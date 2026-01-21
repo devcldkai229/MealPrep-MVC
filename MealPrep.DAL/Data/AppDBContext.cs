@@ -13,10 +13,24 @@ namespace MealPrep.DAL.Data
         public DbSet<Meal> Meals => Set<Meal>();
         public DbSet<WeeklyMenu> WeeklyMenus => Set<WeeklyMenu>();
         public DbSet<WeeklyMenuItem> WeeklyMenuItems => Set<WeeklyMenuItem>();
+        
+        // New pricing entities
+        public DbSet<Plan> Plans => Set<Plan>();
+        public DbSet<PlanMealTier> PlanMealTiers => Set<PlanMealTier>();
+        
         public DbSet<Subscription> Subscriptions => Set<Subscription>();
         public DbSet<Order> Orders => Set<Order>();
         public DbSet<OrderItem> OrderItems => Set<OrderItem>();
+        
+        // New delivery entities
+        public DbSet<DeliveryOrder> DeliveryOrders => Set<DeliveryOrder>();
+        public DbSet<DeliveryOrderItem> DeliveryOrderItems => Set<DeliveryOrderItem>();
         public DbSet<DeliverySlot> DeliverySlots => Set<DeliverySlot>();
+        
+        // New payment entities
+        public DbSet<Payment> Payments => Set<Payment>();
+        public DbSet<PaymentTransaction> PaymentTransactions => Set<PaymentTransaction>();
+        
         public DbSet<NutritionLog> NutritionLogs => Set<NutritionLog>();
         public DbSet<UserNutritionProfile> UserNutritionProfiles => Set<UserNutritionProfile>();
         public DbSet<UserAllergy> UserAllergies => Set<UserAllergy>();
@@ -56,9 +70,6 @@ namespace MealPrep.DAL.Data
 
                 entity.Property(p => p.WeightKg)
                     .HasPrecision(5, 2);
-
-                entity.Property(p => p.DailyBudget)
-                    .HasPrecision(10, 2);
             });
 
             // UserAllergy 1-n với UserNutritionProfile
@@ -97,7 +108,104 @@ namespace MealPrep.DAL.Data
                 entity.Property(m => m.Protein).HasPrecision(5, 2);
                 entity.Property(m => m.Carbs).HasPrecision(5, 2);
                 entity.Property(m => m.Fat).HasPrecision(5, 2);
-                entity.Property(m => m.Price).HasPrecision(10, 2);
+                entity.Property(m => m.BasePrice).HasPrecision(10, 2);
+            });
+
+            // Plan
+            modelBuilder.Entity<Plan>(entity =>
+            {
+                entity.Property(p => p.BasePrice).HasPrecision(10, 2);
+                entity.HasIndex(p => p.Name).IsUnique();
+            });
+
+            // PlanMealTier - Unique constraint
+            modelBuilder.Entity<PlanMealTier>(entity =>
+            {
+                entity.Property(t => t.ExtraPrice).HasPrecision(10, 2);
+                
+                // Unique: PlanId + MealsPerDay
+                entity.HasIndex(t => new { t.PlanId, t.MealsPerDay }).IsUnique();
+
+                entity.HasOne(t => t.Plan)
+                    .WithMany(p => p.MealTiers)
+                    .HasForeignKey(t => t.PlanId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // Subscription
+            modelBuilder.Entity<Subscription>(entity =>
+            {
+                entity.Property(s => s.TotalAmount).HasPrecision(10, 2);
+
+                entity.HasOne(s => s.AppUser)
+                    .WithMany(u => u.Subscriptions)
+                    .HasForeignKey(s => s.AppUserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(s => s.Plan)
+                    .WithMany(p => p.Subscriptions)
+                    .HasForeignKey(s => s.PlanId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // Payment
+            modelBuilder.Entity<Payment>(entity =>
+            {
+                entity.Property(p => p.Amount).HasPrecision(10, 2);
+                
+                // Unique payment code
+                entity.HasIndex(p => p.PaymentCode).IsUnique();
+
+                entity.HasOne(p => p.AppUser)
+                    .WithMany()
+                    .HasForeignKey(p => p.AppUserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(p => p.Subscription)
+                    .WithMany(s => s.Payments)
+                    .HasForeignKey(p => p.SubscriptionId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // PaymentTransaction
+            modelBuilder.Entity<PaymentTransaction>(entity =>
+            {
+                entity.HasOne(t => t.Payment)
+                    .WithMany(p => p.Transactions)
+                    .HasForeignKey(t => t.PaymentId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // DeliveryOrder
+            modelBuilder.Entity<DeliveryOrder>(entity =>
+            {
+                entity.Property(d => d.TotalAmount).HasPrecision(10, 2);
+
+                entity.HasOne(d => d.Subscription)
+                    .WithMany(s => s.DeliveryOrders)
+                    .HasForeignKey(d => d.SubscriptionId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(d => d.DeliverySlot)
+                    .WithMany()
+                    .HasForeignKey(d => d.DeliverySlotId)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            // DeliveryOrderItem
+            modelBuilder.Entity<DeliveryOrderItem>(entity =>
+            {
+                entity.Property(i => i.UnitPrice).HasPrecision(10, 2);
+
+                entity.HasOne(i => i.DeliveryOrder)
+                    .WithMany(d => d.Items)
+                    .HasForeignKey(i => i.DeliveryOrderId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(i => i.Meal)
+                    .WithMany()
+                    .HasForeignKey(i => i.MealId)
+                    .OnDelete(DeleteBehavior.SetNull);
             });
 
             // Order N-1 với AppUser
@@ -106,15 +214,6 @@ namespace MealPrep.DAL.Data
                 entity.HasOne(o => o.AppUser)
                     .WithMany(u => u.Orders)
                     .HasForeignKey(o => o.AppUserId)
-                    .OnDelete(DeleteBehavior.Restrict);
-            });
-
-            // Subscription N-1 với AppUser
-            modelBuilder.Entity<Subscription>(entity =>
-            {
-                entity.HasOne(s => s.AppUser)
-                    .WithMany(u => u.Subscriptions)
-                    .HasForeignKey(s => s.AppUserId)
                     .OnDelete(DeleteBehavior.Restrict);
             });
 
@@ -160,6 +259,45 @@ namespace MealPrep.DAL.Data
                     Id = Guid.Parse("22222222-2222-2222-2222-222222222222"),
                     Name = "User"
                 }
+            );
+
+            // Seed Plans
+            var seedDate = new DateTime(2026, 1, 21, 0, 0, 0, DateTimeKind.Utc);
+            
+            modelBuilder.Entity<Plan>().HasData(
+                new Plan
+                {
+                    Id = 1,
+                    Name = "Weekly",
+                    Description = "Gói đăng ký theo tuần (7 ngày)",
+                    DurationDays = 7,
+                    BasePrice = 300000,
+                    IsActive = true,
+                    CreatedAt = seedDate
+                },
+                new Plan
+                {
+                    Id = 2,
+                    Name = "Monthly",
+                    Description = "Gói đăng ký theo tháng (30 ngày)",
+                    DurationDays = 30,
+                    BasePrice = 1000000,
+                    IsActive = true,
+                    CreatedAt = seedDate
+                }
+            );
+
+            // Seed PlanMealTiers
+            modelBuilder.Entity<PlanMealTier>().HasData(
+                // Weekly plan tiers
+                new PlanMealTier { Id = 1, PlanId = 1, MealsPerDay = 1, ExtraPrice = 0, IsActive = true, CreatedAt = seedDate },
+                new PlanMealTier { Id = 2, PlanId = 1, MealsPerDay = 2, ExtraPrice = 150000, IsActive = true, CreatedAt = seedDate },
+                new PlanMealTier { Id = 3, PlanId = 1, MealsPerDay = 3, ExtraPrice = 280000, IsActive = true, CreatedAt = seedDate },
+                
+                // Monthly plan tiers
+                new PlanMealTier { Id = 4, PlanId = 2, MealsPerDay = 1, ExtraPrice = 0, IsActive = true, CreatedAt = seedDate },
+                new PlanMealTier { Id = 5, PlanId = 2, MealsPerDay = 2, ExtraPrice = 500000, IsActive = true, CreatedAt = seedDate },
+                new PlanMealTier { Id = 6, PlanId = 2, MealsPerDay = 3, ExtraPrice = 900000, IsActive = true, CreatedAt = seedDate }
             );
         }
     }

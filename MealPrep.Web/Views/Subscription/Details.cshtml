@@ -108,8 +108,8 @@
                     <div class="mb-3">
                         <label class="small text-muted d-block">Loại Gói</label>
                         <div class="h5 mb-0">
-                            @(Model.Plan == SubscriptionPlan.Weekly ? "Gói Tuần" : "Gói Tháng")
-                            @if(Model.Plan == SubscriptionPlan.Monthly)
+                            @(Model.Plan?.Name ?? "Chưa xác định")
+                            @if(Model.Plan?.DurationDays == 30)
                             {
                                 <span class="badge bg-success-subtle text-success ms-2">Tiết kiệm 15%</span>
                             }

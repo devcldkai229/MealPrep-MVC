@@ -42,12 +42,17 @@ public class SubscriptionService : ISubscriptionService
             throw new InvalidOperationException("Start date must be today or later.");
 
         sub.AppUserId = userId;
-        sub.Status = SubscriptionStatus.Active;
-        var days = sub.Plan == SubscriptionPlan.Weekly ? 7 : 30;
-        sub.EndDate ??= sub.StartDate.AddDays(days - 1);
+        sub.Status = SubscriptionStatus.PendingPayment;
+        // EndDate will be calculated based on Plan.DurationDays
+        // For now, we'll handle this in the payment flow
 
         await _subRepo.AddAsync(sub);
         await _subRepo.SaveChangesAsync();
+
+        // TODO: Generate DeliveryOrders after payment is confirmed
+        // For now, we skip auto-generation
+        
+        /*
         var selectedMeals = await _mealRepo.Query()
             .Where(m => m.IsActive)
             .OrderBy(m => m.Calories)
@@ -85,6 +90,8 @@ public class SubscriptionService : ISubscriptionService
         }
 
         await _orderRepo.SaveChangesAsync();
+        */
+        
         return sub.Id;
     }
 
