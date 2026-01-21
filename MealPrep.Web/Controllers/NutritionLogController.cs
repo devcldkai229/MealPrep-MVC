@@ -1,6 +1,7 @@
 ﻿using MealPrep.BLL.Services;
 using MealPrep.DAL.Entities;
 using MealPrep.DAL.Repositories;
+using MealPrep.Web.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -37,7 +38,7 @@ namespace MealPrep.Web.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create(NutritionLog model)
+        public async Task<IActionResult> Create(NutritionLogVm model)
         {
             var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
             var user = await _userService.GetUserByIdAsync(userId);
@@ -48,8 +49,15 @@ namespace MealPrep.Web.Controllers
                 ViewBag.Meals = await _mealRepo.Query().Where(m => m.IsActive).OrderBy(m => m.Name).ToListAsync();
                 return View(model);
             }
-
-            await _svc.CreateAsync(userId, user.Email, model);
+            NutritionLog nutritionLog = new NutritionLog
+            {
+                AppUserId = userId,
+                CustomerEmail = user.Email,
+                Date = model.Date,
+                MealId = model.MealId,
+                Quantity = model.Quantity
+            };
+            await _svc.CreateAsync(userId, user.Email, nutritionLog);
             return RedirectToAction(nameof(Index));
         }
 
