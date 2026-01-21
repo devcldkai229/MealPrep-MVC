@@ -1,5 +1,6 @@
-using MealPrep.BLL.Exceptions;
+﻿using MealPrep.BLL.Exceptions;
 using MealPrep.DAL.Data;
+using MealPrep.DAL.Entities;
 using MealPrep.DAL.Enums;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -16,6 +17,59 @@ namespace MealPrep.BLL.Services
             _context = context;
         }
 
+        public async Task UpsertNutritionProfileAsync(
+            Guid userId,
+            int heightCm,
+            decimal weightKg,
+            FitnessGoal goal,
+            ActivityLevel activityLevel,
+            DietPreference dietPreference,
+            int mealsPerDay,
+            string? notes)
+        {
+            var user = await _context.Users
+                .Include(u => u.NutritionProfile!)
+                    .ThenInclude(np => np.Allergies)
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (user == null)
+            {
+                throw new UserNotFoundException(userId);
+            }
+
+            // Nếu chưa có profile thì tạo mới
+            if (user.NutritionProfile == null)
+            {
+                user.NutritionProfile = new UserNutritionProfile
+                {
+                    AppUserId = userId,
+                    HeightCm = heightCm,
+                    WeightKg = weightKg,
+                    Goal = goal,
+                    ActivityLevel = activityLevel,
+                    DietPreference = dietPreference,
+                    MealsPerDay = mealsPerDay,
+                    Notes = notes
+                };
+
+                _context.Set<UserNutritionProfile>().Add(user.NutritionProfile);
+            }
+            else
+            {
+                // Cập nhật profile hiện có
+                user.NutritionProfile.HeightCm = heightCm;
+                user.NutritionProfile.WeightKg = weightKg;
+                user.NutritionProfile.Goal = goal;
+                user.NutritionProfile.ActivityLevel = activityLevel;
+                user.NutritionProfile.DietPreference = dietPreference;
+                user.NutritionProfile.MealsPerDay = mealsPerDay;
+                user.NutritionProfile.Notes = notes;
+
+            }
+
+
+            await _context.SaveChangesAsync();
+        }
         public async Task<AuthResponse> GetUserByIdAsync(Guid userId)
         {
             var user = await _context.Users

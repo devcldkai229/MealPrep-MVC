@@ -138,8 +138,8 @@
                                             <i class="bi bi-rulers"></i> Chiều Cao (cm)
                                         </label>
                                         <input type="number" name="HeightCm" class="form-control" 
-                                               min="80" max="220" 
-                                               value="@(Model.NutritionProfile?.HeightCm ?? 0)" 
+                                               min="80" max="220"
+                                               placeholder="150"
                                                required />
                                         <div class="form-text">Phạm vi: 80-220 cm</div>
                                     </div>
@@ -151,7 +151,7 @@
                                         </label>
                                         <input type="number" name="WeightKg" class="form-control" 
                                                min="20" max="250" step="0.1"
-                                               value="@(Model.NutritionProfile?.WeightKg ?? 65)" 
+                                               placeholder="80"
                                                required />
                                         <div class="form-text">Phạm vi: 20-250 kg</div>
                                     </div>

@@ -47,5 +47,18 @@ namespace MealPrep.BLL.Services
         /// </summary>
         /// <exception cref="Exceptions.UserNotFoundException">User không tồn tại</exception>
         Task ActivateAccountAsync(Guid userId);
+        /// <summary>
+        /// Tạo hoặc cập nhật hồ sơ dinh dưỡng
+        /// </summary>
+        Task UpsertNutritionProfileAsync(
+            Guid userId,
+            int heightCm,
+            decimal weightKg,
+            FitnessGoal goal,
+            ActivityLevel activityLevel,
+            DietPreference dietPreference,
+            int mealsPerDay,
+            string? notes
+        );
     }
 }
