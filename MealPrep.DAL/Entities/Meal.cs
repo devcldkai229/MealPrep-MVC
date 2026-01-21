@@ -7,6 +7,9 @@ using System.Threading.Tasks;
 
 namespace MealPrep.DAL.Entities
 {
+    /// <summary>
+    /// Món ăn trong hệ thống
+    /// </summary>
     public class Meal
     {
         public int Id { get; set; }
@@ -33,9 +36,16 @@ namespace MealPrep.DAL.Entities
         [Range(0, 10000)]
         public decimal Fat { get; set; }
 
+        /// <summary>
+        /// Giá cơ bản của món (nếu bán lẻ)
+        /// </summary>
         [Range(0, 10000000)]
-        public decimal Price { get; set; }
+        public decimal BasePrice { get; set; }
 
         public bool IsActive { get; set; } = true;
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        public DateTime? UpdatedAt { get; set; }
     }
 }

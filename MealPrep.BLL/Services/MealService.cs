@@ -26,8 +26,8 @@ namespace MealPrep.BLL.Services
             {
                 "cal_asc" => query.OrderBy(x => x.Calories),
                 "cal_desc" => query.OrderByDescending(x => x.Calories),
-                "price_asc" => query.OrderBy(x => x.Price),
-                "price_desc" => query.OrderByDescending(x => x.Price),
+                "price_asc" => query.OrderBy(x => x.BasePrice),
+                "price_desc" => query.OrderByDescending(x => x.BasePrice),
                 _ => query.OrderBy(x => x.Name)
             };
 

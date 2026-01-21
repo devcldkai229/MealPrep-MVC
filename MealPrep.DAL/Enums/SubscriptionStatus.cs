@@ -6,6 +6,12 @@ using System.Threading.Tasks;
 
 namespace MealPrep.DAL.Enums
 {
-    public enum SubscriptionStatus { Active = 1, Paused = 2, Cancelled = 3 }
-
+    public enum SubscriptionStatus 
+    { 
+        PendingPayment = 0,
+        Active = 1, 
+        Paused = 2, 
+        Cancelled = 3,
+        Expired = 4
+    }
 }

@@ -96,7 +96,7 @@
                             <!-- Price & Action -->
                             <div class="mt-auto d-flex justify-content-between align-items-center">
                                 <div class="h5 mb-0 text-success">
-                                    @meal.Price.ToString("C", new System.Globalization.CultureInfo("vi-VN"))
+                                    @meal.BasePrice.ToString("C", new System.Globalization.CultureInfo("vi-VN"))
                                 </div>
                                 <a asp-action="Details" asp-route-id="@meal.Id" 
                                    class="btn btn-sm btn-outline-primary">

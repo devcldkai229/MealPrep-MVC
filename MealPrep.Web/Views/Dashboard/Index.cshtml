@@ -58,7 +58,7 @@
                                 <div class="fw-semibold">@m.Name</div>
                                 <div class="meal-meta">@m.Calories kcal • P @m.Protein • C @m.Carbs • F @m.Fat</div>
                                 <div class="d-flex justify-content-between align-items-center mt-2">
-                                    <div class="fw-semibold">@m.Price.ToString("C")</div>
+                                    <div class="fw-semibold">@m.BasePrice.ToString("C")</div>
                                     <a class="btn btn-sm btn-outline-secondary" asp-controller="Meals" asp-action="Details" asp-route-id="@m.Id">Xem</a>
                                 </div>
                             </div>

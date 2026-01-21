@@ -32,9 +32,6 @@ namespace MealPrep.DAL.Entities
         [Range(1, 6)]
         public int MealsPerDay { get; set; } = 3;
 
-        [Range(0, 100000000)]
-        public decimal DailyBudget { get; set; }
-
         [StringLength(10000)]
         public string? Notes { get; set; } // bệnh lý nhẹ, sở thích, mục tiêu cụ thể...
 
