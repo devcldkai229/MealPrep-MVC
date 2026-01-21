@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace MealPrep.Web.Models
+namespace MealPrep.Web.ViewModels
 {
     public class RegisterVm
     {

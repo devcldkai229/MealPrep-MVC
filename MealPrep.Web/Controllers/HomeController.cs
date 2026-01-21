@@ -1,4 +1,4 @@
-using MealPrep.Web.Models;
+using MealPrep.Web.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 

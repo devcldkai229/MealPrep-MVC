@@ -1,1 +1,43 @@
-﻿
+﻿@model List<MealPrep.DAL.Entities.NutritionLog>
+@{
+    ViewData["Title"] = "Nutrition Logs";
+}
+
+<h2>Nutrition Logs</h2>
+
+<a asp-action="Create" class="btn btn-primary mb-3">Add Log</a>
+
+@if(Model.Any())
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Meal</th>
+                <th>Quantity</th>
+                <th>Calories</th>
+                <th>Protein</th>
+                <th>Carbs</th>
+                <th>Fat</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach(var log in Model)
+            {
+                <tr>
+                    <td>@log.Date.ToString("dd/MM/yyyy")</td>
+                    <td>@log.Meal?.Name</td>
+                    <td>@log.Quantity</td>
+                    <td>@((log.Meal?.Calories ?? 0) * log.Quantity)</td>
+                    <td>@((log.Meal?.Protein ?? 0) * log.Quantity)</td>
+                    <td>@((log.Meal?.Carbs ?? 0) * log.Quantity)</td>
+                    <td>@((log.Meal?.Fat ?? 0) * log.Quantity)</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>No logs yet.</p>
+}

@@ -1,6 +1,6 @@
 ﻿using MealPrep.BLL.Exceptions;
 using MealPrep.BLL.Services;
-using MealPrep.Web.Models;
+using MealPrep.Web.ViewModels;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
@@ -85,7 +85,55 @@ namespace MealPrep.Web.Controllers
             }
 
             await SignInAsync(user);
-            return RedirectToAction("Index", "Dashboard");
+            return RedirectToAction("Index", "Auth");
+        }
+
+        [Authorize]
+        [HttpGet]
+        public IActionResult Index()
+        {
+            return View(new CompleteProfileVm());
+        }
+
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CompleteProfile(CompleteProfileVm vm)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(vm);
+            }
+
+            try
+            {
+                var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+                var currentUser = await _userService.GetUserProfileAsync(userId);
+
+                if (currentUser == null)
+                {
+                    return NotFound("User not found");
+                }
+
+                // Update profile with new information
+                await _userService.UpdateProfileAsync(
+                    userId,
+                    currentUser.FullName,
+                    vm.PhoneNumber,
+                    vm.Gender,
+                    vm.Age,
+                    currentUser.AvatarUrl
+                );
+
+                TempData["SuccessMessage"] = "Hoàn tất hồ sơ thành công!";
+                return RedirectToAction("Index", "Dashboard");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error completing profile");
+                ModelState.AddModelError("", "Đã xảy ra lỗi khi cập nhật hồ sơ. Vui lòng thử lại.");
+                return View(vm);
+            }
         }
 
         [Authorize]

@@ -1,0 +1,187 @@
+﻿@model MealPrep.Web.ViewModels.CompleteProfileVm
+
+@{
+    ViewData["Title"] = "Hoàn tất hồ sơ";
+}
+
+<div class="container">
+    <div class="row justify-content-center min-vh-100 align-items-center py-5">
+        <div class="col-md-6 col-lg-5">
+            <div class="card app-card shadow-lg border-0">
+                <div class="card-body p-4 p-md-5">
+                    <!-- Header -->
+                    <div class="text-center mb-4">
+                        <div class="mb-3">
+                            <i class="bi bi-person-circle text-primary" style="font-size: 4rem;"></i>
+                        </div>
+                        <h2 class="h4 fw-bold mb-2">Hoàn tất hồ sơ</h2>
+                        <p class="text-muted mb-0">
+                            Vui lòng cung cấp thêm thông tin để chúng tôi phục vụ bạn tốt hơn
+                        </p>
+                    </div>
+
+                    <!-- Progress indicator -->
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <small class="text-muted">Hoàn thành hồ sơ</small>
+                            <small class="text-primary fw-semibold">Bước cuối</small>
+                        </div>
+                        <div class="progress" style="height: 6px;">
+                            <div class="progress-bar bg-primary" role="progressbar" style="width: 90%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Alert if needed -->
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            <strong>Lỗi!</strong> Vui lòng kiểm tra lại thông tin.
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    <!-- Form -->
+                    <form asp-action="CompleteProfile" method="post">
+                        @Html.AntiForgeryToken()
+
+                        <!-- Gender -->
+                        <div class="mb-4">
+                            <label asp-for="Gender" class="form-label fw-semibold">
+                                <i class="bi bi-gender-ambiguous text-primary"></i>
+                                @Html.DisplayNameFor(m => m.Gender)
+                                <span class="text-danger">*</span>
+                            </label>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <input type="radio" class="btn-check" name="Gender" id="genderMale"
+                                           value="@((int)MealPrep.DAL.Enums.Gender.Male)"
+                                           autocomplete="off" checked>
+                                    <label class="btn btn-outline-primary w-100 py-3" for="genderMale">
+                                        <i class="bi bi-gender-male d-block mb-2" style="font-size: 1.5rem;"></i>
+                                        <span>Nam</span>
+                                    </label>
+                                </div>
+                                <div class="col-6">
+                                    <input type="radio" class="btn-check" name="Gender" id="genderFemale"
+                                           value="@((int)MealPrep.DAL.Enums.Gender.Female)"
+                                           autocomplete="off">
+                                    <label class="btn btn-outline-primary w-100 py-3" for="genderFemale">
+                                        <i class="bi bi-gender-female d-block mb-2" style="font-size: 1.5rem;"></i>
+                                        <span>Nữ</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <span asp-validation-for="Gender" class="text-danger small"></span>
+                        </div>
+
+                        <!-- Age -->
+                        <div class="mb-4">
+                            <label asp-for="Age" class="form-label fw-semibold">
+                                <i class="bi bi-calendar-event text-primary"></i>
+                                @Html.DisplayNameFor(m => m.Age)
+                                <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <input asp-for="Age" type="number" class="form-control form-control-lg"
+                                       placeholder="Nhập tuổi của bạn" min="5" max="100" required />
+                                <span class="input-group-text">tuổi</span>
+                            </div>
+                            <span asp-validation-for="Age" class="text-danger small"></span>
+                            <div class="form-text">
+                                <i class="bi bi-info-circle"></i> Phạm vi: 5-100 tuổi
+                            </div>
+                        </div>
+
+                        <!-- Phone Number (Optional) -->
+                        <div class="mb-4">
+                            <label asp-for="PhoneNumber" class="form-label fw-semibold">
+                                <i class="bi bi-telephone text-primary"></i>
+                                @Html.DisplayNameFor(m => m.PhoneNumber)
+                            </label>
+                            <input asp-for="PhoneNumber" type="tel" class="form-control form-control-lg"
+                                   placeholder="Ví dụ: 0912345678" />
+                            <span asp-validation-for="PhoneNumber" class="text-danger small"></span>
+                            <div class="form-text">
+                                <i class="bi bi-info-circle"></i> Tùy chọn - Để liên hệ khi cần thiết
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-check-circle-fill me-2"></i>
+                                Hoàn tất và tiếp tục
+                            </button>
+                        </div>
+
+                        <!-- Note -->
+                        <div class="alert alert-info mt-4 mb-0" role="alert">
+                            <i class="bi bi-lightbulb-fill me-2"></i>
+                            <strong>Gợi ý:</strong> Thông tin này giúp chúng tôi cá nhân hóa trải nghiệm của bạn và đề xuất các gói ăn phù hợp.
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Skip Link (Optional - if you want to allow skipping) -->
+            <div class="text-center mt-3">
+                <a href="@Url.Action("Index", "Dashboard")" class="text-muted small">
+                    Bỏ qua, hoàn thành sau <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .btn-check:checked + .btn-outline-primary {
+            background-color: var(--bs-primary);
+            color: white;
+        }
+
+        .btn-outline-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(102, 126, 234, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .app-card {
+            border-radius: 1rem;
+        }
+
+        .progress {
+            border-radius: 10px;
+            background-color: rgba(102, 126, 234, 0.1);
+        }
+
+        .progress-bar {
+            border-radius: 10px;
+        }
+    </style>
+}
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        // Auto-format phone number input
+        document.querySelector('input[name="PhoneNumber"]')?.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 0 && value[0] !== '0') {
+                value = '0' + value;
+            }
+            e.target.value = value.substring(0, 11);
+        });
+
+        // Age input validation
+        document.querySelector('input[name="Age"]')?.addEventListener('input', function(e) {
+            let value = parseInt(e.target.value);
+            if (value < 5) e.target.value = 5;
+            if (value > 100) e.target.value = 100;
+        });
+    </script>
+}
