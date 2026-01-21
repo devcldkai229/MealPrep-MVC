@@ -1,0 +1,157 @@
+﻿@model MealPrep.DAL.Entities.NutritionLog
+@{
+    var meals = ViewBag.Meals as List<MealPrep.DAL.Entities.Meal>;
+    ViewData["Title"] = "Thêm Nhật Ký Dinh Dưỡng";
+}
+
+<div class="container py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Trang Chủ</a></li>
+            <li class="breadcrumb-item"><a asp-action="Index">Nhật Ký Dinh Dưỡng</a></li>
+            <li class="breadcrumb-item active">Thêm Nhật Ký</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <!-- Form Card -->
+            <div class="card app-card">
+                <div class="card-header bg-white border-bottom">
+                    <h4 class="mb-0">
+                        <i class="bi bi-plus-circle text-primary"></i> Thêm Nhật Ký Dinh Dưỡng
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Create" method="post" id="nutritionForm">
+                        <!-- Date -->
+                        <div class="mb-4">
+                            <label asp-for="Date" class="form-label">
+                                <i class="bi bi-calendar3"></i> Ngày
+                            </label>
+                            <input asp-for="Date" type="date" class="form-control form-control-lg" />
+                            <span asp-validation-for="Date" class="text-danger small"></span>
+                        </div>
+
+                        <!-- Meal Selection -->
+                        <div class="mb-4">
+                            <label asp-for="MealId" class="form-label">
+                                <i class="bi bi-egg-fried"></i> Chọn Món Ăn
+                            </label>
+                            <select asp-for="MealId" class="form-select form-select-lg" id="mealSelect">
+                                <option value="">-- Chọn món ăn --</option>
+                                @foreach (var m in meals ?? new())
+                                {
+                                    <option value="@m.Id" 
+                                            data-calories="@m.Calories" 
+                                            data-protein="@m.Protein" 
+                                            data-carbs="@m.Carbs" 
+                                            data-fat="@m.Fat">
+                                        @m.Name - @m.Calories kcal
+                                    </option>
+                                }
+                            </select>
+                            <span asp-validation-for="MealId" class="text-danger small"></span>
+                        </div>
+
+                        <!-- Quantity -->
+                        <div class="mb-4">
+                            <label asp-for="Quantity" class="form-label">
+                                <i class="bi bi-hash"></i> Số Lượng (suất)
+                            </label>
+                            <input asp-for="Quantity" type="number" min="1" max="10" 
+                                   class="form-control form-control-lg" id="quantityInput" />
+                            <span asp-validation-for="Quantity" class="text-danger small"></span>
+                            <div class="form-text">Số suất bạn đã ăn</div>
+                        </div>
+
+                        <!-- Nutrition Preview -->
+                        <div id="nutritionPreview" class="card bg-light border-0 mb-4" style="display: none;">
+                            <div class="card-body">
+                                <h6 class="card-title mb-3">
+                                    <i class="bi bi-eye"></i> Tổng Dinh Dưỡng Dự Kiến
+                                </h6>
+                                <div class="row g-3">
+                                    <div class="col-6 col-sm-3">
+                                        <div class="text-center">
+                                            <div class="h5 mb-0 text-danger" id="previewCalories">0</div>
+                                            <small class="text-muted">kcal</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-sm-3">
+                                        <div class="text-center">
+                                            <div class="h5 mb-0 text-primary" id="previewProtein">0</div>
+                                            <small class="text-muted">Đạm (g)</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-sm-3">
+                                        <div class="text-center">
+                                            <div class="h5 mb-0 text-warning" id="previewCarbs">0</div>
+                                            <small class="text-muted">Carbs (g)</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-sm-3">
+                                        <div class="text-center">
+                                            <div class="h5 mb-0 text-info" id="previewFat">0</div>
+                                            <small class="text-muted">Chất Béo (g)</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-check-lg"></i> Lưu Nhật Ký
+                            </button>
+                            <a asp-action="Index" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-lg"></i> Hủy
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Quick Tip -->
+            <div class="alert alert-info mt-4" role="alert">
+                <i class="bi bi-lightbulb"></i>
+                <strong>Mẹo:</strong> Ghi lại bữa ăn ngay sau khi ăn để theo dõi chính xác nhất!
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    
+    <script>
+        $(document).ready(function() {
+            function updatePreview() {
+                const selectedOption = $('#mealSelect option:selected');
+                const quantity = parseInt($('#quantityInput').val()) || 0;
+                
+                if (selectedOption.val() && quantity > 0) {
+                    const calories = parseInt(selectedOption.data('calories')) || 0;
+                    const protein = parseInt(selectedOption.data('protein')) || 0;
+                    const carbs = parseInt(selectedOption.data('carbs')) || 0;
+                    const fat = parseInt(selectedOption.data('fat')) || 0;
+                    
+                    $('#previewCalories').text(calories * quantity);
+                    $('#previewProtein').text(protein * quantity);
+                    $('#previewCarbs').text(carbs * quantity);
+                    $('#previewFat').text(fat * quantity);
+                    
+                    $('#nutritionPreview').slideDown();
+                } else {
+                    $('#nutritionPreview').slideUp();
+                }
+            }
+            
+            $('#mealSelect, #quantityInput').on('change input', updatePreview);
+            updatePreview();
+        });
+    </script>
+}
+

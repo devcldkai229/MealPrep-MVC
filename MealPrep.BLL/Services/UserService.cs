@@ -1,0 +1,118 @@
+using MealPrep.BLL.Exceptions;
+using MealPrep.DAL.Data;
+using MealPrep.DAL.Enums;
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Threading.Tasks;
+
+namespace MealPrep.BLL.Services
+{
+    public class UserService : IUserService
+    {
+        private readonly AppDbContext _context;
+
+        public UserService(AppDbContext context)
+        {
+            _context = context;
+        }
+
+        public async Task<AuthResponse> GetUserByIdAsync(Guid userId)
+        {
+            var user = await _context.Users
+                .Include(u => u.Role)
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (user == null)
+            {
+                throw new UserNotFoundException(userId);
+            }
+
+            return new AuthResponse(
+                UserId: user.Id,
+                Email: user.Email,
+                FullName: user.FullName,
+                RoleId: user.RoleId,
+                RoleName: user.Role.Name,
+                IsActive: user.IsActive,
+                AvatarUrl: user.AvatarUrl
+            );
+        }
+
+        public async Task<DAL.Entities.AppUser?> GetUserProfileAsync(Guid userId)
+        {
+            return await _context.Users
+                .Include(u => u.Role)
+                .Include(u => u.NutritionProfile!)
+                    .ThenInclude(np => np.Allergies)
+                .Include(u => u.DislikedMeals)
+                    .ThenInclude(dm => dm.Meal)
+                .Include(u => u.Subscriptions)
+                .Include(u => u.Orders)
+                .Include(u => u.NutritionLogs)
+                .FirstOrDefaultAsync(u => u.Id == userId);
+        }
+
+        public async Task UpdateProfileAsync(Guid userId, string fullName, string? phoneNumber, Gender gender, int age, string? avatarUrl)
+        {
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null)
+            {
+                throw new UserNotFoundException(userId);
+            }
+
+            user.FullName = fullName;
+            user.PhoneNumber = phoneNumber;
+            user.Gender = gender;
+            user.Age = age;
+            user.AvatarUrl = avatarUrl ?? string.Empty;
+
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task ChangePasswordAsync(Guid userId, string currentPassword, string newPassword)
+        {
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null)
+            {
+                throw new UserNotFoundException(userId);
+            }
+
+            if (!BCrypt.Net.BCrypt.Verify(currentPassword, user.PasswordHash))
+            {
+                throw new InvalidPasswordException();
+            }
+
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<bool> EmailExistsAsync(string email)
+        {
+            return await _context.Users.AnyAsync(u => u.Email == email);
+        }
+
+        public async Task DeactivateAccountAsync(Guid userId)
+        {
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null)
+            {
+                throw new UserNotFoundException(userId);
+            }
+
+            user.IsActive = false;
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task ActivateAccountAsync(Guid userId)
+        {
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null)
+            {
+                throw new UserNotFoundException(userId);
+            }
+
+            user.IsActive = true;
+            await _context.SaveChangesAsync();
+        }
+    }
+}

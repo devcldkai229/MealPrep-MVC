@@ -1,0 +1,145 @@
+@model MealPrep.Web.ViewModels.DashboardVm
+@{
+    ViewData["Title"] = "Bảng Điều Khiển";
+}
+
+<div class="d-flex align-items-end justify-content-between mb-3">
+    <div>
+        <h3 class="fw-bold mb-1">Chào mừng trở lại 👋</h3>
+        <div class="text-secondary">Quản lý món ăn, đăng ký và theo dõi dinh dưỡng mọi nơi.</div>
+    </div>
+    <div class="d-flex gap-2">
+        <a class="btn btn-primary" asp-controller="Subscription" asp-action="Create">Đăng Ký</a>
+        <a class="btn btn-outline-secondary" asp-controller="NutritionLogs" asp-action="Create">Thêm Nhật Ký</a>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-4">
+        <div class="app-card p-3">
+            <div class="kpi-title">Đăng Ký</div>
+            <div class="kpi-value mt-1">@Model.SubscriptionStatus</div>
+            <div class="mt-2"><span class="chip">Lối sống năng động</span></div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="app-card p-3">
+            <div class="kpi-title">Giao Hàng Tiếp Theo</div>
+            <div class="kpi-value mt-1">@Model.NextDeliveryText</div>
+            <div class="mt-2"><a class="link-muted" asp-controller="Subscription" asp-action="Create">Quản lý đăng ký →</a></div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="app-card p-3">
+            <div class="kpi-title">Calo Hôm Nay</div>
+            <div class="kpi-value mt-1">@Model.TodayCalories kcal</div>
+            <div class="mt-2"><a class="link-muted" asp-controller="NutritionLogs" asp-action="Index">Xem dinh dưỡng →</a></div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mt-1">
+    <div class="col-lg-8">
+        <div class="app-card p-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h5 class="fw-semibold mb-0">Món Ăn Nổi Bật</h5>
+                <a class="link-muted" asp-controller="Meals" asp-action="Index">Xem tất cả →</a>
+            </div>
+
+            <div class="row g-3">
+                @foreach (var m in Model.FeaturedMeals)
+                {
+                    <div class="col-md-6 col-xl-4">
+                        <div class="app-card p-2">
+                            <div class="meal-thumb mb-2"></div>
+                            <div class="px-1 pb-1">
+                                <div class="fw-semibold">@m.Name</div>
+                                <div class="meal-meta">@m.Calories kcal • P @m.Protein • C @m.Carbs • F @m.Fat</div>
+                                <div class="d-flex justify-content-between align-items-center mt-2">
+                                    <div class="fw-semibold">@m.Price.ToString("C")</div>
+                                    <a class="btn btn-sm btn-outline-secondary" asp-controller="Meals" asp-action="Details" asp-route-id="@m.Id">Xem</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="app-card p-3 mb-3">
+            <h5 class="fw-semibold">Thao Tác Nhanh</h5>
+            <div class="d-grid gap-2">
+                <a class="btn btn-outline-secondary" asp-controller="Meals" asp-action="Index">Xem món ăn</a>
+                <a class="btn btn-outline-secondary" asp-controller="Subscription" asp-action="Create">Tạo đăng ký</a>
+                <a class="btn btn-outline-secondary" asp-controller="NutritionLogs" asp-action="Create">Thêm nhật ký</a>
+            </div>
+        </div>
+
+        <div class="app-card p-3">
+            <h5 class="fw-semibold mb-2">Calo 7 Ngày Qua</h5>
+            <div class="small text-secondary mb-2">Xu hướng tuần này (bảng).</div>
+
+            <table class="table table-sm mb-0">
+                <thead>
+                    <tr><th>Ngày</th><th class="text-end">kcal</th></tr>
+                </thead>
+                <tbody>
+                @if (Model.WeekCalories.Count == 0)
+                {
+                    <tr><td colspan="2" class="text-secondary">Chưa có nhật ký.</td></tr>
+                }
+                else
+                {
+                    foreach (var d in Model.WeekCalories)
+                    {
+                        <tr>
+                            <td>@d.Date.ToString("dd/MM")</td>
+                            <td class="text-end">@d.Calories</td>
+                        </tr>
+                    }
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="app-card p-3 mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <h5 class="fw-semibold mb-0">Đơn Hàng Gần Đây</h5>
+        <span class="text-secondary small">5 đơn gần nhất</span>
+    </div>
+
+    <table class="table mb-0">
+        <thead>
+            <tr>
+                <th>Ngày</th>
+                <th>Khung Giờ</th>
+                <th>Trạng Thái</th>
+                <th>Món Ăn</th>
+            </tr>
+        </thead>
+        <tbody>
+        @if (Model.RecentOrders.Count == 0)
+        {
+            <tr><td colspan="4" class="text-secondary">Chưa có đơn hàng.</td></tr>
+        }
+        else
+        {
+            foreach (var o in Model.RecentOrders)
+            {
+                <tr>
+                    <td>@o.DeliveryDate.ToString("dd/MM/yyyy")</td>
+                    <td>@o.DeliverySlot?.Name</td>
+                    <td>@o.Status</td>
+                    <td class="text-secondary">@string.Join(", ", o.Items.Select(i => $"{i.Meal?.Name} x{i.Quantity}"))</td>
+                </tr>
+            }
+        }
+        </tbody>
+    </table>
+</div>

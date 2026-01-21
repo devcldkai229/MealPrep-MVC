@@ -1,0 +1,133 @@
+﻿@model MealPrep.Web.Models.RegisterVm
+@{
+    ViewData["Title"] = "Đăng Ký";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="app-card p-4">
+            <div class="text-center mb-4">
+                <h3 class="fw-bold mb-1">Tạo tài khoản</h3>
+                <p class="text-secondary">Tham gia MealPrep và bắt đầu hành trình healthy</p>
+            </div>
+
+            <form asp-action="Register" method="post">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                <div class="mb-3">
+                    <label asp-for="Email" class="form-label fw-semibold">Email</label>
+                    <div class="input-group">
+                        <input asp-for="Email" class="form-control" id="emailInput" placeholder="email@example.com" />
+                        <button type="button" class="btn btn-outline-primary" id="sendOtpBtn">Gửi Mã OTP</button>
+                    </div>
+                    <span asp-validation-for="Email" class="text-danger small"></span>
+                    <small class="form-text" id="otpMessage"></small>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="OtpCode" class="form-label fw-semibold">Mã Xác Thực</label>
+                    <input asp-for="OtpCode" class="form-control" maxlength="6" placeholder="Nhập mã 6 số" />
+                    <span asp-validation-for="OtpCode" class="text-danger small"></span>
+                    <small class="text-secondary">Kiểm tra email để lấy mã xác thực</small>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="FullName" class="form-label fw-semibold">Họ Và Tên</label>
+                    <input asp-for="FullName" class="form-control" placeholder="Nguyễn Văn A" />
+                    <span asp-validation-for="FullName" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Password" class="form-label fw-semibold">Mật Khẩu</label>
+                    <input asp-for="Password" class="form-control" placeholder="••••••••" />
+                    <span asp-validation-for="Password" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="ConfirmPassword" class="form-label fw-semibold">Xác Nhận Mật Khẩu</label>
+                    <input asp-for="ConfirmPassword" class="form-control" placeholder="••••••••" />
+                    <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                </div>
+
+                <div class="d-grid gap-2 mb-3">
+                    <button type="submit" class="btn btn-primary btn-lg">Tạo tài khoản</button>
+                </div>
+
+                <div class="text-center">
+                    <span class="text-secondary">Đã có tài khoản?</span>
+                    <a asp-action="Login" class="fw-semibold">Đăng nhập</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        $(document).ready(function () {
+            let otpSent = false;
+            let countdown = 0;
+
+            $('#sendOtpBtn').click(function () {
+                const email = $('#emailInput').val();
+                const btn = $(this);
+
+                if (!email) {
+                    $('#otpMessage').text('Vui lòng nhập email').addClass('text-danger').removeClass('text-success');
+                    return;
+                }
+
+                // Kiểm tra email hợp lệ
+                const emailRegex = /^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/;
+                if (!emailRegex.test(email)) {
+                    $('#otpMessage').text('Vui lòng nhập email hợp lệ').addClass('text-danger').removeClass('text-success');
+                    return;
+                }
+
+                btn.prop('disabled', true).text('Đang gửi...');
+
+                $.ajax({
+                    url: '@Url.Action("SendOtp", "Auth")',
+                    type: 'POST',
+                    data: { 
+                        email: email,
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function (response) {
+                        console.log('OTP Response:', response);
+                        if (response.success) {
+                            $('#otpMessage').text('✓ ' + response.message).addClass('text-success').removeClass('text-danger');
+                            otpSent = true;
+                            startCountdown(btn);
+                        } else {
+                            $('#otpMessage').text('✗ ' + response.message).addClass('text-danger').removeClass('text-success');
+                            btn.prop('disabled', false).text('Gửi Mã OTP');
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('AJAX Error:', status, error, xhr.responseText);
+                        $('#otpMessage').text('✗ Lỗi: ' + error).addClass('text-danger').removeClass('text-success');
+                        btn.prop('disabled', false).text('Gửi Mã OTP');
+                    }
+                });
+            });
+
+            function startCountdown(btn) {
+                countdown = 60;
+                btn.prop('disabled', true);
+                
+                const interval = setInterval(function () {
+                    countdown--;
+                    btn.text(`Gửi lại sau ${countdown}s`);
+
+                    if (countdown <= 0) {
+                        clearInterval(interval);
+                        btn.prop('disabled', false).text('Gửi lại OTP');
+                    }
+                }, 1000);
+            }
+        });
+    </script>
+}
+

@@ -1,0 +1,281 @@
+@model MealPrep.DAL.Entities.Subscription
+@using MealPrep.DAL.Enums
+@{
+    ViewData["Title"] = "Chi Tiết Đăng Ký";
+    var totalOrders = Model.Orders.Count;
+    var deliveredOrders = Model.Orders.Count(o => o.Status == OrderStatus.Delivered);
+    var upcomingOrders = Model.Orders.Count(o => o.Status == OrderStatus.Planned);
+    var deliveringOrders = Model.Orders.Count(o => o.Status == OrderStatus.Delivering);
+}
+
+<div class="container py-4">
+    <!-- Header with Status Badge -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2 mb-1">
+                <i class="bi bi-calendar-check-fill text-primary"></i> Đăng Ký #@Model.Id
+            </h1>
+            <p class="text-muted mb-0">Lịch giao hàng tự động</p>
+        </div>
+        <div>
+            @if(Model.Status == SubscriptionStatus.Active)
+            {
+                <span class="badge bg-success fs-5 px-3 py-2">
+                    <i class="bi bi-check-circle-fill"></i> Hoạt Động
+                </span>
+            }
+            else if(Model.Status == SubscriptionStatus.Paused)
+            {
+                <span class="badge bg-warning fs-5 px-3 py-2">
+                    <i class="bi bi-pause-circle-fill"></i> Tạm Dừng
+                </span>
+            }
+            else
+            {
+                <span class="badge bg-danger fs-5 px-3 py-2">
+                    <i class="bi bi-x-circle-fill"></i> Đã Hủy
+                </span>
+            }
+        </div>
+    </div>
+
+    <!-- Progress Overview -->
+    <div class="card app-card mb-4">
+        <div class="card-body">
+            <div class="row text-center g-0">
+                <div class="col">
+                    <div class="display-6 fw-bold text-primary">@totalOrders</div>
+                    <div class="small text-muted">Tổng Đơn</div>
+                </div>
+                <div class="col border-start">
+                    <div class="display-6 fw-bold text-success">@deliveredOrders</div>
+                    <div class="small text-muted">Đã Giao</div>
+                </div>
+                <div class="col border-start">
+                    <div class="display-6 fw-bold text-info">@deliveringOrders</div>
+                    <div class="small text-muted">Đang Giao</div>
+                </div>
+                <div class="col border-start">
+                    <div class="display-6 fw-bold text-warning">@upcomingOrders</div>
+                    <div class="small text-muted">Sắp Tới</div>
+                </div>
+            </div>
+            
+            <!-- Progress Bar -->
+            @if(totalOrders > 0)
+            {
+                var progressPercentage = (deliveredOrders * 100.0 / totalOrders);
+                <div class="progress mt-3" style="height: 8px;">
+                    <div class="progress-bar bg-success" style="width: @progressPercentage%"></div>
+                </div>
+                <div class="text-center mt-2 small text-muted">
+                    Hoàn thành @Math.Round(progressPercentage, 1)%
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Left Column - Subscription Info -->
+        <div class="col-lg-4">
+            <!-- Customer Info Card -->
+            <div class="card app-card mb-4">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="mb-0">
+                        <i class="bi bi-person-circle text-primary"></i> Thông Tin Khách Hàng
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="small text-muted d-block">Họ Tên</label>
+                        <div class="fw-semibold">@Model.CustomerName</div>
+                    </div>
+                    <div class="mb-0">
+                        <label class="small text-muted d-block">Email</label>
+                        <div class="fw-semibold">@Model.CustomerEmail</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Plan Info Card -->
+            <div class="card app-card mb-4">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="mb-0">
+                        <i class="bi bi-box-seam text-success"></i> Chi Tiết Gói
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="small text-muted d-block">Loại Gói</label>
+                        <div class="h5 mb-0">
+                            @(Model.Plan == SubscriptionPlan.Weekly ? "Gói Tuần" : "Gói Tháng")
+                            @if(Model.Plan == SubscriptionPlan.Monthly)
+                            {
+                                <span class="badge bg-success-subtle text-success ms-2">Tiết kiệm 15%</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="small text-muted d-block">Bữa Mỗi Ngày</label>
+                        <div class="fw-semibold">
+                            <i class="bi bi-egg-fried text-warning"></i> @Model.MealsPerDay bữa
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="small text-muted d-block">Ngày Bắt Đầu</label>
+                        <div class="fw-semibold">
+                            <i class="bi bi-calendar-event text-primary"></i> @Model.StartDate.ToString("dd/MM/yyyy")
+                        </div>
+                    </div>
+                    <div class="mb-0">
+                        <label class="small text-muted d-block">Ngày Kết Thúc</label>
+                        <div class="fw-semibold">
+                            @if(Model.EndDate.HasValue)
+                            {
+                                <i class="bi bi-calendar-x text-danger"></i>
+                                @Model.EndDate.Value.ToString("dd/MM/yyyy")
+                            }
+                            else
+                            {
+                                <i class="bi bi-infinity text-success"></i>
+                                <span class="text-muted">Liên tục</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card app-card">
+                <div class="card-header bg-white border-bottom">
+                    <h6 class="mb-0">
+                        <i class="bi bi-lightning-charge"></i> Thao Tác Nhanh
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a asp-controller="Dashboard" asp-action="Index" class="btn btn-outline-primary">
+                            <i class="bi bi-speedometer2"></i> Dashboard
+                        </a>
+                        <a asp-controller="Meal" asp-action="Index" class="btn btn-outline-success">
+                            <i class="bi bi-egg-fried"></i> Xem Món Ăn
+                        </a>
+                        <a asp-action="Create" class="btn btn-outline-secondary">
+                            <i class="bi bi-plus-lg"></i> Đăng Ký Mới
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column - Orders Timeline -->
+        <div class="col-lg-8">
+            <div class="card app-card">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="mb-0">
+                        <i class="bi bi-truck text-success"></i> Lịch Giao Hàng (@totalOrders Đơn)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    @if(Model.Orders.Any())
+                    {
+                        <!-- Filter Tabs -->
+                        <ul class="nav nav-pills mb-4" role="tablist">
+                            <li class="nav-item">
+                                <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#allOrders">
+                                    Tất Cả (@totalOrders)
+                                </button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link" data-bs-toggle="pill" data-bs-target="#upcomingOrders">
+                                    Sắp Tới (@upcomingOrders)
+                                </button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link" data-bs-toggle="pill" data-bs-target="#deliveringOrders">
+                                    Đang Giao (@deliveringOrders)
+                                </button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link" data-bs-toggle="pill" data-bs-target="#deliveredOrders">
+                                    Đã Giao (@deliveredOrders)
+                                </button>
+                            </li>
+                        </ul>
+
+                        <!-- Tab Content -->
+                        <div class="tab-content">
+                            <!-- All Orders -->
+                            <div class="tab-pane fade show active" id="allOrders">
+                                @foreach (var order in Model.Orders.OrderBy(o => o.DeliveryDate))
+                                {
+                                    <partial name="_OrderCard" model="order" />
+                                }
+                            </div>
+
+                            <!-- Planned Orders -->
+                            <div class="tab-pane fade" id="upcomingOrders">
+                                @foreach (var order in Model.Orders.Where(o => o.Status == OrderStatus.Planned).OrderBy(o => o.DeliveryDate))
+                                {
+                                    <partial name="_OrderCard" model="order" />
+                                }
+                                @if(!Model.Orders.Any(o => o.Status == OrderStatus.Planned))
+                                {
+                                    <div class="text-center py-4 text-muted">
+                                        <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                                        <p class="mt-2">Không có đơn sắp tới</p>
+                                    </div>
+                                }
+                            </div>
+
+                            <!-- Delivering Orders -->
+                            <div class="tab-pane fade" id="deliveringOrders">
+                                @foreach (var order in Model.Orders.Where(o => o.Status == OrderStatus.Delivering).OrderBy(o => o.DeliveryDate))
+                                {
+                                    <partial name="_OrderCard" model="order" />
+                                }
+                                @if(!Model.Orders.Any(o => o.Status == OrderStatus.Delivering))
+                                {
+                                    <div class="text-center py-4 text-muted">
+                                        <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                                        <p class="mt-2">Không có đơn đang giao</p>
+                                    </div>
+                                }
+                            </div>
+
+                            <!-- Delivered Orders -->
+                            <div class="tab-pane fade" id="deliveredOrders">
+                                @foreach (var order in Model.Orders.Where(o => o.Status == OrderStatus.Delivered).OrderByDescending(o => o.DeliveryDate))
+                                {
+                                    <partial name="_OrderCard" model="order" />
+                                }
+                                @if(!Model.Orders.Any(o => o.Status == OrderStatus.Delivered))
+                                {
+                                    <div class="text-center py-4 text-muted">
+                                        <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                                        <p class="mt-2">Chưa có đơn đã giao</p>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="bi bi-calendar-x text-muted" style="font-size: 4rem;"></i>
+                            <h5 class="mt-3">Chưa Có Đơn Hàng</h5>
+                            <p class="text-muted">Đơn hàng sẽ tự động được tạo dựa trên gói đăng ký của bạn.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .progress {
+        border-radius: 10px;
+        overflow: hidden;
+    }
+</style>

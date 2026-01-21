@@ -1,0 +1,111 @@
+﻿@{
+    ViewData["Title"] = "MealPrep - Dịch Vụ Giao Món Ăn Lành Mạnh";
+}
+
+<!-- Hero Section -->
+<div class="hero-section text-white text-center py-5" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 20px; margin-bottom: 3rem;">
+    <div class="container py-5">
+        <h1 class="display-3 fw-bold mb-3">🍽️ Bữa Ăn Lành Mảnh, Giao Tận Nơi</h1>
+        <p class="lead mb-4">Bữa ăn tươi ngon, bổ dưỡng, phù hợp với mục tiêu thể hình của bạn. Giao tận cửa nhà.</p>
+        <div class="d-flex gap-3 justify-content-center">
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <a asp-controller="Dashboard" asp-action="Index" class="btn btn-light btn-lg px-5">Vào Bảng Điều Khiển</a>
+                <a asp-controller="Meals" asp-action="Index" class="btn btn-outline-light btn-lg px-5">Xem Món Ăn</a>
+            }
+            else
+            {
+                <a asp-controller="Auth" asp-action="Register" class="btn btn-light btn-lg px-5">Bắt Đầu</a>
+                <a asp-controller="Auth" asp-action="Login" class="btn btn-outline-light btn-lg px-5">Đăng Nhập</a>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Features Section -->
+<div class="row g-4 mb-5">
+    <div class="col-md-4">
+        <div class="app-card p-4 text-center h-100">
+            <div class="feature-icon mb-3">🥗</div>
+            <h4 class="fw-semibold mb-2">Tươi & Lành Mạnh</h4>
+            <p class="text-secondary mb-0">Bữa ăn được chuyên gia dinh dưỡng duyệt với dinh dưỡng cân bằng cho mục tiêu thể hình của bạn</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="app-card p-4 text-center h-100">
+            <div class="feature-icon mb-3">🚚</div>
+            <h4 class="fw-semibold mb-2">Giao Hàng Nhanh</h4>
+            <p class="text-secondary mb-0">Chọn khung giờ giao hàng và nhận bữa ăn tươi ngon tận cửa nhà</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="app-card p-4 text-center h-100">
+            <div class="feature-icon mb-3">📊</div>
+            <h4 class="fw-semibold mb-2">Theo Dõi Dinh Dưỡng</h4>
+            <p class="text-secondary mb-0">Giám sát lượng calo, đạm, carbs, và chất béo hàng ngày một cách dễ dàng</p>
+        </div>
+    </div>
+</div>
+
+<!-- How It Works -->
+<div class="app-card p-5 mb-5">
+    <h2 class="fw-bold text-center mb-4">Cách Hoạt Động</h2>
+    <div class="row g-4">
+        <div class="col-md-3 text-center">
+            <div class="step-number mb-3">1</div>
+            <h5 class="fw-semibold">Chọn Gói</h5>
+            <p class="text-secondary small">Chọn gói tuần hoặc tháng phù hợp với lối sống của bạn</p>
+        </div>
+        <div class="col-md-3 text-center">
+            <div class="step-number mb-3">2</div>
+            <h5 class="fw-semibold">Chọn Món Ăn</h5>
+            <p class="text-secondary small">Xem thực đơn và tùy chỉnh món ăn tuần của bạn</p>
+        </div>
+        <div class="col-md-3 text-center">
+            <div class="step-number mb-3">3</div>
+            <h5 class="fw-semibold">Đặt Lịch Giao</h5>
+            <p class="text-secondary small">Chọn thời gian và địa điểm giao hàng uu tiên</p>
+        </div>
+        <div class="col-md-3 text-center">
+            <div class="step-number mb-3">4</div>
+            <h5 class="fw-semibold">Thưởng Thức & Theo Dõi</h5>
+            <p class="text-secondary small">Tận hưởng bữa ăn ngon và theo dõi tiến trình dinh dưỡng</p>
+        </div>
+    </div>
+</div>
+
+<!-- Pricing Teaser -->
+<div class="text-center py-5">
+    <h2 class="fw-bold mb-3">Sẵn Sàng Bắt Đầu Hành Trình Lành Mạnh?</h2>
+    <p class="lead text-secondary mb-4">Tham gia cùng hàng nghìn khách hàng hài lòng đã đạt được mục tiêu thể hình</p>
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <a asp-controller="Subscription" asp-action="Create" class="btn btn-primary btn-lg px-5">Xem Gói</a>
+    }
+    else
+    {
+        <a asp-controller="Auth" asp-action="Register" class="btn btn-primary btn-lg px-5">Đăng Ký Ngay</a>
+    }
+</div>
+
+<style>
+    .hero-section {
+        box-shadow: 0 20px 60px rgba(102, 126, 234, 0.3);
+    }
+    .feature-icon {
+        font-size: 3.5rem;
+        line-height: 1;
+    }
+    .step-number {
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+</style>

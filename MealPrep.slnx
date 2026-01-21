@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="MealPrep.BLL/MealPrep.BLL.csproj" />
+  <Project Path="MealPrep.DAL/MealPrep.DAL.csproj" />
+  <Project Path="MealPrep.Web/MealPrep.Web.csproj" />
+</Solution>

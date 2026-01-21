@@ -1,0 +1,597 @@
+@model MealPrep.DAL.Entities.AppUser
+
+@{
+    ViewData["Title"] = "Hồ Sơ Của Tôi";
+}
+
+<div class="container py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Trang Chủ</a></li>
+            <li class="breadcrumb-item"><a asp-controller="Dashboard" asp-action="Index">Dashboard</a></li>
+            <li class="breadcrumb-item active">Hồ Sơ</li>
+        </ol>
+    </nav>
+
+    <!-- Page Header -->
+    <div class="text-center mb-5">
+        <div class="profile-avatar-large mb-3">
+            <i class="bi bi-person-circle"></i>
+        </div>
+        <h1 class="h3 mb-1">@Model.FullName</h1>
+        <p class="text-muted">@Model.Email</p>
+        <span class="badge bg-primary-subtle text-primary">
+            <i class="bi bi-shield-check"></i> @Model.Role.Name
+        </span>
+    </div>
+
+    <div class="row g-4">
+        <!-- Left Column - Personal Information -->
+        <div class="col-lg-8">
+            <!-- Basic Information Card -->
+            <div class="card app-card mb-4">
+                <div class="card-header bg-white border-bottom">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="bi bi-person text-primary"></i> Thông Tin Cá Nhân
+                        </h5>
+                        <button class="btn btn-sm btn-outline-primary" disabled>
+                            <i class="bi bi-pencil"></i> Chỉnh Sửa
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <label class="small text-muted d-block mb-1">Họ Và Tên</label>
+                            <div class="fw-semibold">@Model.FullName</div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="small text-muted d-block mb-1">Email</label>
+                            <div class="fw-semibold">
+                                @Model.Email
+                                <i class="bi bi-check-circle-fill text-success ms-1" title="Đã xác thực"></i>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="small text-muted d-block mb-1">Giới Tính</label>
+                            <div class="fw-semibold">
+                                @if(Model.Gender != MealPrep.DAL.Enums.Gender.Unknown)
+                                {
+                                    @Model.Gender.ToString()
+                                }
+                                else
+                                {
+                                    <span class="text-muted fst-italic">Chưa cập nhật</span>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="small text-muted d-block mb-1">Tuổi</label>
+                            <div class="fw-semibold">
+                                @if(Model.Age > 0)
+                                {
+                                    @Model.Age <span class="text-muted">tuổi</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted fst-italic">Chưa cập nhật</span>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="small text-muted d-block mb-1">Thành Viên Từ</label>
+                            <div class="fw-semibold">
+                                <i class="bi bi-calendar-check text-success"></i>
+                                @Model.Id.ToString().Substring(0, 8)... (User ID)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Nutrition Profile Card -->
+            <div class="card app-card mb-4">
+                <div class="card-header bg-white border-bottom">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="bi bi-heart-pulse text-danger"></i> Hồ Sơ Dinh Dưỡng
+                        </h5>
+                        <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" 
+                                data-bs-target="#nutritionForm">
+                            <i class="bi bi-pencil"></i> @(Model.NutritionProfile != null ? "Chỉnh Sửa" : "Thiết Lập") Hồ Sơ
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Nutrition Profile Form (Collapsed by default) -->
+                    <div class="collapse mb-4" id="nutritionForm">
+                        <div class="border rounded p-4 bg-light">
+                            <h6 class="mb-3">
+                                <i class="bi bi-pencil-square"></i> Cập Nhật Hồ Sơ Dinh Dưỡng
+                            </h6>
+                            <form method="post" action="/Auth/UpdateNutritionProfile">
+                                @Html.AntiForgeryToken()
+                                
+                                <div class="row g-3">
+                                    <!-- Height -->
+                                    <div class="col-md-6">
+                                        <label class="form-label">
+                                            <i class="bi bi-rulers"></i> Chiều Cao (cm)
+                                        </label>
+                                        <input type="number" name="HeightCm" class="form-control" 
+                                               min="80" max="220" 
+                                               value="@(Model.NutritionProfile?.HeightCm ?? 170)" 
+                                               required />
+                                        <div class="form-text">Phạm vi: 80-220 cm</div>
+                                    </div>
+
+                                    <!-- Weight -->
+                                    <div class="col-md-6">
+                                        <label class="form-label">
+                                            <i class="bi bi-speedometer"></i> Cân Nặng (kg)
+                                        </label>
+                                        <input type="number" name="WeightKg" class="form-control" 
+                                               min="20" max="250" step="0.1"
+                                               value="@(Model.NutritionProfile?.WeightKg ?? 65)" 
+                                               required />
+                                        <div class="form-text">Phạm vi: 20-250 kg</div>
+                                    </div>
+
+                                    <!-- Fitness Goal -->
+                                    <div class="col-md-6">
+                                        <label class="form-label">
+                                            <i class="bi bi-trophy"></i> Mục Tiêu
+                                        </label>
+                                        <select name="Goal" class="form-select" required>
+                                            @foreach(var goal in Enum.GetValues<MealPrep.DAL.Enums.FitnessGoal>())
+                                            {
+                                                <option value="@goal" selected="@(Model.NutritionProfile?.Goal == goal)">
+                                                    @goal
+                                                </option>
+                                            }
+                                        </select>
+                                    </div>
+
+                                    <!-- Activity Level -->
+                                    <div class="col-md-6">
+                                        <label class="form-label">
+                                            <i class="bi bi-activity"></i> Mức Độ Hoạt Động
+                                        </label>
+                                        <select name="ActivityLevel" class="form-select" required>
+                                            @foreach(var level in Enum.GetValues<MealPrep.DAL.Enums.ActivityLevel>())
+                                            {
+                                                <option value="@level" selected="@(Model.NutritionProfile?.ActivityLevel == level)">
+                                                    @level
+                                                </option>
+                                            }
+                                        </select>
+                                    </div>
+
+                                    <!-- Diet Preference -->
+                                    <div class="col-md-6">
+                                        <label class="form-label">
+                                            <i class="bi bi-egg-fried"></i> Chế Độ Ăn
+                                        </label>
+                                        <select name="DietPreference" class="form-select" required>
+                                            @foreach(var diet in Enum.GetValues<MealPrep.DAL.Enums.DietPreference>())
+                                            {
+                                                <option value="@diet" selected="@(Model.NutritionProfile?.DietPreference == diet)">
+                                                    @diet
+                                                </option>
+                                            }
+                                        </select>
+                                    </div>
+
+                                    <!-- Meals Per Day -->
+                                    <div class="col-md-6">
+                                        <label class="form-label">
+                                            <i class="bi bi-calendar3"></i> Số Bữa Mỗi Ngày
+                                        </label>
+                                        <input type="number" name="MealsPerDay" class="form-control" 
+                                               min="1" max="6" 
+                                               value="@(Model.NutritionProfile?.MealsPerDay ?? 3)" 
+                                               required />
+                                        <div class="form-text">Phạm vi: 1-6 bữa</div>
+                                    </div>
+
+                                    <!-- Daily Budget -->
+                                    <div class="col-md-12">
+                                        <label class="form-label">
+                                            <i class="bi bi-cash-coin"></i> Ngân Sách Mỗi Ngày (VND)
+                                        </label>
+                                        <input type="number" name="DailyBudget" class="form-control" 
+                                               min="0" step="1000"
+                                               value="@(Model.NutritionProfile?.DailyBudget ?? 100000)" 
+                                               placeholder="ví dụ: 100000" />
+                                        <div class="form-text">Ngân sách ăn uống mỗi ngày bằng VND</div>
+                                    </div>
+
+                                    <!-- Notes -->
+                                    <div class="col-12">
+                                        <label class="form-label">
+                                            <i class="bi bi-journal-text"></i> Ghi Chú Thêm
+                                        </label>
+                                        <textarea name="Notes" class="form-control" rows="3" 
+                                                  placeholder="Tình trạng sức khỏe, hạn chế chế độ ăn, sở thích cụ thể...">@Model.NutritionProfile?.Notes</textarea>
+                                        <div class="form-text">Tùy chọn: tình trạng sức khỏe, sở thích, v.v.</div>
+                                    </div>
+
+                                    <!-- Allergies -->
+                                    <div class="col-12">
+                                        <label class="form-label">
+                                            <i class="bi bi-exclamation-triangle"></i> Dị Ứng
+                                        </label>
+                                        <input type="text" id="allergyInput" class="form-control mb-2" 
+                                               placeholder="ví dụ: Đậu phộng, Hải sản, Sửa..." />
+                                        <button type="button" class="btn btn-sm btn-outline-danger" id="addAllergyBtn">
+                                            <i class="bi bi-plus-lg"></i> Thêm Dị Ứng
+                                        </button>
+                                        <div id="allergiesList" class="mt-2">
+                                            @if(Model.NutritionProfile?.Allergies?.Any() == true)
+                                            {
+                                                @foreach(var allergy in Model.NutritionProfile.Allergies)
+                                                {
+                                                    <span class="badge bg-danger-subtle text-danger me-2 mb-2">
+                                                        @allergy.AllergyName
+                                                        <button type="button" class="btn-close btn-close-sm ms-1" 
+                                                                style="font-size: 0.6rem;" data-allergy="@allergy.AllergyName"></button>
+                                                    </span>
+                                                    <input type="hidden" name="Allergies" value="@allergy.AllergyName" />
+                                                }
+                                            }
+                                        </div>
+                                    </div>
+
+                                    <!-- Submit Buttons -->
+                                    <div class="col-12">
+                                        <hr />
+                                        <div class="d-grid gap-2">
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="bi bi-check-lg"></i> Lưu Hồ Sơ Dinh Dưỡng
+                                            </button>
+                                            <button type="button" class="btn btn-outline-secondary" 
+                                                    data-bs-toggle="collapse" data-bs-target="#nutritionForm">
+                                                <i class="bi bi-x-lg"></i> Hủy
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Display Current Profile -->
+                    @if(Model.NutritionProfile != null)
+                    {
+                        var profile = Model.NutritionProfile;
+                        <div class="row g-3">
+                            <div class="col-sm-6 col-md-3">
+                                <div class="text-center p-3 bg-light rounded">
+                                    <i class="bi bi-rulers text-primary" style="font-size: 1.5rem;"></i>
+                                    <div class="h4 mb-0 mt-2">@profile.HeightCm</div>
+                                    <small class="text-muted">cm</small>
+                                </div>
+                            </div>
+                            <div class="col-sm-6 col-md-3">
+                                <div class="text-center p-3 bg-light rounded">
+                                    <i class="bi bi-speedometer text-success" style="font-size: 1.5rem;"></i>
+                                    <div class="h4 mb-0 mt-2">@profile.WeightKg</div>
+                                    <small class="text-muted">kg</small>
+                                </div>
+                            </div>
+                            <div class="col-sm-6 col-md-3">
+                                <div class="text-center p-3 bg-light rounded">
+                                    <i class="bi bi-trophy text-warning" style="font-size: 1.5rem;"></i>
+                                    <div class="h6 mb-0 mt-2">@profile.Goal</div>
+                                    <small class="text-muted">Mục Tiêu</small>
+                                </div>
+                            </div>
+                            <div class="col-sm-6 col-md-3">
+                                <div class="text-center p-3 bg-light rounded">
+                                    <i class="bi bi-activity text-danger" style="font-size: 1.5rem;"></i>
+                                    <div class="h6 mb-0 mt-2">@profile.ActivityLevel</div>
+                                    <small class="text-muted">Hoạt Động</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <hr class="my-3" />
+                        
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="small text-muted d-block mb-1">Chế Độ Ăn</label>
+                                <div class="fw-semibold">
+                                    <i class="bi bi-egg-fried text-warning"></i> @profile.DietPreference
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="small text-muted d-block mb-1">Số Bữa Mỗi Ngày</label>
+                                <div class="fw-semibold">
+                                    <i class="bi bi-calendar3"></i> @profile.MealsPerDay bữa
+                                </div>
+                            </div>
+                        </div>
+
+                        @if(!string.IsNullOrEmpty(profile.Notes))
+                        {
+                            <div class="mt-3">
+                                <label class="small text-muted d-block mb-1">Ghi Chú</label>
+                                <div class="p-3 bg-light rounded">
+                                    <small>@profile.Notes</small>
+                                </div>
+                            </div>
+                        }
+
+                        @if(profile.Allergies?.Any() == true)
+                        {
+                            <div class="mt-3">
+                                <label class="small text-muted d-block mb-2">Dị Ứng</label>
+                                <div class="d-flex flex-wrap gap-2">
+                                    @foreach(var allergy in profile.Allergies)
+                                    {
+                                        <span class="badge bg-danger-subtle text-danger">
+                                            <i class="bi bi-exclamation-triangle"></i> @allergy.AllergyName
+                                        </span>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="text-center py-4">
+                            <i class="bi bi-clipboard-heart text-muted" style="font-size: 3rem;"></i>
+                            <p class="text-muted mt-3 mb-0">
+                                Chưa thiết lập hồ sơ dinh dưỡng. Tạo ngay để nhận gợi ý bữa ăn phù hợp!
+                            </p>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Disliked Meals Card -->
+            <div class="card app-card">
+                <div class="card-header bg-white border-bottom">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="bi bi-hand-thumbs-down text-warning"></i> Món Không Thích
+                        </h5>
+                        <button type="button" class="btn btn-sm btn-outline-warning" data-bs-toggle="collapse" 
+                                data-bs-target="#dislikedMealsForm">
+                            <i class="bi bi-plus-lg"></i> Thêm Món
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Add Disliked Meal Form (Collapsed) -->
+                    <div class="collapse mb-3" id="dislikedMealsForm">
+                        <div class="border rounded p-3 bg-light">
+                            <h6 class="mb-3">
+                                <i class="bi bi-pencil-square"></i> Thêm Món Vào Danh Sách Không Thích
+                            </h6>
+                            <form method="post" action="/Auth/AddDislikedMeal">
+                                @Html.AntiForgeryToken()
+                                <div class="mb-3">
+                                    <label class="form-label">Chọn Món Không Thích</label>
+                                    <select name="MealId" class="form-select" required>
+                                        <option value="">-- Chọn món ăn --</option>
+                                        <!-- This should be populated from ViewBag.AvailableMeals in controller -->
+                                        <option value="1">Món ăn mẫu 1</option>
+                                        <option value="2">Món ăn mẫu 2</option>
+                                    </select>
+                                    <div class="form-text">Chọn các món bạn không muốn trong đăng ký</div>
+                                </div>
+                                <div class="d-grid gap-2">
+                                    <button type="submit" class="btn btn-warning">
+                                        <i class="bi bi-hand-thumbs-down"></i> Thêm Vào Danh Sách
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" 
+                                            data-bs-toggle="collapse" data-bs-target="#dislikedMealsForm">
+                                        Hủy
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Display Disliked Meals -->
+                    @if(Model.DislikedMeals?.Any() == true)
+                    {
+                        <div class="d-flex flex-wrap gap-2">
+                            @foreach(var dislike in Model.DislikedMeals)
+                            {
+                                <form method="post" action="/Auth/RemoveDislikedMeal" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="dislikedMealId" value="@dislike.Id" />
+                                    <div class="badge bg-warning-subtle text-warning p-2">
+                                        @dislike.Meal?.Name
+                                        <button type="submit" class="btn-close btn-close-sm ms-1" 
+                                                style="font-size: 0.6rem;" title="Xóa"></button>
+                                    </div>
+                                </form>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-3 text-muted">
+                            <i class="bi bi-emoji-smile"></i>
+                            <p class="mb-0 small">Chưa có món không thích. Tất cả đều được chào đón!</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column - Account Settings -->
+        <div class="col-lg-4">
+            <!-- Account Security Card -->
+            <div class="card app-card mb-4">
+                <div class="card-header bg-white border-bottom">
+                    <h6 class="mb-0">
+                        <i class="bi bi-shield-lock text-success"></i> Bảo Mật Tài Khoản
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-primary" disabled>
+                            <i class="bi bi-key"></i> Đổi Mật Khẩu
+                        </button>
+                        <button class="btn btn-outline-secondary" disabled>
+                            <i class="bi bi-shield-check"></i> Xác Thực 2 Yếu Tố
+                        </button>
+                    </div>
+                    
+                    <div class="alert alert-success mt-3 mb-0 small">
+                        <i class="bi bi-check-circle-fill"></i>
+                        Tài khoản của bạn an toàn
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Stats Card -->
+            <div class="card app-card mb-4">
+                <div class="card-header bg-white border-bottom">
+                    <h6 class="mb-0">
+                        <i class="bi bi-graph-up"></i> Thống Kê Nhanh
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="small text-muted">Đăng Ký Đang Hoạt Động</span>
+                            <strong class="text-success">
+                                @(Model.Subscriptions?.Count(s => s.Status == MealPrep.DAL.Enums.SubscriptionStatus.Active) ?? 0)
+                            </strong>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="small text-muted">Tổng Đơn Hàng</span>
+                            <strong class="text-primary">
+                                @(Model.Orders?.Count ?? 0)
+                            </strong>
+                        </div>
+                    </div>
+
+                    <div class="mb-0">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="small text-muted">Nhật Ký Dinh Dưỡng</span>
+                            <strong class="text-warning">
+                                @(Model.NutritionLogs?.Count ?? 0)
+                            </strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Links Card -->
+            <div class="card app-card">
+                <div class="card-header bg-white border-bottom">
+                    <h6 class="mb-0">
+                        <i class="bi bi-link-45deg"></i> Liên Kết Nhanh
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <a asp-controller="Dashboard" asp-action="Index" 
+                           class="list-group-item list-group-item-action border-0 px-0">
+                            <i class="bi bi-speedometer2 text-primary"></i> Dashboard
+                        </a>
+                        <a asp-controller="Subscription" asp-action="Create" 
+                           class="list-group-item list-group-item-action border-0 px-0">
+                            <i class="bi bi-calendar-check text-success"></i> Đăng Ký Của Tôi
+                        </a>
+                        <a asp-controller="NutritionLog" asp-action="Index" 
+                           class="list-group-item list-group-item-action border-0 px-0">
+                            <i class="bi bi-heart-pulse text-danger"></i> Nhật Ký Dinh Dưỡng
+                        </a>
+                        <a asp-controller="Meal" asp-action="Index" 
+                           class="list-group-item list-group-item-action border-0 px-0">
+                            <i class="bi bi-egg-fried text-warning"></i> Xem Món Ăn
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .profile-avatar-large {
+        font-size: 6rem;
+        color: var(--bs-primary);
+        opacity: 0.8;
+    }
+
+    .list-group-item-action:hover {
+        background-color: rgba(102, 126, 234, 0.05);
+    }
+
+    .btn-close-sm {
+        padding: 0;
+        width: 0.5em;
+        height: 0.5em;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Add Allergy functionality
+            $('#addAllergyBtn').click(function() {
+                const allergyName = $('#allergyInput').val().trim();
+                if (!allergyName) {
+                    alert('Vui lòng nhập tên dị ứng');
+                    return;
+                }
+
+                // Check if already exists
+                const existingAllergies = $('#allergiesList input[name="Allergies"]').map(function() {
+                    return $(this).val();
+                }).get();
+                
+                if (existingAllergies.includes(allergyName)) {
+                    alert('Dị ứng này đã có trong danh sách');
+                    return;
+                }
+
+                // Add badge and hidden input
+                const badge = $('<span class="badge bg-danger-subtle text-danger me-2 mb-2"></span>')
+                    .text(allergyName + ' ')
+                    .append($('<button type="button" class="btn-close btn-close-sm ms-1"></button>')
+                        .css('font-size', '0.6rem')
+                        .attr('data-allergy', allergyName));
+                
+                const hiddenInput = $('<input type="hidden" name="Allergies">')
+                    .val(allergyName);
+
+                $('#allergiesList').append(badge).append(hiddenInput);
+                $('#allergyInput').val('');
+            });
+
+            // Remove Allergy functionality
+            $(document).on('click', '#allergiesList .btn-close', function() {
+                const allergyName = $(this).data('allergy');
+                $(this).closest('.badge').remove();
+                $('#allergiesList input[value="' + allergyName + '"]').remove();
+            });
+
+            // Enter key to add allergy
+            $('#allergyInput').keypress(function(e) {
+                if (e.which === 13) {
+                    e.preventDefault();
+                    $('#addAllergyBtn').click();
+                }
+            });
+        });
+    </script>
+}
+

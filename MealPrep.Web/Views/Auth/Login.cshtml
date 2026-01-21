@@ -1,0 +1,44 @@
+﻿@model MealPrep.Web.Models.LoginVm
+@{
+    ViewData["Title"] = "Đăng Nhập";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <div class="app-card p-4">
+            <div class="text-center mb-4">
+                <h3 class="fw-bold mb-1">Chào mừng trở lại</h3>
+                <p class="text-secondary">Đăng nhập vào tài khoản MealPrep</p>
+            </div>
+
+            <form asp-action="Login" method="post">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                <div class="mb-3">
+                    <label asp-for="Email" class="form-label fw-semibold">Email</label>
+                    <input asp-for="Email" class="form-control form-control-lg" placeholder="email@example.com" />
+                    <span asp-validation-for="Email" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Password" class="form-label fw-semibold">Mật Khẩu</label>
+                    <input asp-for="Password" type="password" class="form-control form-control-lg" placeholder="••••••••" />
+                    <span asp-validation-for="Password" class="text-danger small"></span>
+                </div>
+
+                <div class="d-grid gap-2 mb-3">
+                    <button type="submit" class="btn btn-primary btn-lg">Đăng Nhập</button>
+                </div>
+
+                <div class="text-center">
+                    <span class="text-secondary">Chưa có tài khoản?</span>
+                    <a asp-action="Register" class="fw-semibold">Đăng ký ngay</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

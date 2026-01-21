@@ -1,0 +1,223 @@
+﻿@model List<MealPrep.BLL.Services.DailySummary>
+
+@{
+    ViewData["Title"] = "Tổng Kết Dinh Dưỡng";
+    var from = ViewBag.From as DateOnly?;
+    var to = ViewBag.To as DateOnly?;
+    
+    var totalCalories = Model.Sum(d => d.Calories);
+    var totalProtein = Model.Sum(d => d.Protein);
+    var totalCarbs = Model.Sum(d => d.Carbs);
+    var totalFat = Model.Sum(d => d.Fat);
+    
+    var avgCalories = Model.Any() ? (int)(totalCalories / Model.Count) : 0;
+    var avgProtein = Model.Any() ? (int)(totalProtein / Model.Count) : 0;
+}
+
+<div class="container py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Trang Chủ</a></li>
+            <li class="breadcrumb-item"><a asp-action="Index">Nhật Ký Dinh Dưỡng</a></li>
+            <li class="breadcrumb-item active">Tổng Kết</li>
+        </ol>
+    </nav>
+
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2 mb-1">Tổng Kết Dinh Dưỡng</h1>
+            <p class="text-muted mb-0">
+                @if(from.HasValue && to.HasValue)
+                {
+                    <i class="bi bi-calendar-range"></i>
+                    @from.Value.ToString("dd/MM/yyyy") - @to.Value.ToString("dd/MM/yyyy");
+                }
+            </p>
+        </div>
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Quay Lại
+        </a>
+    </div>
+
+    <!-- Total Summary Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-lg-3">
+            <div class="card app-card text-center">
+                <div class="card-body">
+                    <i class="bi bi-fire text-danger" style="font-size: 2rem;"></i>
+                    <div class="h3 mt-2 mb-0">@totalCalories</div>
+                    <small class="text-muted">Tổng Calo</small>
+                    <div class="small text-muted mt-1">TB: @avgCalories kcal/ngày</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card app-card text-center">
+                <div class="card-body">
+                    <i class="bi bi-egg text-primary" style="font-size: 2rem;"></i>
+                    <div class="h3 mt-2 mb-0">@totalProtein g</div>
+                    <small class="text-muted">Tổng Đạm</small>
+                    <div class="small text-muted mt-1">TB: @avgProtein g/ngày</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card app-card text-center">
+                <div class="card-body">
+                    <i class="bi bi-grain text-warning" style="font-size: 2rem;"></i>
+                    <div class="h3 mt-2 mb-0">@totalCarbs g</div>
+                    <small class="text-muted">Tổng Carbs</small>
+                    <div class="small text-muted mt-1">TB: @((int)(totalCarbs / (Model.Count > 0 ? Model.Count : 1))) g/ngày</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card app-card text-center">
+                <div class="card-body">
+                    <i class="bi bi-droplet text-info" style="font-size: 2rem;"></i>
+                    <div class="h3 mt-2 mb-0">@totalFat g</div>
+                    <small class="text-muted">Tổng Chất Béo</small>
+                    <div class="small text-muted mt-1">TB: @((int)(totalFat / (Model.Count > 0 ? Model.Count : 1))) g/ngày</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Daily Breakdown Table -->
+    @if(Model.Any())
+    {
+        <div class="card app-card mb-4">
+            <div class="card-header bg-white border-bottom">
+                <h5 class="mb-0">
+                    <i class="bi bi-bar-chart-line"></i> Chi Tiết Theo Ngày
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Ngày</th>
+                                <th class="text-end">Calo</th>
+                                <th class="text-end">Đạm</th>
+                                <th class="text-end">Carbs</th>
+                                <th class="text-end">Chất Béo</th>
+                                <th class="text-end">So Với TB</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var day in Model.OrderByDescending(d => d.Date))
+                            {
+                                var percentOfAvg = avgCalories > 0 ? (int)((day.Calories * 100.0) / avgCalories) : 100;
+                                <tr>
+                                    <td>
+                                        <strong>@day.Date.ToString("dd/MM/yyyy")</strong>
+                                        <div class="small text-muted">@day.Date.DayOfWeek</div>
+                                    </td>
+                                    <td class="text-end">
+                                        <span class="badge bg-danger-subtle text-danger">
+                                            @day.Calories kcal
+                                        </span>
+                                    </td>
+                                    <td class="text-end">
+                                        <strong class="text-primary">@day.Protein g</strong>
+                                    </td>
+                                    <td class="text-end">
+                                        <strong class="text-warning">@day.Carbs g</strong>
+                                    </td>
+                                    <td class="text-end">
+                                        <strong class="text-info">@day.Fat g</strong>
+                                    </td>
+                                    <td class="text-end">
+                                        @if(percentOfAvg > 110)
+                                        {
+                                            <span class="badge bg-warning">@percentOfAvg% <i class="bi bi-arrow-up"></i></span>
+                                        }
+                                        else if(percentOfAvg < 90)
+                                        {
+                                            <span class="badge bg-info">@percentOfAvg% <i class="bi bi-arrow-down"></i></span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-success">@percentOfAvg% <i class="bi bi-check"></i></span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot class="table-light">
+                            <tr>
+                                <th>Tổng / Trung Bình</th>
+                                <th class="text-end">@totalCalories kcal</th>
+                                <th class="text-end">@totalProtein g</th>
+                                <th class="text-end">@totalCarbs g</th>
+                                <th class="text-end">@totalFat g</th>
+                                <th class="text-end"></th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Visual Chart Placeholder -->
+        <div class="card app-card">
+            <div class="card-header bg-white border-bottom">
+                <h5 class="mb-0">
+                    <i class="bi bi-graph-up"></i> Xu Hướng Calo
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="position: relative; height: 300px;">
+                    <div class="d-flex align-items-end justify-content-between h-100 gap-2">
+                        @foreach (var day in Model.OrderBy(d => d.Date).Take(14))
+                        {
+                            var height = avgCalories > 0 ? Math.Min((day.Calories * 100.0 / avgCalories), 150) : 50;
+                            <div class="d-flex flex-column align-items-center flex-fill">
+                                <small class="text-muted mb-1" style="font-size: 0.7rem;">@day.Calories</small>
+                                <div class="chart-bar" 
+                                     style="width: 100%; height: @height%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 4px 4px 0 0;"
+                                     title="@day.Date.ToString("MMM dd"): @day.Calories kcal">
+                                </div>
+                                <small class="text-muted mt-1" style="font-size: 0.65rem;">@day.Date.ToString("dd")</small>
+                            </div>
+                        }
+                    </div>
+                    <div class="border-top mt-2 pt-2 text-center">
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle"></i> Lượng calo nạp vào theo ngày
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- Empty State -->
+        <div class="card app-card text-center py-5">
+            <div class="card-body">
+                <i class="bi bi-calendar-x text-muted" style="font-size: 3rem;"></i>
+                <h4 class="mt-3">Không có dữ liệu trong khoảng thời gian này</h4>
+                <p class="text-muted mb-4">Thử chọn khoảng ngày khác hoặc thêm nhật ký dinh dưỡng</p>
+                <a asp-action="Create" class="btn btn-primary">
+                    <i class="bi bi-plus-lg"></i> Thêm Nhật Ký
+                </a>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .chart-bar {
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .chart-bar:hover {
+        opacity: 0.8;
+        transform: translateY(-2px);
+    }
+</style>

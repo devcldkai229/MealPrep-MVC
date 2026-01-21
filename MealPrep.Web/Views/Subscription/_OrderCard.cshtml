@@ -1,0 +1,148 @@
+@model MealPrep.DAL.Entities.Order
+@using MealPrep.DAL.Enums
+
+@{
+    var isToday = Model.DeliveryDate == DateOnly.FromDateTime(DateTime.Today);
+    var isPast = Model.DeliveryDate < DateOnly.FromDateTime(DateTime.Today);
+    var statusColor = Model.Status switch
+    {
+        OrderStatus.Planned => "warning",
+        OrderStatus.Delivering => "primary",
+        OrderStatus.Delivered => "success",
+        OrderStatus.Cancelled => "danger",
+        _ => "secondary"
+    };
+    var statusIcon = Model.Status switch
+    {
+        OrderStatus.Planned => "clock",
+        OrderStatus.Delivering => "truck",
+        OrderStatus.Delivered => "check-circle-fill",
+        OrderStatus.Cancelled => "x-circle",
+        _ => "circle"
+    };
+}
+
+<div class="order-card mb-3 @(isToday ? "border-primary" : "")">
+    <div class="d-flex align-items-start">
+        <!-- Date Badge -->
+        <div class="order-date-badge @(isToday ? "bg-primary" : isPast ? "bg-secondary" : "bg-light")">
+            <div class="month">@Model.DeliveryDate.ToString("MMM")</div>
+            <div class="day">@Model.DeliveryDate.Day</div>
+            <div class="weekday">@Model.DeliveryDate.DayOfWeek.ToString().Substring(0, 3)</div>
+        </div>
+
+        <!-- Order Content -->
+        <div class="flex-grow-1 ms-3">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                    <h6 class="mb-1">
+                        @if(isToday)
+                        {
+                            <span class="badge bg-primary me-2">HÔM NAY</span>
+                        }
+                        @Model.DeliveryDate.ToString("dd/MM/yyyy - dddd")
+                    </h6>
+                    <div class="text-muted small">
+                        <i class="bi bi-clock"></i> 
+                        @(Model.DeliverySlot?.Name ?? "Khung giờ " + Model.DeliverySlotId)
+                    </div>
+                </div>
+                <span class="badge bg-@statusColor-subtle text-@statusColor">
+                    <i class="bi bi-@statusIcon"></i> @Model.Status
+                </span>
+            </div>
+
+            <!-- Order Items -->
+            @if(Model.Items?.Any() == true)
+            {
+                <div class="order-items">
+                    @foreach(var item in Model.Items)
+                    {
+                        <div class="order-item">
+                            <i class="bi bi-egg-fried text-warning me-2"></i>
+                            <span class="fw-semibold">@item.Meal?.Name</span>
+                            <span class="text-muted"> × @item.Quantity</span>
+                            @if(item.Meal != null)
+                            {
+                                <span class="badge bg-light text-dark ms-2">
+                                    @item.Meal.Calories kcal
+                                </span>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="text-muted small fst-italic">
+                    Không có món ăn trong đơn này
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .order-card {
+        padding: 1rem;
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.75rem;
+        transition: all 0.2s;
+    }
+
+    .order-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        transform: translateY(-2px);
+    }
+
+    .order-card.border-primary {
+        border-width: 2px;
+        border-color: #667eea !important;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .order-date-badge {
+        min-width: 70px;
+        text-align: center;
+        padding: 0.75rem 0.5rem;
+        border-radius: 0.5rem;
+        color: white;
+    }
+
+    .order-date-badge.bg-light {
+        color: #333;
+    }
+
+    .order-date-badge .month {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        font-weight: 600;
+    }
+
+    .order-date-badge .day {
+        font-size: 1.75rem;
+        font-weight: bold;
+        line-height: 1;
+        margin: 0.25rem 0;
+    }
+
+    .order-date-badge .weekday {
+        font-size: 0.7rem;
+        opacity: 0.8;
+    }
+
+    .order-items {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-top: 0.75rem;
+        padding: 0.75rem;
+        background: #f9fafb;
+        border-radius: 0.5rem;
+    }
+
+    .order-item {
+        font-size: 0.9rem;
+    }
+</style>

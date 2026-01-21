@@ -1,0 +1,453 @@
+@model MealPrep.DAL.Entities.Subscription
+@using MealPrep.DAL.Enums
+@{
+    ViewData["Title"] = "Đăng Ký Gói Ăn";
+    var slots = ViewBag.Slots as List<MealPrep.DAL.Entities.DeliverySlot> ?? new();
+}
+
+<div class="container py-4">
+    <!-- Hero Section -->
+    <div class="text-center mb-5">
+        <h1 class="display-5 fw-bold mb-2">
+            <i class="bi bi-calendar-check text-primary"></i> Chọn Gói Ăn Của Bạn
+        </h1>
+        <p class="text-muted fs-5">Bữa ăn healthy giao hàng ngày. Hủy hoặc tạm dừng bất cứ lúc nào.</p>
+    </div>
+
+    <!-- Step Indicator -->
+    <div class="row justify-content-center mb-5">
+        <div class="col-lg-8">
+            <div class="d-flex justify-content-between align-items-center position-relative">
+                <div class="step-progress-line"></div>
+                <div class="step-item active text-center">
+                    <div class="step-circle">1</div>
+                    <div class="step-label mt-2">Chọn Gói</div>
+                </div>
+                <div class="step-item text-center">
+                    <div class="step-circle">2</div>
+                    <div class="step-label mt-2">Thông Tin</div>
+                </div>
+                <div class="step-item text-center">
+                    <div class="step-circle">3</div>
+                    <div class="step-label mt-2">Giao Hàng</div>
+                </div>
+                <div class="step-item text-center">
+                    <div class="step-circle">4</div>
+                    <div class="step-label mt-2">Xác Nhận</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pricing Cards -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-6">
+            <div class="card pricing-card h-100" data-plan="Weekly" data-price="299000">
+                <div class="card-body d-flex flex-column">
+                    <div class="text-center mb-4">
+                        <div class="plan-badge badge bg-primary-subtle text-primary mb-3">Linh Hoạt Theo Tuần</div>
+                        <h3 class="fw-bold mb-3">Gói Tuần</h3>
+                        <div class="display-4 fw-bold text-primary">299.000₫</div>
+                        <div class="text-muted">mỗi tuần</div>
+                        <div class="small text-success mt-2">≈ 42.714₫ mỗi bữa</div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <ul class="list-unstyled mb-4 flex-grow-1">
+                        <li class="mb-3">
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                            <strong>7 ngày</strong> ăn uống healthy
+                        </li>
+                        <li class="mb-3">
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                            Chọn <strong>1-6 bữa mỗi ngày</strong>
+                        </li>
+                        <li class="mb-3">
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                            Giao hàng miễn phí tận nơi
+                        </li>
+                        <li class="mb-3">
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                            Hủy hoặc tạm dừng bất cứ lúc nào
+                        </li>
+                        <li class="mb-3">
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                            Truy cập tất cả món ăn đa dạng
+                        </li>
+                        <li class="mb-3">
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                            Theo dõi dinh dưỡng miễn phí
+                        </li>
+                    </ul>
+                    
+                    <button type="button" class="btn btn-outline-primary btn-lg w-100 select-plan-btn">
+                        <i class="bi bi-arrow-right-circle"></i> Chọn Gói Tuần
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card pricing-card h-100 border-primary shadow-lg position-relative" data-plan="Monthly" data-price="999000">
+                <div class="ribbon">
+                    <span>TIẾT KIỆM NHẤT</span>
+                </div>
+                <div class="card-body d-flex flex-column">
+                    <div class="text-center mb-4">
+                        <div class="plan-badge badge bg-success-subtle text-success mb-3">Tiết kiệm 15%!</div>
+                        <h3 class="fw-bold mb-3">Gói Tháng</h3>
+                        <div class="display-4 fw-bold text-primary">999.000₫</div>
+                        <div class="text-muted">mỗi tháng</div>
+                        <div class="small text-success mt-2">≈ 33.300₫ mỗi bữa</div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <ul class="list-unstyled mb-4 flex-grow-1">
+                        <li class="mb-3">
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                            <strong>30 ngày</strong> ăn uống healthy
+                        </li>
+                        <li class="mb-3">
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                            Chọn <strong>1-6 bữa mỗi ngày</strong>
+                        </li>
+                        <li class="mb-3">
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                            <strong>Ưu tiên</strong> chọn món ăn
+                        </li>
+                        <li class="mb-3">
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                            Giao hàng miễn phí + <strong>quà tặng</strong>
+                        </li>
+                        <li class="mb-3">
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                            <strong>Tư vấn dinh dưỡng</strong> miễn phí
+                        </li>
+                        <li class="mb-3">
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                            Hỗ trợ <strong>lập kế hoạch ăn uống</strong>
+                        </li>
+                    </ul>
+                    
+                    <button type="button" class="btn btn-primary btn-lg w-100 select-plan-btn">
+                        <i class="bi bi-star-fill"></i> Chọn Gói Tháng
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Subscription Form (Hidden initially) -->
+    <div id="subscriptionFormContainer" style="display: none;">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="card app-card shadow-lg">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">
+                            <i class="bi bi-pencil-square"></i> Hoàn Tất Đăng Ký
+                        </h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="alert alert-primary" role="alert">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>Tự động tạo đơn hàng:</strong> Sau khi đăng ký, chúng tôi sẽ tự động tạo các đơn giao hàng hàng ngày cho thời gian bạn chọn. Bạn có thể xem và quản lý trong dashboard!
+                        </div>
+
+                        <div class="text-danger mb-3" asp-validation-summary="All"></div>
+
+                        <form asp-action="Create" method="post" id="subscriptionForm">
+                            <!-- Hidden Plan Field -->
+                            <input asp-for="Plan" type="hidden" id="planInput" />
+
+                            <!-- Step 2: Customer Information -->
+                            <div class="form-section mb-4">
+                                <h5 class="section-title">
+                                    <span class="badge bg-primary me-2">Bước 2</span>
+                                    Thông Tin Của Bạn
+                                </h5>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label asp-for="CustomerName" class="form-label">
+                                            <i class="bi bi-person"></i> Họ Và Tên
+                                        </label>
+                                        <input asp-for="CustomerName" class="form-control form-control-lg" 
+                                               placeholder="Nhập họ tên đầy đủ" required />
+                                        <span asp-validation-for="CustomerName" class="text-danger"></span>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label asp-for="CustomerEmail" class="form-label">
+                                            <i class="bi bi-envelope"></i> Email
+                                        </label>
+                                        <input asp-for="CustomerEmail" type="email" class="form-control form-control-lg" 
+                                               placeholder="email@example.com" required />
+                                        <span asp-validation-for="CustomerEmail" class="text-danger"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Step 3: Meal Configuration -->
+                            <div class="form-section mb-4">
+                                <h5 class="section-title">
+                                    <span class="badge bg-primary me-2">Bước 3</span>
+                                    Cấu Hình Bữa Ăn
+                                </h5>
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label asp-for="MealsPerDay" class="form-label">
+                                            <i class="bi bi-egg-fried"></i> Số Bữa Mỗi Ngày
+                                        </label>
+                                        <select asp-for="MealsPerDay" class="form-select form-select-lg" id="mealsPerDaySelect">
+                                            <option value="1">1 Bữa</option>
+                                            <option value="2" selected>2 Bữa</option>
+                                            <option value="3">3 Bữa</option>
+                                            <option value="4">4 Bữa</option>
+                                            <option value="5">5 Bữa</option>
+                                            <option value="6">6 Bữa</option>
+                                        </select>
+                                        <span asp-validation-for="MealsPerDay" class="text-danger"></span>
+                                        <div class="form-text">Bạn muốn ăn bao nhiêu bữa mỗi ngày</div>
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label asp-for="StartDate" class="form-label">
+                                            <i class="bi bi-calendar-event"></i> Ngày Bắt Đầu
+                                        </label>
+                                        <input asp-for="StartDate" type="date" class="form-control form-control-lg" 
+                                               min="@DateTime.Today.ToString("yyyy-MM-dd")" required />
+                                        <span asp-validation-for="StartDate" class="text-danger"></span>
+                                        <div class="form-text">Bắt đầu nhận bữa ăn từ ngày nào</div>
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label class="form-label">
+                                            <i class="bi bi-truck"></i> Thời Gian Giao Hàng
+                                        </label>
+                                        <select name="deliverySlotId" class="form-select form-select-lg" required>
+                                            <option value="">-- Chọn Khung Giờ --</option>
+                                            @foreach (var slot in slots)
+                                            {
+                                                <option value="@slot.Id">
+                                                    @slot.Name
+                                                    @if(slot.Capacity > 0)
+                                                    {
+                                                        <text> (Còn trống: @slot.Capacity)</text>
+                                                    }
+                                                </option>
+                                            }
+                                        </select>
+                                        <div class="form-text">Khung giờ giao hàng bạn muốn</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Order Summary Preview -->
+                            <div class="form-section mb-4">
+                                <h5 class="section-title">
+                                    <span class="badge bg-primary me-2">Bước 4</span>
+                                    Tóm Tắt Đơn Hàng
+                                </h5>
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <div class="row g-3">
+                                            <div class="col-md-6">
+                                                <label class="small text-muted d-block">Gói Đã Chọn</label>
+                                                <div class="h5 mb-0" id="summaryPlan">-</div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="small text-muted d-block">Tổng Số Bữa</label>
+                                                <div class="h5 mb-0" id="summaryTotalMeals">-</div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="small text-muted d-block">Thời Gian</label>
+                                                <div class="h5 mb-0" id="summaryDuration">-</div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="small text-muted d-block">Tổng Chi Phí</label>
+                                                <div class="h3 text-success mb-0" id="summaryPrice">-</div>
+                                            </div>
+                                        </div>
+                                        <hr class="my-3">
+                                        <div class="small">
+                                            <i class="bi bi-info-circle text-primary"></i>
+                                            <strong id="summaryOrdersCount">-</strong> đơn giao hàng sẽ được tạo tự động
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Submit Buttons -->
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="bi bi-check-circle-fill"></i> Xác Nhận & Tạo Đăng Ký
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" onclick="$('#subscriptionFormContainer').slideUp()">
+                                    <i class="bi bi-arrow-left"></i> Đổi Gói
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Pricing Cards */
+    .pricing-card {
+        transition: transform 0.3s, box-shadow 0.3s;
+        border-radius: 1rem;
+    }
+    
+    .pricing-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+    }
+    
+    .plan-badge {
+        font-size: 0.875rem;
+        padding: 0.5rem 1rem;
+    }
+
+    /* Ribbon */
+    .ribbon {
+        position: absolute;
+        right: -5px;
+        top: -5px;
+        z-index: 1;
+        overflow: hidden;
+        width: 75px;
+        height: 75px;
+        text-align: right;
+    }
+    
+    .ribbon span {
+        font-size: 0.625rem;
+        font-weight: bold;
+        color: #FFF;
+        text-transform: uppercase;
+        text-align: center;
+        line-height: 20px;
+        transform: rotate(45deg);
+        width: 100px;
+        display: block;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        box-shadow: 0 3px 10px -5px rgba(0, 0, 0, 1);
+        position: absolute;
+        top: 19px;
+        right: -21px;
+    }
+
+    /* Step Progress */
+    .step-progress-line {
+        position: absolute;
+        top: 20px;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: #e0e0e0;
+        z-index: 0;
+    }
+    
+    .step-item {
+        position: relative;
+        z-index: 1;
+        flex: 1;
+    }
+    
+    .step-circle {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #fff;
+        border: 2px solid #e0e0e0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        color: #999;
+        margin: 0 auto;
+    }
+    
+    .step-item.active .step-circle {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-color: #667eea;
+        color: white;
+    }
+    
+    .step-label {
+        font-size: 0.875rem;
+        color: #999;
+    }
+    
+    .step-item.active .step-label {
+        color: #667eea;
+        font-weight: 600;
+    }
+
+    /* Form Sections */
+    .form-section {
+        padding: 1.5rem;
+        background: #f8f9fa;
+        border-radius: 0.5rem;
+    }
+    
+    .section-title {
+        margin-bottom: 1rem;
+        font-weight: 600;
+    }
+</style>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    
+    <script>
+        $(document).ready(function() {
+            let selectedPlan = '';
+            let selectedPrice = 0;
+
+            // Plan Selection
+            $('.select-plan-btn').click(function() {
+                const card = $(this).closest('.pricing-card');
+                selectedPlan = card.data('plan');
+                selectedPrice = card.data('price');
+                
+                // Update UI
+                $('.pricing-card').removeClass('border-primary shadow-lg');
+                card.addClass('border-primary shadow-lg');
+                
+                // Set hidden input
+                $('#planInput').val(selectedPlan);
+                
+                // Update summary
+                updateSummary();
+                
+                // Show form
+                $('#subscriptionFormContainer').slideDown();
+                
+                // Scroll to form
+                $('html, body').animate({
+                    scrollTop: $('#subscriptionFormContainer').offset().top - 50
+                }, 500);
+            });
+
+            // Update summary when inputs change
+            $('#mealsPerDaySelect, input[name="StartDate"]').on('change', updateSummary);
+
+            function updateSummary() {
+                const mealsPerDay = parseInt($('#mealsPerDaySelect').val()) || 2;
+                const days = selectedPlan === 'Weekly' ? 7 : 30;
+                const totalMeals = mealsPerDay * days;
+                
+                $('#summaryPlan').text(selectedPlan === 'Weekly' ? 'Gói Tuần' : 'Gói Tháng');
+                $('#summaryDuration').text(days + ' ngày');
+                $('#summaryTotalMeals').text(totalMeals + ' bữa');
+                $('#summaryPrice').text(selectedPrice.toLocaleString('vi-VN') + '₫');
+                $('#summaryOrdersCount').text(days);
+            }
+        });
+    </script>
+}

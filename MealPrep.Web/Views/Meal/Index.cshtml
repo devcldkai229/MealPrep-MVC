@@ -1,0 +1,193 @@
+﻿@model List<MealPrep.DAL.Entities.Meal>
+
+@{
+    ViewData["Title"] = "Danh Sách Món Ăn";
+}
+
+<div class="container py-4">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2 mb-1">Danh Sách Món Ăn</h1>
+            <p class="text-muted mb-0">Khám phá các lựa chọn món ăn healthy và ngon miệng</p>
+        </div>
+        <a asp-controller="Subscription" asp-action="Create" class="btn btn-primary">
+            <i class="bi bi-calendar-check"></i> Đăng Ký Ngay
+        </a>
+    </div>
+
+    <!-- Search & Filter Card -->
+    <div class="card app-card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-5">
+                    <label for="searchInput" class="form-label small text-muted">Tìm kiếm món ăn</label>
+                    <input type="text" id="searchInput" name="q" value="@ViewBag.Query" 
+                           class="form-control" placeholder="vd: Gà Nướng..." />
+                </div>
+                
+                <div class="col-md-4">
+                    <label for="sortSelect" class="form-label small text-muted">Sắp xếp theo</label>
+                    <select name="sort" id="sortSelect" class="form-select">
+                        <option value="">Tên (A-Z)</option>
+                        <option value="cal_asc" selected="@(ViewBag.Sort == "cal_asc")">Calo (Thấp → Cao)</option>
+                        <option value="cal_desc" selected="@(ViewBag.Sort == "cal_desc")">Calo (Cao → Thấp)</option>
+                        <option value="price_asc" selected="@(ViewBag.Sort == "price_asc")">Giá (Thấp → Cao)</option>
+                        <option value="price_desc" selected="@(ViewBag.Sort == "price_desc")">Giá (Cao → Thấp)</option>
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-search"></i> Áp Dụng
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Meal Count -->
+    @if(Model.Any())
+    {
+        <p class="text-muted mb-3">
+            <i class="bi bi-check-circle-fill text-success"></i> 
+            <strong>@Model.Count</strong> món ăn
+        </p>
+    }
+
+    <!-- Meals Grid -->
+    @if(Model.Any())
+    {
+        <div class="row g-4">
+            @foreach (var meal in Model)
+            {
+                <div class="col-md-6 col-lg-4">
+                    <div class="card app-card h-100 meal-card">
+                        <div class="meal-image-placeholder">
+                            <div class="placeholder-content">
+                                <i class="bi bi-image"></i>
+                                <span>Image</span>
+                            </div>
+                        </div>
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title mb-2">@meal.Name</h5>
+                            
+                            <!-- Nutrition Badges -->
+                            <div class="d-flex gap-2 mb-3 flex-wrap">
+                                <span class="badge bg-danger-subtle text-danger">
+                                    <i class="bi bi-fire"></i> @meal.Calories kcal
+                                </span>
+                                <span class="badge bg-primary-subtle text-primary">
+                                    <i class="bi bi-egg"></i> @meal.Protein g đạm
+                                </span>
+                                <span class="badge bg-warning-subtle text-warning">
+                                    <i class="bi bi-droplet"></i> @meal.Fat g chất béo
+                                </span>
+                            </div>
+
+                            <!-- Macros Summary -->
+                            <div class="small text-muted mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <span>Carbs</span>
+                                    <strong>@meal.Carbs g</strong>
+                                </div>
+                            </div>
+
+                            <!-- Price & Action -->
+                            <div class="mt-auto d-flex justify-content-between align-items-center">
+                                <div class="h5 mb-0 text-success">
+                                    @meal.Price.ToString("C", new System.Globalization.CultureInfo("vi-VN"))
+                                </div>
+                                <a asp-action="Details" asp-route-id="@meal.Id" 
+                                   class="btn btn-sm btn-outline-primary">
+                                    Xem Chi Tiết →
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <!-- Empty State -->
+        <div class="card app-card text-center py-5">
+            <div class="card-body">
+                <i class="bi bi-search text-muted" style="font-size: 3rem;"></i>
+                <h4 class="mt-3">Không tìm thấy món ăn</h4>
+                <p class="text-muted mb-4">
+                    @if(!string.IsNullOrEmpty(ViewBag.Query))
+                    {
+                        <span>Thử điều chỉnh từ khóa tìm kiếm</span>
+                    }
+                    else
+                    {
+                        <span>Hiện tại chưa có món ăn nào</span>
+                    }
+                </p>
+                @if(!string.IsNullOrEmpty(ViewBag.Query))
+                {
+                    <a asp-action="Index" class="btn btn-outline-primary">Xóa Tìm Kiếm</a>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .meal-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .meal-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    .meal-image-placeholder {
+        height: 200px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .meal-image-placeholder::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: repeating-linear-gradient(
+            45deg,
+            rgba(255, 255, 255, 0.05),
+            rgba(255, 255, 255, 0.05) 10px,
+            transparent 10px,
+            transparent 20px
+        );
+    }
+
+    .placeholder-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        color: white;
+        font-size: 2rem;
+        z-index: 1;
+    }
+
+    .placeholder-content span {
+        font-size: 0.875rem;
+        margin-top: 0.5rem;
+        font-weight: 500;
+    }
+
+    .badge {
+        font-weight: 500;
+        padding: 0.35rem 0.65rem;
+    }
+</style>
