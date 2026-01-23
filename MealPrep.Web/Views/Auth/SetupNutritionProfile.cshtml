@@ -1,0 +1,415 @@
+﻿@model MealPrep.Web.ViewModels.UpdateNutritionProfileVm
+
+@{
+    ViewData["Title"] = "Thiết lập hồ sơ dinh dưỡng";
+}
+
+<div class="container">
+    <div class="row justify-content-center min-vh-100 py-5">
+        <div class="col-lg-8">
+            <div class="card app-card shadow-lg border-0">
+                <div class="card-body p-4 p-md-5">
+                    <!-- Header -->
+                    <div class="text-center mb-4">
+                        <div class="mb-3">
+                            <i class="bi bi-heart-pulse text-danger" style="font-size: 4rem;"></i>
+                        </div>
+                        <h2 class="h4 fw-bold mb-2">Thiết lập hồ sơ dinh dưỡng</h2>
+                        <p class="text-muted mb-0">
+                            Cung cấp thông tin để chúng tôi tính toán và đề xuất chế độ ăn phù hợp với bạn
+                        </p>
+                    </div>
+
+                    <!-- Progress indicator -->
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <small class="text-muted">Hoàn thiện hồ sơ</small>
+                            <small class="text-success fw-semibold">
+                                <i class="bi bi-check-circle-fill"></i> Bước cuối cùng
+                            </small>
+                        </div>
+                        <div class="progress" style="height: 6px;">
+                            <div class="progress-bar bg-success" role="progressbar" style="width: 100%"></div>
+                        </div>
+                    </div>
+
+                    @if (TempData["SuccessMessage"] != null)
+                    {
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="bi bi-check-circle-fill me-2"></i>
+                            @TempData["SuccessMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            <strong>Lỗi!</strong> Vui lòng kiểm tra lại thông tin.
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    <!-- Form -->
+                    <form asp-action="SetupNutritionProfile" method="post">
+                        @Html.AntiForgeryToken()
+
+                        <div class="row g-4">
+                            <!-- Height and Weight -->
+                            <div class="col-12">
+                                <h6 class="text-primary mb-3">
+                                    <i class="bi bi-rulers"></i> Thông số cơ thể
+                                </h6>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label asp-for="HeightCm" class="form-label fw-semibold">
+                                    @Html.DisplayNameFor(m => m.HeightCm) <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group">
+                                    <input asp-for="HeightCm" type="number" class="form-control form-control-lg"
+                                           placeholder="Ví dụ: 170" required />
+                                    <span class="input-group-text">cm</span>
+                                </div>
+                                <span asp-validation-for="HeightCm" class="text-danger small"></span>
+                                <div class="form-text">Chiều cao từ 80-220 cm</div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label asp-for="WeightKg" class="form-label fw-semibold">
+                                    @Html.DisplayNameFor(m => m.WeightKg) <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group">
+                                    <input asp-for="WeightKg" type="number" class="form-control form-control-lg"
+                                           placeholder="Ví dụ: 65" step="0.1" required />
+                                    <span class="input-group-text">kg</span>
+                                </div>
+                                <span asp-validation-for="WeightKg" class="text-danger small"></span>
+                                <div class="form-text">Cân nặng từ 20-250 kg</div>
+                            </div>
+
+                            <!-- Fitness Goal -->
+                            <div class="col-12">
+                                <h6 class="text-primary mb-3 mt-3">
+                                    <i class="bi bi-trophy"></i> Mục tiêu của bạn
+                                </h6>
+                            </div>
+
+                            <div class="col-12">
+                                <label asp-for="Goal" class="form-label fw-semibold">
+                                    @Html.DisplayNameFor(m => m.Goal) <span class="text-danger">*</span>
+                                </label>
+                                <div class="row g-2">
+                                    @foreach (var goal in Enum.GetValues<MealPrep.DAL.Enums.FitnessGoal>())
+                                    {
+                                        var goalId = $"goal{goal}";
+                                        var isChecked = Model?.Goal == goal || (Model == null && goal == MealPrep.DAL.Enums.FitnessGoal.Maintain);
+
+                                        <div class="col-md-4">
+                                            <input type="radio" class="btn-check" name="Goal" id="@goalId"
+                                                   value="@((int)goal)" autocomplete="off" checked="@isChecked">
+                                            <label class="btn btn-outline-primary w-100 py-3" for="@goalId">
+                                                <i class="bi @GetGoalIcon(goal) d-block mb-2" style="font-size: 1.5rem;"></i>
+                                                <span class="fw-semibold">@GetGoalText(goal)</span>
+                                                <small class="d-block text-muted mt-1">@GetGoalDescription(goal)</small>
+                                            </label>
+                                        </div>
+                                    }
+                                </div>
+                                <span asp-validation-for="Goal" class="text-danger small"></span>
+                            </div>
+
+                            <!-- Activity Level -->
+                            <div class="col-12">
+                                <h6 class="text-primary mb-3 mt-3">
+                                    <i class="bi bi-activity"></i> Mức độ vận động
+                                </h6>
+                            </div>
+
+                            <div class="col-12">
+                                <label asp-for="ActivityLevel" class="form-label fw-semibold">
+                                    @Html.DisplayNameFor(m => m.ActivityLevel) <span class="text-danger">*</span>
+                                </label>
+                                <select asp-for="ActivityLevel" class="form-select form-select-lg" required>
+                                    @foreach (var level in Enum.GetValues<MealPrep.DAL.Enums.ActivityLevel>())
+                                    {
+                                        <option value="@((int)level)">
+                                            @GetActivityLevelText(level) - @GetActivityLevelDescription(level)
+                                        </option>
+                                    }
+                                </select>
+                                <span asp-validation-for="ActivityLevel" class="text-danger small"></span>
+                            </div>
+
+                            <!-- Diet Preference -->
+                            <div class="col-12">
+                                <h6 class="text-primary mb-3 mt-3">
+                                    <i class="bi bi-egg-fried"></i> Chế độ ăn ưa thích
+                                </h6>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label asp-for="DietPreference" class="form-label fw-semibold">
+                                    @Html.DisplayNameFor(m => m.DietPreference) <span class="text-danger">*</span>
+                                </label>
+                                <select asp-for="DietPreference" class="form-select form-select-lg" required>
+                                    @foreach (var diet in Enum.GetValues<MealPrep.DAL.Enums.DietPreference>())
+                                    {
+                                        <option value="@((int)diet)">@GetDietPreferenceText(diet)</option>
+                                    }
+                                </select>
+                                <span asp-validation-for="DietPreference" class="text-danger small"></span>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label asp-for="MealsPerDay" class="form-label fw-semibold">
+                                    @Html.DisplayNameFor(m => m.MealsPerDay) <span class="text-danger">*</span>
+                                </label>
+                                <input asp-for="MealsPerDay" type="number" class="form-control form-control-lg"
+                                       min="1" max="6" required />
+                                <span asp-validation-for="MealsPerDay" class="text-danger small"></span>
+                                <div class="form-text">Số bữa ăn mỗi ngày (1-6 bữa)</div>
+                            </div>
+
+                            <!-- Allergies -->
+                            <div class="col-12">
+                                <h6 class="text-primary mb-3 mt-3">
+                                    <i class="bi bi-exclamation-triangle"></i> Thông tin bổ sung
+                                </h6>
+                            </div>
+
+                            
+
+                            <!-- Notes -->
+                            <div class="col-12">
+                                <label asp-for="Notes" class="form-label fw-semibold">
+                                    <i class="bi bi-journal-text"></i> @Html.DisplayNameFor(m => m.Notes)
+                                </label>
+                                <textarea asp-for="Notes" class="form-control" rows="4"
+                                          placeholder="Ví dụ: Tiểu đường, cao huyết áp, sở thích ăn cay, không ăn hành..."></textarea>
+                                <span asp-validation-for="Notes" class="text-danger small"></span>
+                                <div class="form-text">Ghi chú về tình trạng sức khỏe, sở thích ăn uống...</div>
+                            </div>
+
+                            <!-- Submit Buttons -->
+                            <div class="col-12 mt-4">
+                                <div class="d-grid gap-2">
+                                    <button type="submit" class="btn btn-success btn-lg">
+                                        <i class="bi bi-check-circle-fill me-2"></i>
+                                        Hoàn tất và bắt đầu
+                                    </button>
+                                    <a href="@Url.Action("Index", "Dashboard")" class="btn btn-outline-secondary">
+                                        <i class="bi bi-skip-forward"></i> Bỏ qua, thiết lập sau
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Info Card -->
+            <div class="card border-0 shadow-sm mt-4">
+                <div class="card-body">
+                    <div class="row g-3 text-center">
+                        <div class="col-md-4">
+                            <i class="bi bi-calculator text-primary" style="font-size: 2rem;"></i>
+                            <h6 class="mt-2 mb-1">Tính toán chính xác</h6>
+                            <small class="text-muted">Calories và dinh dưỡng phù hợp</small>
+                        </div>
+                        <div class="col-md-4">
+                            <i class="bi bi-heart-pulse text-danger" style="font-size: 2rem;"></i>
+                            <h6 class="mt-2 mb-1">Chế độ cá nhân hóa</h6>
+                            <small class="text-muted">Dựa trên mục tiêu của bạn</small>
+                        </div>
+                        <div class="col-md-4">
+                            <i class="bi bi-graph-up-arrow text-success" style="font-size: 2rem;"></i>
+                            <h6 class="mt-2 mb-1">Theo dõi tiến độ</h6>
+                            <small class="text-muted">Đánh giá và điều chỉnh</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions {
+    string GetGoalIcon(MealPrep.DAL.Enums.FitnessGoal goal)
+    {
+        return goal switch
+        {
+            MealPrep.DAL.Enums.FitnessGoal.Maintain => "bi-dash-circle",
+            MealPrep.DAL.Enums.FitnessGoal.FatLoss => "bi-arrow-down-circle",
+            MealPrep.DAL.Enums.FitnessGoal.MuscleGain => "bi-arrow-up-circle",
+            _ => "bi-circle"
+        };
+    }
+
+    string GetGoalText(MealPrep.DAL.Enums.FitnessGoal goal)
+    {
+        return goal switch
+        {
+            MealPrep.DAL.Enums.FitnessGoal.Maintain => "Duy trì",
+            MealPrep.DAL.Enums.FitnessGoal.FatLoss => "Giảm cân",
+            MealPrep.DAL.Enums.FitnessGoal.MuscleGain => "Tăng cơ",
+            _ => goal.ToString()
+        };
+    }
+
+    string GetGoalDescription(MealPrep.DAL.Enums.FitnessGoal goal)
+    {
+        return goal switch
+        {
+            MealPrep.DAL.Enums.FitnessGoal.Maintain => "Giữ nguyên cân nặng",
+            MealPrep.DAL.Enums.FitnessGoal.FatLoss => "Giảm mỡ thừa",
+            MealPrep.DAL.Enums.FitnessGoal.MuscleGain => "Tăng khối cơ",
+            _ => ""
+        };
+    }
+
+    string GetActivityLevelText(MealPrep.DAL.Enums.ActivityLevel level)
+    {
+        return level switch
+        {
+            MealPrep.DAL.Enums.ActivityLevel.Sedentary => "Ít vận động",
+            MealPrep.DAL.Enums.ActivityLevel.LightlyActive => "Vận động nhẹ",
+            MealPrep.DAL.Enums.ActivityLevel.ModeratelyActive => "Vận động vừa",
+            MealPrep.DAL.Enums.ActivityLevel.VeryActive => "Vận động nhiều",
+            MealPrep.DAL.Enums.ActivityLevel.ExtraActive => "Vận động cực nhiều",
+            _ => level.ToString()
+        };
+    }
+
+    string GetActivityLevelDescription(MealPrep.DAL.Enums.ActivityLevel level)
+    {
+        return level switch
+        {
+            MealPrep.DAL.Enums.ActivityLevel.Sedentary => "Ngồi nhiều, ít hoạt động",
+            MealPrep.DAL.Enums.ActivityLevel.LightlyActive => "1-3 ngày/tuần",
+            MealPrep.DAL.Enums.ActivityLevel.ModeratelyActive => "3-5 ngày/tuần",
+            MealPrep.DAL.Enums.ActivityLevel.VeryActive => "6-7 ngày/tuần",
+            MealPrep.DAL.Enums.ActivityLevel.ExtraActive => "VĐV chuyên nghiệp",
+            _ => ""
+        };
+    }
+
+    string GetDietPreferenceText(MealPrep.DAL.Enums.DietPreference diet)
+    {
+        return diet switch
+        {
+            MealPrep.DAL.Enums.DietPreference.None => "Không hạn chế",
+            MealPrep.DAL.Enums.DietPreference.Vegan => "Thuần chay",
+            MealPrep.DAL.Enums.DietPreference.Vegetarian => "Ăn chay",
+            MealPrep.DAL.Enums.DietPreference.LowCarb => "Giảm tinh bột",
+            MealPrep.DAL.Enums.DietPreference.Keto => "Keto",
+            MealPrep.DAL.Enums.DietPreference.Halal => "Halal",
+            MealPrep.DAL.Enums.DietPreference.GlutenFree => "Không gluten",
+            MealPrep.DAL.Enums.DietPreference.DairyFree => "Không sữa",
+            _ => diet.ToString()
+        };
+    }
+}
+
+@section Styles {
+    <style>
+        .btn-check:checked + .btn-outline-primary {
+            background-color: var(--bs-primary);
+            color: white;
+        }
+
+        .btn-outline-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(102, 126, 234, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .app-card {
+            border-radius: 1rem;
+        }
+
+        .progress {
+            border-radius: 10px;
+            background-color: rgba(25, 135, 84, 0.1);
+        }
+
+        .progress-bar {
+            border-radius: 10px;
+        }
+
+        .btn-close-sm {
+            padding: 0;
+            width: 0.5em;
+            height: 0.5em;
+        }
+    </style>
+}
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        $(document).ready(function() {
+            // Add Allergy functionality
+            function addAllergy() {
+                const allergyName = $('#allergyInput').val().trim();
+                if (!allergyName) {
+                    return;
+                }
+
+                // Check if already exists
+                const existingAllergies = $('#allergiesList input[name="Allergies"]').map(function() {
+                    return $(this).val();
+                }).get();
+
+                if (existingAllergies.includes(allergyName)) {
+                    alert('Dị ứng này đã có trong danh sách');
+                    return;
+                }
+
+                // Add badge and hidden input
+                const badge = $('<span class="badge bg-danger-subtle text-danger me-2 mb-2 p-2"></span>')
+                    .text(allergyName + ' ')
+                    .append($('<button type="button" class="btn-close btn-close-sm ms-1"></button>')
+                        .css('font-size', '0.6rem')
+                        .attr('data-allergy', allergyName));
+
+                const hiddenInput = $('<input type="hidden" name="Allergies">')
+                    .val(allergyName);
+
+                $('#allergiesList').append(badge).append(hiddenInput);
+                $('#allergyInput').val('');
+            }
+
+            $('#addAllergyBtn').click(addAllergy);
+
+            // Remove Allergy functionality
+            $(document).on('click', '#allergiesList .btn-close', function() {
+                const allergyName = $(this).data('allergy');
+                $(this).closest('.badge').remove();
+                $('#allergiesList input[value="' + allergyName + '"]').remove();
+            });
+
+            // Enter key to add allergy
+            $('#allergyInput').keypress(function(e) {
+                if (e.which === 13) {
+                    e.preventDefault();
+                    addAllergy();
+                }
+            });
+
+            // Validate number inputs
+            $('input[type="number"]').on('input', function() {
+                const min = parseInt($(this).attr('min'));
+                const max = parseInt($(this).attr('max'));
+                let value = parseFloat($(this).val());
+
+                if (value < min) $(this).val(min);
+                if (value > max) $(this).val(max);
+            });
+        });
+    </script>
+}

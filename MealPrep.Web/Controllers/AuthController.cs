@@ -1,5 +1,6 @@
 ﻿using MealPrep.BLL.Exceptions;
 using MealPrep.BLL.Services;
+using MealPrep.DAL.Enums;
 using MealPrep.Web.ViewModels;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -25,7 +26,8 @@ namespace MealPrep.Web.Controllers
             _userService = userService;
         }
 
-        [HttpGet] public IActionResult Register() => View();
+        [HttpGet] 
+        public IActionResult Register() => View();
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -50,7 +52,8 @@ namespace MealPrep.Web.Controllers
             }
         }
 
-        [HttpPost] public async Task<IActionResult> Register(RegisterVm vm)
+        [HttpPost] 
+        public async Task<IActionResult> Register(RegisterVm vm)
         {
             if(!ModelState.IsValid)
             {
@@ -61,16 +64,19 @@ namespace MealPrep.Web.Controllers
             {
                 var user = await _authService.RegisterAsync(vm.Email, vm.FullName, vm.Password, vm.OtpCode);
                 await SignInAsync(user);
-                return RedirectToAction("Index", "Dashboard");
+                
+                // Sau khi đăng ký thành công, chuyển đến trang hoàn tất thông tin cá nhân
+                return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
-            {
+            {   
                 ModelState.AddModelError("", ex.Message);
                 return View(vm);
             }
         }
 
-        [HttpGet] public IActionResult Login() => View(new LoginVm());
+        [HttpGet] 
+        public IActionResult Login() => View(new LoginVm());
 
         [HttpPost]
         public async Task<IActionResult> Login(LoginVm vm)
@@ -85,9 +91,14 @@ namespace MealPrep.Web.Controllers
             }
 
             await SignInAsync(user);
-            return RedirectToAction("Index", "Auth");
+            
+            // Login thì chuyển thẳng đến Dashboard
+            return RedirectToAction("Index", "Dashboard");
         }
 
+        /// <summary>
+        /// Trang hoàn tất thông tin cá nhân (tuổi, giới tính, số điện thoại) - GET
+        /// </summary>
         [Authorize]
         [HttpGet]
         public IActionResult Index()
@@ -95,6 +106,9 @@ namespace MealPrep.Web.Controllers
             return View(new CompleteProfileVm());
         }
 
+        /// <summary>
+        /// Xử lý submit form hoàn tất thông tin cá nhân - POST
+        /// </summary>
         [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -102,7 +116,7 @@ namespace MealPrep.Web.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return View(vm);
+                return View("Index", vm);
             }
 
             try
@@ -125,13 +139,88 @@ namespace MealPrep.Web.Controllers
                     currentUser.AvatarUrl
                 );
 
-                TempData["SuccessMessage"] = "Hoàn tất hồ sơ thành công!";
-                return RedirectToAction("Index", "Dashboard");
+                TempData["SuccessMessage"] = "Hoàn tất thông tin cá nhân thành công!";
+                
+                // Sau khi hoàn tất thông tin cá nhân, chuyển đến trang thiết lập nutrition profile
+                return RedirectToAction(nameof(SetupNutritionProfile));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error completing profile");
                 ModelState.AddModelError("", "Đã xảy ra lỗi khi cập nhật hồ sơ. Vui lòng thử lại.");
+                return View("Index", vm);
+            }
+        }
+
+        /// <summary>
+        /// Trang thiết lập hồ sơ dinh dưỡng - GET
+        /// </summary>
+        [Authorize]
+        [HttpGet]
+        public async Task<IActionResult> SetupNutritionProfile()
+        {
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var user = await _userService.GetUserProfileAsync(userId);
+
+            if (user == null)
+            {
+                return NotFound("User not found");
+            }
+
+            var vm = new UpdateNutritionProfileVm();
+
+            // Pre-fill if profile exists
+            if (user.NutritionProfile != null)
+            {
+                vm.HeightCm = user.NutritionProfile.HeightCm;
+                vm.WeightKg = user.NutritionProfile.WeightKg;
+                vm.Goal = user.NutritionProfile.Goal;
+                vm.ActivityLevel = user.NutritionProfile.ActivityLevel;
+                vm.DietPreference = user.NutritionProfile.DietPreference;
+                vm.MealsPerDay = user.NutritionProfile.MealsPerDay;
+                vm.Notes = user.NutritionProfile.Notes;
+            }
+
+            return View(vm);
+        }
+
+        /// <summary>
+        /// Xử lý submit form thiết lập hồ sơ dinh dưỡng - POST
+        /// </summary>
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SetupNutritionProfile(UpdateNutritionProfileVm vm)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(vm);
+            }
+
+            try
+            {
+                var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+                await _userService.UpsertNutritionProfileAsync(
+                    userId,
+                    vm.HeightCm,
+                    vm.WeightKg,
+                    vm.Goal,
+                    vm.ActivityLevel,
+                    vm.DietPreference,
+                    vm.MealsPerDay,
+                    vm.Notes
+                );
+
+                TempData["SuccessMessage"] = "Thiết lập hồ sơ dinh dưỡng thành công! Chào mừng bạn đến với MealPrep.";
+                
+                // Sau khi hoàn tất nutrition profile, chuyển đến Dashboard
+                return RedirectToAction("Index", "Dashboard");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error setting up nutrition profile for user {UserId}", User.FindFirstValue(ClaimTypes.NameIdentifier));
+                ModelState.AddModelError("", "Đã xảy ra lỗi khi thiết lập hồ sơ dinh dưỡng. Vui lòng thử lại.");
                 return View(vm);
             }
         }
