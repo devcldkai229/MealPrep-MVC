@@ -55,4 +55,3 @@ public class AppUser
     
     public ICollection<WeeklyMenu> WeeklyMenus { get; set; } = new List<WeeklyMenu>();
 }
-
