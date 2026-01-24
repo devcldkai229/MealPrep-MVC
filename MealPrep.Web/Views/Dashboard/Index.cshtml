@@ -1,3 +1,4 @@
+@using System.Text.Json
 @model MealPrep.Web.ViewModels.DashboardVm
 @{
     ViewData["Title"] = "Bảng Điều Khiển";
@@ -51,9 +52,21 @@
             <div class="row g-3">
                 @foreach (var m in Model.FeaturedMeals)
                 {
+                    var imageUrls = new List<string>();
+                    try
+                    {
+                        if (!string.IsNullOrEmpty(m.Images))
+                        {
+                            imageUrls = JsonSerializer.Deserialize<List<string>>(m.Images) ?? new List<string>();
+                        }
+                    }
+                    catch { }
+
+                    var firstImage = imageUrls.FirstOrDefault() ?? "/images/placeholder-meal.jpg";
+
                     <div class="col-md-6 col-xl-4">
                         <div class="app-card p-2">
-                            <div class="meal-thumb mb-2"></div>
+                            <div class="meal-thumb mb-2" style="background-image: url('@firstImage'); background-size: cover; background-position: center; height: 150px; border-radius: 8px;"></div>
                             <div class="px-1 pb-1">
                                 <div class="fw-semibold">@m.Name</div>
                                 <div class="meal-meta">@m.Calories kcal • P @m.Protein • C @m.Carbs • F @m.Fat</div>
@@ -88,20 +101,20 @@
                     <tr><th>Ngày</th><th class="text-end">kcal</th></tr>
                 </thead>
                 <tbody>
-                @if (Model.WeekCalories.Count == 0)
-                {
-                    <tr><td colspan="2" class="text-secondary">Chưa có nhật ký.</td></tr>
-                }
-                else
-                {
-                    foreach (var d in Model.WeekCalories)
+                    @if (Model.WeekCalories.Count == 0)
                     {
-                        <tr>
-                            <td>@d.Date.ToString("dd/MM")</td>
-                            <td class="text-end">@d.Calories</td>
-                        </tr>
+                        <tr><td colspan="2" class="text-secondary">Chưa có nhật ký.</td></tr>
                     }
-                }
+                    else
+                    {
+                        foreach (var d in Model.WeekCalories)
+                        {
+                            <tr>
+                                <td>@d.Date.ToString("dd/MM")</td>
+                                <td class="text-end">@d.Calories</td>
+                            </tr>
+                        }
+                    }
                 </tbody>
             </table>
         </div>
@@ -124,22 +137,22 @@
             </tr>
         </thead>
         <tbody>
-        @if (Model.RecentOrders.Count == 0)
-        {
-            <tr><td colspan="4" class="text-secondary">Chưa có đơn hàng.</td></tr>
-        }
-        else
-        {
-            foreach (var o in Model.RecentOrders)
+            @if (Model.RecentOrders.Count == 0)
             {
-                <tr>
-                    <td>@o.DeliveryDate.ToString("dd/MM/yyyy")</td>
-                    <td>@o.DeliverySlot?.Name</td>
-                    <td>@o.Status</td>
-                    <td class="text-secondary">@string.Join(", ", o.Items.Select(i => $"{i.Meal?.Name} x{i.Quantity}"))</td>
-                </tr>
+                <tr><td colspan="4" class="text-secondary">Chưa có đơn hàng.</td></tr>
             }
-        }
+            else
+            {
+                foreach (var o in Model.RecentOrders)
+                {
+                    <tr>
+                        <td>@o.DeliveryDate.ToString("dd/MM/yyyy")</td>
+                        <td>@o.DeliverySlot?.Name</td>
+                        <td>@o.Status</td>
+                        <td class="text-secondary">@string.Join(", ", o.Items.Select(i => $"{i.Meal?.Name} x{i.Quantity}"))</td>
+                    </tr>
+                }
+            }
         </tbody>
     </table>
 </div>
