@@ -380,9 +380,19 @@
                                     <label class="form-label">Chọn Món Không Thích</label>
                                     <select name="MealId" class="form-select" required>
                                         <option value="">-- Chọn món ăn --</option>
-                                        <!-- This should be populated from ViewBag.AvailableMeals in controller -->
-                                        <option value="1">Món ăn mẫu 1</option>
-                                        <option value="2">Món ăn mẫu 2</option>
+                                        @if (ViewBag.AvailableMeals != null)
+                                        {
+                                            var availableMeals = ViewBag.AvailableMeals as List<MealPrep.DAL.Entities.Meal>;
+                                            var dislikedMealIds = Model.DislikedMeals?.Select(dm => dm.MealId).ToList() ?? new List<int>();
+                                            
+                                            @foreach (var meal in availableMeals)
+                                            {
+                                                if (!dislikedMealIds.Contains(meal.Id))
+                                                {
+                                                    <option value="@meal.Id">@meal.Name</option>
+                                                }
+                                            }
+                                        }
                                     </select>
                                     <div class="form-text">Chọn các món bạn không muốn trong đăng ký</div>
                                 </div>

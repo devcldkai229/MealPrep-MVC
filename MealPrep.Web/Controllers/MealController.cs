@@ -2,6 +2,8 @@
 using MealPrep.DAL.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
+using System.Security.Claims;
 
 namespace MealPrep.Web.Controllers
 {
@@ -24,6 +26,19 @@ namespace MealPrep.Web.Controllers
         {
             var meal = await _svc.GetAsync(id);
             if (meal == null) return NotFound();
+            
+            // Check if user has disliked this meal
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                var userId = Guid.Parse(User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier)!);
+                var userService = HttpContext.RequestServices.GetRequiredService<IUserService>();
+                ViewBag.IsDisliked = await userService.IsMealDislikedAsync(userId, id);
+            }
+            else
+            {
+                ViewBag.IsDisliked = false;
+            }
+            
             return View(meal);
         }
 

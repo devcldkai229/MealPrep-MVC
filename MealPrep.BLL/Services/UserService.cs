@@ -4,6 +4,8 @@ using MealPrep.DAL.Entities;
 using MealPrep.DAL.Enums;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace MealPrep.BLL.Services
@@ -25,7 +27,8 @@ namespace MealPrep.BLL.Services
             ActivityLevel activityLevel,
             DietPreference dietPreference,
             int mealsPerDay,
-            string? notes)
+            string? notes,
+            List<string>? allergies = null)
         {
             var user = await _context.Users
                 .Include(u => u.NutritionProfile!)
@@ -64,11 +67,78 @@ namespace MealPrep.BLL.Services
                 user.NutritionProfile.DietPreference = dietPreference;
                 user.NutritionProfile.MealsPerDay = mealsPerDay;
                 user.NutritionProfile.Notes = notes;
-
             }
 
+            // Xử lý allergies nếu có
+            if (allergies != null)
+            {
+                // Xóa allergies cũ không có trong danh sách mới
+                var existingAllergies = user.NutritionProfile.Allergies?.ToList() ?? new List<UserAllergy>();
+                var allergiesToRemove = existingAllergies
+                    .Where(a => !allergies.Contains(a.AllergyName, StringComparer.OrdinalIgnoreCase))
+                    .ToList();
+                
+                foreach (var allergy in allergiesToRemove)
+                {
+                    _context.Set<UserAllergy>().Remove(allergy);
+                }
+
+                // Thêm allergies mới
+                var existingAllergyNames = existingAllergies
+                    .Select(a => a.AllergyName)
+                    .ToList();
+                
+                foreach (var allergyName in allergies)
+                {
+                    if (!string.IsNullOrWhiteSpace(allergyName) && 
+                        !existingAllergyNames.Contains(allergyName, StringComparer.OrdinalIgnoreCase))
+                    {
+                        var newAllergy = new UserAllergy
+                        {
+                            UserNutritionProfileId = user.NutritionProfile.Id,
+                            AllergyName = allergyName.Trim()
+                        };
+                        _context.Set<UserAllergy>().Add(newAllergy);
+                    }
+                }
+            }
 
             await _context.SaveChangesAsync();
+        }
+
+        public async Task AddDislikedMealAsync(Guid userId, int mealId)
+        {
+            var existing = await _context.Set<UserDislikedMeal>()
+                .FirstOrDefaultAsync(dm => dm.AppUserId == userId && dm.MealId == mealId);
+            
+            if (existing == null)
+            {
+                var dislikedMeal = new UserDislikedMeal
+                {
+                    AppUserId = userId,
+                    MealId = mealId
+                };
+                _context.Set<UserDislikedMeal>().Add(dislikedMeal);
+                await _context.SaveChangesAsync();
+            }
+        }
+
+        public async Task RemoveDislikedMealAsync(Guid userId, int mealId)
+        {
+            var dislikedMeal = await _context.Set<UserDislikedMeal>()
+                .FirstOrDefaultAsync(dm => dm.AppUserId == userId && dm.MealId == mealId);
+            
+            if (dislikedMeal != null)
+            {
+                _context.Set<UserDislikedMeal>().Remove(dislikedMeal);
+                await _context.SaveChangesAsync();
+            }
+        }
+
+        public async Task<bool> IsMealDislikedAsync(Guid userId, int mealId)
+        {
+            return await _context.Set<UserDislikedMeal>()
+                .AnyAsync(dm => dm.AppUserId == userId && dm.MealId == mealId);
         }
         public async Task<AuthResponse> GetUserByIdAsync(Guid userId)
         {

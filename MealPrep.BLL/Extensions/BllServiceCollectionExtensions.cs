@@ -1,5 +1,7 @@
 using MealPrep.BLL.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace MealPrep.BLL.Extensions
 {
@@ -14,8 +16,17 @@ namespace MealPrep.BLL.Extensions
             services.AddScoped<IMealService, MealService>();
             services.AddScoped<ISubscriptionService, SubscriptionService>();
             services.AddScoped<INutritionLogService, NutritionLogService>();
-            services.AddScoped<IMomoService, MomoPaymentService>();
-            services.AddHttpClient<MomoPaymentService>();
+            
+            // Register HttpClient for MoMo service
+            services.AddHttpClient();
+            services.AddScoped<IMomoService>(sp =>
+            {
+                var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
+                var httpClient = httpClientFactory.CreateClient();
+                var configuration = sp.GetRequiredService<IConfiguration>();
+                var logger = sp.GetRequiredService<ILogger<MomoPaymentService>>();
+                return new MomoPaymentService(configuration, httpClient, logger);
+            });
 
             return services;
         }

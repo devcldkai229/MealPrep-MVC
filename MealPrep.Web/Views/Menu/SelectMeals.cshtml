@@ -205,21 +205,31 @@
     }
     
     .nutrition-info {
-        animation: fadeIn 0.3s ease;
+        animation: fadeInAnimation 0.3s ease;
     }
     
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(-5px); }
-        to { opacity: 1; transform: translateY(0); }
+    @@keyframes fadeInAnimation {
+        from { 
+            opacity: 0; 
+            transform: translateY(-5px); 
+        }
+        to { 
+            opacity: 1; 
+            transform: translateY(0); 
+        }
     }
     
     .header-icon {
-        animation: pulse 2s infinite;
+        animation: pulseAnimation 2s infinite;
     }
     
-    @keyframes pulse {
-        0%, 100% { transform: scale(1); }
-        50% { transform: scale(1.05); }
+    @@keyframes pulseAnimation {
+        0%, 100% { 
+            transform: scale(1); 
+        }
+        50% { 
+            transform: scale(1.05); 
+        }
     }
 </style>
 

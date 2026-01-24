@@ -184,16 +184,17 @@ namespace MealPrep.Web.Controllers
                             await _dbContext.SaveChangesAsync();
                             await transaction.CommitAsync();
 
-                        _logger.LogInformation("Payment {PaymentCode} confirmed successfully", payment.PaymentCode);
+                            _logger.LogInformation("Payment {PaymentCode} confirmed successfully", payment.PaymentCode);
 
-                        TempData["SuccessMessage"] = "Thanh toán thành công! Vui lòng chọn món ăn cho tuần này.";
-                        return RedirectToAction("SelectMeals", "Menu");
-                    }
-                    catch (Exception ex)
-                    {
-                        await transaction.RollbackAsync();
-                        _logger.LogError(ex, "Failed to update payment status");
-                        TempData["ErrorMessage"] = "Có lỗi xảy ra khi xử lý thanh toán. Vui lòng liên hệ hỗ trợ.";
+                            TempData["SuccessMessage"] = "Thanh toán thành công! Vui lòng chọn món ăn cho tuần này.";
+                            return RedirectToAction("SelectMeals", "Menu");
+                        }
+                        catch (Exception ex)
+                        {
+                            await transaction.RollbackAsync();
+                            _logger.LogError(ex, "Failed to update payment status");
+                            TempData["ErrorMessage"] = "Có lỗi xảy ra khi xử lý thanh toán. Vui lòng liên hệ hỗ trợ.";
+                        }
                     }
                 }
             }

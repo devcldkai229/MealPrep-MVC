@@ -111,6 +111,7 @@ public class MenuController : Controller
                     .Where(item => item.DayOfWeek == dayOfWeek)
                     .Select(item => item.Meal)
                     .Where(m => m != null && m.IsActive)
+                    .Cast<Meal>()
                     .ToList();
 
                 // If no meals in menu for this day, use all active meals
@@ -161,7 +162,8 @@ public class MenuController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> SelectMeals()
+    [ActionName("SelectMeals")]
+    public async Task<IActionResult> SelectMealsPost()
     {
         var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 

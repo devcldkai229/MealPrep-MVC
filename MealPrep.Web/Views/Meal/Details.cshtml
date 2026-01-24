@@ -1,7 +1,39 @@
 ﻿@model MealPrep.DAL.Entities.Meal
+@using System.Text.Json
+@using System.Security.Claims
 
 @{
     ViewData["Title"] = Model.Name;
+    
+    // Parse ingredients and images from JSON
+    var ingredients = new List<string>();
+    var images = new List<string>();
+    
+    if (!string.IsNullOrEmpty(Model.Ingredients))
+    {
+        try
+        {
+            ingredients = JsonSerializer.Deserialize<List<string>>(Model.Ingredients) ?? new List<string>();
+        }
+        catch
+        {
+            // Fallback: treat as comma-separated string
+            ingredients = Model.Ingredients.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
+        }
+    }
+    
+    if (!string.IsNullOrEmpty(Model.Images))
+    {
+        try
+        {
+            images = JsonSerializer.Deserialize<List<string>>(Model.Images) ?? new List<string>();
+        }
+        catch
+        {
+            // Fallback: treat as comma-separated string
+            images = Model.Images.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
+        }
+    }
 }
 
 <div class="container py-4">
@@ -19,12 +51,49 @@
         <div class="col-lg-7">
             <!-- Meal Image Card -->
             <div class="card app-card mb-4">
-                <div class="meal-detail-image">
-                    <div class="placeholder-content">
-                        <i class="bi bi-image"></i>
-                        <span>Hình Ảnh Món Ăn</span>
+                @if (images.Any())
+                {
+                    <div id="mealImageCarousel" class="carousel slide" data-bs-ride="carousel">
+                        <div class="carousel-inner">
+                            @for (int i = 0; i < images.Count; i++)
+                            {
+                                <div class="carousel-item @(i == 0 ? "active" : "")">
+                                    <img src="@images[i]" class="d-block w-100 meal-detail-image" 
+                                         alt="@Model.Name" 
+                                         style="object-fit: cover; height: 400px; border-radius: 0.5rem 0.5rem 0 0;" 
+                                         onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'800\' height=\'400\'%3E%3Crect fill=\'%23667eea\' width=\'800\' height=\'400\'/%3E%3Ctext fill=\'white\' font-family=\'Arial\' font-size=\'24\' x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dominant-baseline=\'middle\'%3E@Model.Name%3C/text%3E%3C/svg%3E';">
+                                </div>
+                            }
+                        </div>
+                        @if (images.Count > 1)
+                        {
+                            <button class="carousel-control-prev" type="button" data-bs-target="#mealImageCarousel" data-bs-slide="prev">
+                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Previous</span>
+                            </button>
+                            <button class="carousel-control-next" type="button" data-bs-target="#mealImageCarousel" data-bs-slide="next">
+                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Next</span>
+                            </button>
+                            <div class="carousel-indicators">
+                                @for (int i = 0; i < images.Count; i++)
+                                {
+                                    <button type="button" data-bs-target="#mealImageCarousel" data-bs-slide-to="@i" 
+                                            class="@(i == 0 ? "active" : "")" aria-current="@(i == 0 ? "true" : "false")" aria-label="Slide @(i + 1)"></button>
+                                }
+                            </div>
+                        }
                     </div>
-                </div>
+                }
+                else
+                {
+                    <div class="meal-detail-image">
+                        <div class="placeholder-content">
+                            <i class="bi bi-image"></i>
+                            <span>Hình Ảnh Món Ăn</span>
+                        </div>
+                    </div>
+                }
             </div>
 
             <!-- Description Card -->
@@ -53,10 +122,10 @@
                     <h5 class="card-title mb-3">
                         <i class="bi bi-list-check text-success"></i> Nguyên Liệu
                     </h5>
-                    @if(Model.Ingredients != null && Model.Ingredients.Length > 0)
+                    @if (ingredients.Any())
                     {
                         <ul class="list-unstyled mb-0">
-                            @foreach(var ingredient in Model.Ingredients)
+                            @foreach(var ingredient in ingredients)
                             {
                                 <li class="mb-2">
                                     <i class="bi bi-check2 text-success"></i> @ingredient
@@ -158,9 +227,21 @@
 
             <!-- Action Buttons -->
             <div class="d-grid gap-2">
-                <a asp-controller="Subscription" asp-action="Create" class="btn btn-primary btn-lg">
+                <a asp-controller="Subscription" asp-action="Index" class="btn btn-primary btn-lg">
                     <i class="bi bi-calendar-check"></i> Đăng Ký Để Nhận Món Này
                 </a>
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    var userId = Guid.Parse(User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier)!);
+                    <form method="post" asp-controller="Auth" asp-action="ToggleDislikedMeal" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="mealId" value="@Model.Id" />
+                        <button type="submit" class="btn btn-outline-warning w-100">
+                            <i class="bi bi-hand-thumbs-down"></i> 
+                            @(ViewBag.IsDisliked == true ? "Bỏ Không Thích" : "Không Thích Món Này")
+                        </button>
+                    </form>
+                }
                 <a asp-action="Index" class="btn btn-outline-secondary">
                     <i class="bi bi-arrow-left"></i> Quay Lại Danh Sách
                 </a>

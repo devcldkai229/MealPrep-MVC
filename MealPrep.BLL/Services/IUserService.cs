@@ -58,7 +58,23 @@ namespace MealPrep.BLL.Services
             ActivityLevel activityLevel,
             DietPreference dietPreference,
             int mealsPerDay,
-            string? notes
+            string? notes,
+            List<string>? allergies = null
         );
+
+        /// <summary>
+        /// Thêm món không thích
+        /// </summary>
+        Task AddDislikedMealAsync(Guid userId, int mealId);
+
+        /// <summary>
+        /// Xóa món không thích
+        /// </summary>
+        Task RemoveDislikedMealAsync(Guid userId, int mealId);
+
+        /// <summary>
+        /// Kiểm tra user có không thích món này không
+        /// </summary>
+        Task<bool> IsMealDislikedAsync(Guid userId, int mealId);
     }
 }

@@ -1,5 +1,6 @@
 using MealPrep.DAL.Entities;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;

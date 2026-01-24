@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace MealPrep.Web.Controllers
 {
@@ -243,7 +244,119 @@ namespace MealPrep.Web.Controllers
                 return NotFound("User not found");
             }
             
+            // Load available meals for disliked meals dropdown
+            var mealService = HttpContext.RequestServices.GetRequiredService<IMealService>();
+            var availableMeals = await mealService.SearchAsync(null, null);
+            ViewBag.AvailableMeals = availableMeals.Where(m => m.IsActive).ToList();
+            
             return View(user);
+        }
+
+        [HttpPost]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateNutritionProfile(
+            int heightCm, decimal weightKg, FitnessGoal goal, 
+            ActivityLevel activityLevel, DietPreference dietPreference, 
+            int mealsPerDay, string? notes, List<string>? allergies)
+        {
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            
+            try
+            {
+                await _userService.UpsertNutritionProfileAsync(
+                    userId, heightCm, weightKg, goal, activityLevel, 
+                    dietPreference, mealsPerDay, notes, allergies);
+                
+                TempData["SuccessMessage"] = "Đã cập nhật hồ sơ dinh dưỡng thành công!";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to update nutrition profile");
+                TempData["ErrorMessage"] = "Có lỗi xảy ra khi cập nhật hồ sơ. Vui lòng thử lại.";
+            }
+            
+            return RedirectToAction(nameof(Profile));
+        }
+
+        [HttpPost]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddDislikedMeal(int mealId)
+        {
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            
+            try
+            {
+                await _userService.AddDislikedMealAsync(userId, mealId);
+                TempData["SuccessMessage"] = "Đã thêm món vào danh sách không thích.";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to add disliked meal");
+                TempData["ErrorMessage"] = "Có lỗi xảy ra. Vui lòng thử lại.";
+            }
+            
+            return RedirectToAction(nameof(Profile));
+        }
+
+        [HttpPost]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RemoveDislikedMeal(int dislikedMealId)
+        {
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            
+            try
+            {
+                // Get the disliked meal to find mealId
+                var user = await _userService.GetUserProfileAsync(userId);
+                var dislikedMeal = user?.DislikedMeals?.FirstOrDefault(dm => dm.Id == dislikedMealId);
+                
+                if (dislikedMeal != null)
+                {
+                    await _userService.RemoveDislikedMealAsync(userId, dislikedMeal.MealId);
+                    TempData["SuccessMessage"] = "Đã xóa món khỏi danh sách không thích.";
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to remove disliked meal");
+                TempData["ErrorMessage"] = "Có lỗi xảy ra. Vui lòng thử lại.";
+            }
+            
+            return RedirectToAction(nameof(Profile));
+        }
+
+        [HttpPost]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ToggleDislikedMeal(int mealId)
+        {
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            
+            try
+            {
+                var isDisliked = await _userService.IsMealDislikedAsync(userId, mealId);
+                
+                if (isDisliked)
+                {
+                    await _userService.RemoveDislikedMealAsync(userId, mealId);
+                    TempData["SuccessMessage"] = "Đã bỏ không thích món này.";
+                }
+                else
+                {
+                    await _userService.AddDislikedMealAsync(userId, mealId);
+                    TempData["SuccessMessage"] = "Đã thêm món vào danh sách không thích.";
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to toggle disliked meal");
+                TempData["ErrorMessage"] = "Có lỗi xảy ra. Vui lòng thử lại.";
+            }
+            
+            return RedirectToAction("Details", "Meal", new { id = mealId });
         }
 
         public IActionResult AccessDenied() => Content("Truy cập bị từ chối!");
