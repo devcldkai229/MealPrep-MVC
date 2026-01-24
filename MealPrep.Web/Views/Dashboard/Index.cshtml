@@ -9,7 +9,7 @@
         <div class="text-secondary">Quản lý món ăn, đăng ký và theo dõi dinh dưỡng mọi nơi.</div>
     </div>
     <div class="d-flex gap-2">
-        <a class="btn btn-primary" asp-controller="Subscription" asp-action="Create">Đăng Ký</a>
+        <a class="btn btn-primary" asp-controller="Subscription" asp-action="Index">Đăng Ký</a>
         <a class="btn btn-outline-secondary" asp-controller="NutritionLog" asp-action="Create">Thêm Nhật Ký</a>
     </div>
 </div>
@@ -27,7 +27,7 @@
         <div class="app-card p-3">
             <div class="kpi-title">Giao Hàng Tiếp Theo</div>
             <div class="kpi-value mt-1">@Model.NextDeliveryText</div>
-            <div class="mt-2"><a class="link-muted" asp-controller="Subscription" asp-action="Create">Quản lý đăng ký →</a></div>
+            <div class="mt-2"><a class="link-muted" asp-controller="Subscription" asp-action="Index">Quản lý đăng ký →</a></div>
         </div>
     </div>
 

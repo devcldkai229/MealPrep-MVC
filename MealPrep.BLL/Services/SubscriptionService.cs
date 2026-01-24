@@ -16,17 +16,23 @@ public class SubscriptionService : ISubscriptionService
     private readonly IRepository<Order> _orderRepo;
     private readonly IRepository<Meal> _mealRepo;
     private readonly IRepository<DeliverySlot> _slotRepo;
+    private readonly IRepository<Plan> _planRepo;
+    private readonly IRepository<PlanMealTier> _tierRepo;
 
     public SubscriptionService(
         IRepository<Subscription> subRepo,
         IRepository<Order> orderRepo,
         IRepository<Meal> mealRepo,
-        IRepository<DeliverySlot> slotRepo)
+        IRepository<DeliverySlot> slotRepo,
+        IRepository<Plan> planRepo,
+        IRepository<PlanMealTier> tierRepo)
     {
         _subRepo = subRepo;
         _orderRepo = orderRepo;
         _mealRepo = mealRepo;
         _slotRepo = slotRepo;
+        _planRepo = planRepo;
+        _tierRepo = tierRepo;
     }
 
     public async Task<int> CreateAsync(Guid userId, Subscription sub, int deliverySlotId)
@@ -104,6 +110,40 @@ public class SubscriptionService : ISubscriptionService
                 .ThenInclude(o => o.Items)
                     .ThenInclude(i => i.Meal)
             .FirstOrDefaultAsync(s => s.Id == id && s.AppUserId == userId);
+    }
+
+    public async Task<List<Plan>> GetAllPlansWithTiersAsync()
+    {
+        return await _planRepo.Query()
+            .Include(p => p.MealTiers.Where(t => t.IsActive))
+            .Where(p => p.IsActive)
+            .OrderBy(p => p.DurationDays)
+            .ToListAsync();
+    }
+
+    public Task<Plan?> GetPlanByIdAsync(int planId)
+    {
+        return _planRepo.Query()
+            .Include(p => p.MealTiers.Where(t => t.IsActive))
+            .FirstOrDefaultAsync(p => p.Id == planId && p.IsActive);
+    }
+
+    public async Task<PlanMealTier?> GetTierByIdAsync(int tierId)
+    {
+        return await _tierRepo.Query()
+            .FirstOrDefaultAsync(t => t.Id == tierId && t.IsActive);
+    }
+
+    public async Task<decimal> CalculateTotalPriceAsync(int planId, int tierId)
+    {
+        var plan = await GetPlanByIdAsync(planId);
+        if (plan == null) throw new InvalidOperationException("Plan not found");
+
+        var tier = await GetTierByIdAsync(tierId);
+        if (tier == null || tier.PlanId != planId) 
+            throw new InvalidOperationException("Tier not found or does not belong to plan");
+
+        return plan.BasePrice + tier.ExtraPrice;
     }
 }
 }

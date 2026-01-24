@@ -51,7 +51,7 @@ namespace MealPrep.DAL.Data
                     .IsRequired();
 
                 entity.Property(u => u.CreatedAtUtc)
-                    .HasDefaultValueSql("NOW()");
+                    .HasDefaultValueSql("GETUTCDATE()");
 
                 // User N-1 với Role
                 entity.HasOne(u => u.Role)

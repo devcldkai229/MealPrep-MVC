@@ -3,8 +3,8 @@ using System;
 using MealPrep.DAL.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
@@ -18,27 +18,24 @@ namespace MealPrep.DAL.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("ProductVersion", "9.0.0")
-                .HasAnnotation("Relational:MaxIdentifierLength", 63);
+                .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
-            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
             modelBuilder.Entity("MealPrep.DAL.Entities.AppRole", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("name");
+                        .HasColumnType("nvarchar(50)");
 
-                    b.HasKey("Id")
-                        .HasName("pk_roles");
+                    b.HasKey("Id");
 
-                    b.ToTable("roles", (string)null);
+                    b.ToTable("Roles");
 
                     b.HasData(
                         new
@@ -57,621 +54,495 @@ namespace MealPrep.DAL.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("Age")
-                        .HasColumnType("integer")
-                        .HasColumnName("age");
+                        .HasColumnType("int");
 
                     b.Property<string>("AvatarUrl")
                         .IsRequired()
                         .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("avatar_url");
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<DateTime>("CreatedAtUtc")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at_utc")
-                        .HasDefaultValueSql("NOW()");
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
 
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("character varying(256)")
-                        .HasColumnName("email");
+                        .HasColumnType("nvarchar(256)");
 
                     b.Property<string>("FullName")
                         .IsRequired()
                         .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("full_name");
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<int>("Gender")
-                        .HasColumnType("integer")
-                        .HasColumnName("gender");
+                        .HasColumnType("int");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("boolean")
-                        .HasColumnName("is_active");
+                        .HasColumnType("bit");
 
                     b.Property<DateTime?>("LastLoginAtUtc")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("last_login_at_utc");
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)")
-                        .HasColumnName("password_hash");
+                        .HasColumnType("nvarchar(255)");
 
                     b.Property<string>("PhoneNumber")
                         .HasMaxLength(20)
-                        .HasColumnType("character varying(20)")
-                        .HasColumnName("phone_number");
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<Guid>("RoleId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("role_id");
+                        .HasColumnType("uniqueidentifier");
 
-                    b.HasKey("Id")
-                        .HasName("pk_users");
+                    b.HasKey("Id");
 
                     b.HasIndex("Email")
-                        .IsUnique()
-                        .HasDatabaseName("ix_users_email");
+                        .IsUnique();
 
-                    b.HasIndex("RoleId")
-                        .HasDatabaseName("ix_users_role_id");
+                    b.HasIndex("RoleId");
 
-                    b.ToTable("users", (string)null);
+                    b.ToTable("Users");
                 });
 
             modelBuilder.Entity("MealPrep.DAL.Entities.DeliveryOrder", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
+                        .HasColumnType("int");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
+                        .HasColumnType("datetime2");
 
                     b.Property<DateOnly>("DeliveryDate")
-                        .HasColumnType("date")
-                        .HasColumnName("delivery_date");
+                        .HasColumnType("date");
 
                     b.Property<int?>("DeliverySlotId")
-                        .HasColumnType("integer")
-                        .HasColumnName("delivery_slot_id");
+                        .HasColumnType("int");
 
                     b.Property<string>("Note")
                         .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)")
-                        .HasColumnName("note");
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<int>("Status")
-                        .HasColumnType("integer")
-                        .HasColumnName("status");
+                        .HasColumnType("int");
 
                     b.Property<int>("SubscriptionId")
-                        .HasColumnType("integer")
-                        .HasColumnName("subscription_id");
+                        .HasColumnType("int");
 
                     b.Property<decimal>("TotalAmount")
                         .HasPrecision(10, 2)
-                        .HasColumnType("numeric(10,2)")
-                        .HasColumnName("total_amount");
+                        .HasColumnType("decimal(10,2)");
 
                     b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at");
+                        .HasColumnType("datetime2");
 
-                    b.HasKey("Id")
-                        .HasName("pk_delivery_orders");
+                    b.HasKey("Id");
 
-                    b.HasIndex("DeliverySlotId")
-                        .HasDatabaseName("ix_delivery_orders_delivery_slot_id");
+                    b.HasIndex("DeliverySlotId");
 
-                    b.HasIndex("SubscriptionId")
-                        .HasDatabaseName("ix_delivery_orders_subscription_id");
+                    b.HasIndex("SubscriptionId");
 
-                    b.ToTable("delivery_orders", (string)null);
+                    b.ToTable("DeliveryOrders");
                 });
 
             modelBuilder.Entity("MealPrep.DAL.Entities.DeliveryOrderItem", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
+                        .HasColumnType("int");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("DeliveryOrderId")
-                        .HasColumnType("integer")
-                        .HasColumnName("delivery_order_id");
+                        .HasColumnType("int");
 
                     b.Property<int?>("MealId")
-                        .HasColumnType("integer")
-                        .HasColumnName("meal_id");
+                        .HasColumnType("int");
 
                     b.Property<string>("MealNameSnapshot")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)")
-                        .HasColumnName("meal_name_snapshot");
+                        .HasColumnType("nvarchar(255)");
 
                     b.Property<string>("MealType")
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("meal_type");
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<int>("Quantity")
-                        .HasColumnType("integer")
-                        .HasColumnName("quantity");
+                        .HasColumnType("int");
 
                     b.Property<decimal>("UnitPrice")
                         .HasPrecision(10, 2)
-                        .HasColumnType("numeric(10,2)")
-                        .HasColumnName("unit_price");
+                        .HasColumnType("decimal(10,2)");
 
-                    b.HasKey("Id")
-                        .HasName("pk_delivery_order_items");
+                    b.HasKey("Id");
 
-                    b.HasIndex("DeliveryOrderId")
-                        .HasDatabaseName("ix_delivery_order_items_delivery_order_id");
+                    b.HasIndex("DeliveryOrderId");
 
-                    b.HasIndex("MealId")
-                        .HasDatabaseName("ix_delivery_order_items_meal_id");
+                    b.HasIndex("MealId");
 
-                    b.ToTable("delivery_order_items", (string)null);
+                    b.ToTable("DeliveryOrderItems");
                 });
 
             modelBuilder.Entity("MealPrep.DAL.Entities.DeliverySlot", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
+                        .HasColumnType("int");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<int>("Capacity")
-                        .HasColumnType("integer")
-                        .HasColumnName("capacity");
+                        .HasColumnType("int");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("boolean")
-                        .HasColumnName("is_active");
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(80)
-                        .HasColumnType("character varying(80)")
-                        .HasColumnName("name");
+                        .HasColumnType("nvarchar(80)");
 
-                    b.HasKey("Id")
-                        .HasName("pk_delivery_slots");
+                    b.HasKey("Id");
 
-                    b.ToTable("delivery_slots", (string)null);
+                    b.ToTable("DeliverySlots");
                 });
 
             modelBuilder.Entity("MealPrep.DAL.Entities.Meal", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
+                        .HasColumnType("int");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<decimal>("BasePrice")
                         .HasPrecision(10, 2)
-                        .HasColumnType("numeric(10,2)")
-                        .HasColumnName("base_price");
+                        .HasColumnType("decimal(10,2)");
 
                     b.Property<int>("Calories")
-                        .HasColumnType("integer")
-                        .HasColumnName("calories");
+                        .HasColumnType("int");
 
                     b.Property<decimal>("Carbs")
                         .HasPrecision(5, 2)
-                        .HasColumnType("numeric(5,2)")
-                        .HasColumnName("carbs");
+                        .HasColumnType("decimal(5,2)");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
                         .HasMaxLength(10000)
-                        .HasColumnType("character varying(10000)")
-                        .HasColumnName("description");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("Fat")
                         .HasPrecision(5, 2)
-                        .HasColumnType("numeric(5,2)")
-                        .HasColumnName("fat");
+                        .HasColumnType("decimal(5,2)");
 
-                    b.PrimitiveCollection<string[]>("Images")
+                    b.Property<string>("Images")
                         .IsRequired()
-                        .HasColumnType("text[]")
-                        .HasColumnName("images");
+                        .HasColumnType("nvarchar(max)");
 
-                    b.PrimitiveCollection<string[]>("Ingredients")
+                    b.Property<string>("Ingredients")
                         .IsRequired()
-                        .HasColumnType("text[]")
-                        .HasColumnName("ingredients");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("boolean")
-                        .HasColumnName("is_active");
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)")
-                        .HasColumnName("name");
+                        .HasColumnType("nvarchar(255)");
 
                     b.Property<decimal>("Protein")
                         .HasPrecision(5, 2)
-                        .HasColumnType("numeric(5,2)")
-                        .HasColumnName("protein");
+                        .HasColumnType("decimal(5,2)");
 
                     b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at");
+                        .HasColumnType("datetime2");
 
-                    b.HasKey("Id")
-                        .HasName("pk_meals");
+                    b.HasKey("Id");
 
-                    b.ToTable("meals", (string)null);
+                    b.ToTable("Meals");
                 });
 
             modelBuilder.Entity("MealPrep.DAL.Entities.NutritionLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
+                        .HasColumnType("int");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<Guid>("AppUserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("app_user_id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("CustomerEmail")
                         .IsRequired()
                         .HasMaxLength(120)
-                        .HasColumnType("character varying(120)")
-                        .HasColumnName("customer_email");
+                        .HasColumnType("nvarchar(120)");
 
                     b.Property<DateOnly>("Date")
-                        .HasColumnType("date")
-                        .HasColumnName("date");
+                        .HasColumnType("date");
 
                     b.Property<int>("MealId")
-                        .HasColumnType("integer")
-                        .HasColumnName("meal_id");
+                        .HasColumnType("int");
 
                     b.Property<int>("Quantity")
-                        .HasColumnType("integer")
-                        .HasColumnName("quantity");
+                        .HasColumnType("int");
 
-                    b.HasKey("Id")
-                        .HasName("pk_nutrition_logs");
+                    b.HasKey("Id");
 
-                    b.HasIndex("AppUserId")
-                        .HasDatabaseName("ix_nutrition_logs_app_user_id");
+                    b.HasIndex("AppUserId");
 
-                    b.HasIndex("MealId")
-                        .HasDatabaseName("ix_nutrition_logs_meal_id");
+                    b.HasIndex("MealId");
 
-                    b.ToTable("nutrition_logs", (string)null);
+                    b.ToTable("NutritionLogs");
                 });
 
             modelBuilder.Entity("MealPrep.DAL.Entities.Order", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
+                        .HasColumnType("int");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<Guid>("AppUserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("app_user_id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateOnly>("DeliveryDate")
-                        .HasColumnType("date")
-                        .HasColumnName("delivery_date");
+                        .HasColumnType("date");
 
                     b.Property<int>("DeliverySlotId")
-                        .HasColumnType("integer")
-                        .HasColumnName("delivery_slot_id");
+                        .HasColumnType("int");
 
                     b.Property<int>("Status")
-                        .HasColumnType("integer")
-                        .HasColumnName("status");
+                        .HasColumnType("int");
 
                     b.Property<int>("SubscriptionId")
-                        .HasColumnType("integer")
-                        .HasColumnName("subscription_id");
+                        .HasColumnType("int");
 
-                    b.HasKey("Id")
-                        .HasName("pk_orders");
+                    b.HasKey("Id");
 
-                    b.HasIndex("AppUserId")
-                        .HasDatabaseName("ix_orders_app_user_id");
+                    b.HasIndex("AppUserId");
 
-                    b.HasIndex("DeliverySlotId")
-                        .HasDatabaseName("ix_orders_delivery_slot_id");
+                    b.HasIndex("DeliverySlotId");
 
-                    b.HasIndex("SubscriptionId")
-                        .HasDatabaseName("ix_orders_subscription_id");
+                    b.HasIndex("SubscriptionId");
 
-                    b.ToTable("orders", (string)null);
+                    b.ToTable("Orders");
                 });
 
             modelBuilder.Entity("MealPrep.DAL.Entities.OrderItem", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
+                        .HasColumnType("int");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<int>("MealId")
-                        .HasColumnType("integer")
-                        .HasColumnName("meal_id");
+                        .HasColumnType("int");
 
                     b.Property<int>("OrderId")
-                        .HasColumnType("integer")
-                        .HasColumnName("order_id");
+                        .HasColumnType("int");
 
                     b.Property<int>("Quantity")
-                        .HasColumnType("integer")
-                        .HasColumnName("quantity");
+                        .HasColumnType("int");
 
-                    b.HasKey("Id")
-                        .HasName("pk_order_items");
+                    b.HasKey("Id");
 
-                    b.HasIndex("MealId")
-                        .HasDatabaseName("ix_order_items_meal_id");
+                    b.HasIndex("MealId");
 
-                    b.HasIndex("OrderId")
-                        .HasDatabaseName("ix_order_items_order_id");
+                    b.HasIndex("OrderId");
 
-                    b.ToTable("order_items", (string)null);
+                    b.ToTable("OrderItems");
                 });
 
             modelBuilder.Entity("MealPrep.DAL.Entities.OtpCode", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Code")
                         .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("code");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("email");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("ExpiresAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("expires_at");
+                        .HasColumnType("datetime2");
 
                     b.Property<bool>("IsUsed")
-                        .HasColumnType("boolean")
-                        .HasColumnName("is_used");
+                        .HasColumnType("bit");
 
-                    b.HasKey("Id")
-                        .HasName("pk_otp_codes");
+                    b.HasKey("Id");
 
-                    b.ToTable("otp_codes", (string)null);
+                    b.ToTable("OtpCodes");
                 });
 
             modelBuilder.Entity("MealPrep.DAL.Entities.Payment", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
+                        .HasColumnType("int");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<decimal>("Amount")
                         .HasPrecision(10, 2)
-                        .HasColumnType("numeric(10,2)")
-                        .HasColumnName("amount");
+                        .HasColumnType("decimal(10,2)");
 
                     b.Property<Guid>("AppUserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("app_user_id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Currency")
                         .IsRequired()
                         .HasMaxLength(10)
-                        .HasColumnType("character varying(10)")
-                        .HasColumnName("currency");
+                        .HasColumnType("nvarchar(10)");
 
                     b.Property<string>("Description")
                         .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("description");
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<DateTime?>("ExpiredAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("expired_at");
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Method")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("method");
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<DateTime?>("PaidAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("paid_at");
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("PaymentCode")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("payment_code");
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("status");
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<int>("SubscriptionId")
-                        .HasColumnType("integer")
-                        .HasColumnName("subscription_id");
+                        .HasColumnType("int");
 
-                    b.HasKey("Id")
-                        .HasName("pk_payments");
+                    b.HasKey("Id");
 
-                    b.HasIndex("AppUserId")
-                        .HasDatabaseName("ix_payments_app_user_id");
+                    b.HasIndex("AppUserId");
 
                     b.HasIndex("PaymentCode")
-                        .IsUnique()
-                        .HasDatabaseName("ix_payments_payment_code");
+                        .IsUnique();
 
-                    b.HasIndex("SubscriptionId")
-                        .HasDatabaseName("ix_payments_subscription_id");
+                    b.HasIndex("SubscriptionId");
 
-                    b.ToTable("payments", (string)null);
+                    b.ToTable("Payments");
                 });
 
             modelBuilder.Entity("MealPrep.DAL.Entities.PaymentTransaction", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
+                        .HasColumnType("int");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Gateway")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("gateway");
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("OrderId")
                         .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
-                        .HasColumnName("order_id");
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<int>("PaymentId")
-                        .HasColumnType("integer")
-                        .HasColumnName("payment_id");
+                        .HasColumnType("int");
 
                     b.Property<string>("RawResponseJson")
-                        .HasColumnType("text")
-                        .HasColumnName("raw_response_json");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("RequestId")
                         .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
-                        .HasColumnName("request_id");
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("ResponseCode")
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("response_code");
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("ResponseMessage")
                         .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("response_message");
+                        .HasColumnType("nvarchar(500)");
 
-                    b.HasKey("Id")
-                        .HasName("pk_payment_transactions");
+                    b.HasKey("Id");
 
-                    b.HasIndex("PaymentId")
-                        .HasDatabaseName("ix_payment_transactions_payment_id");
+                    b.HasIndex("PaymentId");
 
-                    b.ToTable("payment_transactions", (string)null);
+                    b.ToTable("PaymentTransactions");
                 });
 
             modelBuilder.Entity("MealPrep.DAL.Entities.Plan", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
+                        .HasColumnType("int");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<decimal>("BasePrice")
                         .HasPrecision(10, 2)
-                        .HasColumnType("numeric(10,2)")
-                        .HasColumnName("base_price");
+                        .HasColumnType("decimal(10,2)");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
                         .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("description");
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<int>("DurationDays")
-                        .HasColumnType("integer")
-                        .HasColumnName("duration_days");
+                        .HasColumnType("int");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("boolean")
-                        .HasColumnName("is_active");
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("name");
+                        .HasColumnType("nvarchar(100)");
 
-                    b.HasKey("Id")
-                        .HasName("pk_plans");
+                    b.HasKey("Id");
 
                     b.HasIndex("Name")
-                        .IsUnique()
-                        .HasDatabaseName("ix_plans_name");
+                        .IsUnique();
 
-                    b.ToTable("plans", (string)null);
+                    b.ToTable("Plans");
 
                     b.HasData(
                         new
@@ -700,40 +571,32 @@ namespace MealPrep.DAL.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
+                        .HasColumnType("int");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
+                        .HasColumnType("datetime2");
 
                     b.Property<decimal>("ExtraPrice")
                         .HasPrecision(10, 2)
-                        .HasColumnType("numeric(10,2)")
-                        .HasColumnName("extra_price");
+                        .HasColumnType("decimal(10,2)");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("boolean")
-                        .HasColumnName("is_active");
+                        .HasColumnType("bit");
 
                     b.Property<int>("MealsPerDay")
-                        .HasColumnType("integer")
-                        .HasColumnName("meals_per_day");
+                        .HasColumnType("int");
 
                     b.Property<int>("PlanId")
-                        .HasColumnType("integer")
-                        .HasColumnName("plan_id");
+                        .HasColumnType("int");
 
-                    b.HasKey("Id")
-                        .HasName("pk_plan_meal_tiers");
+                    b.HasKey("Id");
 
                     b.HasIndex("PlanId", "MealsPerDay")
-                        .IsUnique()
-                        .HasDatabaseName("ix_plan_meal_tiers_plan_id_meals_per_day");
+                        .IsUnique();
 
-                    b.ToTable("plan_meal_tiers", (string)null);
+                    b.ToTable("PlanMealTiers");
 
                     b.HasData(
                         new
@@ -796,244 +659,194 @@ namespace MealPrep.DAL.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
+                        .HasColumnType("int");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<Guid>("AppUserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("app_user_id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("CustomerEmail")
                         .IsRequired()
                         .HasMaxLength(120)
-                        .HasColumnType("character varying(120)")
-                        .HasColumnName("customer_email");
+                        .HasColumnType("nvarchar(120)");
 
                     b.Property<string>("CustomerName")
                         .IsRequired()
                         .HasMaxLength(80)
-                        .HasColumnType("character varying(80)")
-                        .HasColumnName("customer_name");
+                        .HasColumnType("nvarchar(80)");
 
                     b.Property<DateOnly?>("EndDate")
-                        .HasColumnType("date")
-                        .HasColumnName("end_date");
+                        .HasColumnType("date");
 
                     b.Property<int>("MealsPerDay")
-                        .HasColumnType("integer")
-                        .HasColumnName("meals_per_day");
+                        .HasColumnType("int");
 
                     b.Property<int>("PlanId")
-                        .HasColumnType("integer")
-                        .HasColumnName("plan_id");
+                        .HasColumnType("int");
 
                     b.Property<DateOnly>("StartDate")
-                        .HasColumnType("date")
-                        .HasColumnName("start_date");
+                        .HasColumnType("date");
 
                     b.Property<int>("Status")
-                        .HasColumnType("integer")
-                        .HasColumnName("status");
+                        .HasColumnType("int");
 
                     b.Property<decimal>("TotalAmount")
                         .HasPrecision(10, 2)
-                        .HasColumnType("numeric(10,2)")
-                        .HasColumnName("total_amount");
+                        .HasColumnType("decimal(10,2)");
 
                     b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at");
+                        .HasColumnType("datetime2");
 
-                    b.HasKey("Id")
-                        .HasName("pk_subscriptions");
+                    b.HasKey("Id");
 
-                    b.HasIndex("AppUserId")
-                        .HasDatabaseName("ix_subscriptions_app_user_id");
+                    b.HasIndex("AppUserId");
 
-                    b.HasIndex("PlanId")
-                        .HasDatabaseName("ix_subscriptions_plan_id");
+                    b.HasIndex("PlanId");
 
-                    b.ToTable("subscriptions", (string)null);
+                    b.ToTable("Subscriptions");
                 });
 
             modelBuilder.Entity("MealPrep.DAL.Entities.UserAllergy", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
+                        .HasColumnType("int");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("AllergyName")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("allergy_name");
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<int>("UserNutritionProfileId")
-                        .HasColumnType("integer")
-                        .HasColumnName("user_nutrition_profile_id");
+                        .HasColumnType("int");
 
-                    b.HasKey("Id")
-                        .HasName("pk_user_allergies");
+                    b.HasKey("Id");
 
-                    b.HasIndex("UserNutritionProfileId")
-                        .HasDatabaseName("ix_user_allergies_user_nutrition_profile_id");
+                    b.HasIndex("UserNutritionProfileId");
 
-                    b.ToTable("user_allergies", (string)null);
+                    b.ToTable("UserAllergies");
                 });
 
             modelBuilder.Entity("MealPrep.DAL.Entities.UserDislikedMeal", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
+                        .HasColumnType("int");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<Guid>("AppUserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("app_user_id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("MealId")
-                        .HasColumnType("integer")
-                        .HasColumnName("meal_id");
+                        .HasColumnType("int");
 
-                    b.HasKey("Id")
-                        .HasName("pk_user_disliked_meals");
+                    b.HasKey("Id");
 
-                    b.HasIndex("MealId")
-                        .HasDatabaseName("ix_user_disliked_meals_meal_id");
+                    b.HasIndex("MealId");
 
                     b.HasIndex("AppUserId", "MealId")
-                        .IsUnique()
-                        .HasDatabaseName("ix_user_disliked_meals_app_user_id_meal_id");
+                        .IsUnique();
 
-                    b.ToTable("user_disliked_meals", (string)null);
+                    b.ToTable("UserDislikedMeals");
                 });
 
             modelBuilder.Entity("MealPrep.DAL.Entities.UserNutritionProfile", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
+                        .HasColumnType("int");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<int>("ActivityLevel")
-                        .HasColumnType("integer")
-                        .HasColumnName("activity_level");
+                        .HasColumnType("int");
 
                     b.Property<Guid>("AppUserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("app_user_id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("DietPreference")
-                        .HasColumnType("integer")
-                        .HasColumnName("diet_preference");
+                        .HasColumnType("int");
 
                     b.Property<int>("Goal")
-                        .HasColumnType("integer")
-                        .HasColumnName("goal");
+                        .HasColumnType("int");
 
                     b.Property<int>("HeightCm")
-                        .HasColumnType("integer")
-                        .HasColumnName("height_cm");
+                        .HasColumnType("int");
 
                     b.Property<int>("MealsPerDay")
-                        .HasColumnType("integer")
-                        .HasColumnName("meals_per_day");
+                        .HasColumnType("int");
 
                     b.Property<string>("Notes")
                         .HasMaxLength(10000)
-                        .HasColumnType("character varying(10000)")
-                        .HasColumnName("notes");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("WeightKg")
                         .HasPrecision(5, 2)
-                        .HasColumnType("numeric(5,2)")
-                        .HasColumnName("weight_kg");
+                        .HasColumnType("decimal(5,2)");
 
-                    b.HasKey("Id")
-                        .HasName("pk_user_nutrition_profiles");
+                    b.HasKey("Id");
 
                     b.HasIndex("AppUserId")
-                        .IsUnique()
-                        .HasDatabaseName("ix_user_nutrition_profiles_app_user_id");
+                        .IsUnique();
 
-                    b.ToTable("user_nutrition_profiles", (string)null);
+                    b.ToTable("UserNutritionProfiles");
                 });
 
             modelBuilder.Entity("MealPrep.DAL.Entities.WeeklyMenu", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
+                        .HasColumnType("int");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<Guid?>("CreatedByUserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("created_by_user_id");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateOnly>("WeekEnd")
-                        .HasColumnType("date")
-                        .HasColumnName("week_end");
+                        .HasColumnType("date");
 
                     b.Property<DateOnly>("WeekStart")
-                        .HasColumnType("date")
-                        .HasColumnName("week_start");
+                        .HasColumnType("date");
 
-                    b.HasKey("Id")
-                        .HasName("pk_weekly_menus");
+                    b.HasKey("Id");
 
-                    b.HasIndex("CreatedByUserId")
-                        .HasDatabaseName("ix_weekly_menus_created_by_user_id");
+                    b.HasIndex("CreatedByUserId");
 
-                    b.ToTable("weekly_menus", (string)null);
+                    b.ToTable("WeeklyMenus");
                 });
 
             modelBuilder.Entity("MealPrep.DAL.Entities.WeeklyMenuItem", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
+                        .HasColumnType("int");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<int>("DayOfWeek")
-                        .HasColumnType("integer")
-                        .HasColumnName("day_of_week");
+                        .HasColumnType("int");
 
                     b.Property<int>("MealId")
-                        .HasColumnType("integer")
-                        .HasColumnName("meal_id");
+                        .HasColumnType("int");
 
                     b.Property<int>("WeeklyMenuId")
-                        .HasColumnType("integer")
-                        .HasColumnName("weekly_menu_id");
+                        .HasColumnType("int");
 
-                    b.HasKey("Id")
-                        .HasName("pk_weekly_menu_items");
+                    b.HasKey("Id");
 
-                    b.HasIndex("MealId")
-                        .HasDatabaseName("ix_weekly_menu_items_meal_id");
+                    b.HasIndex("MealId");
 
-                    b.HasIndex("WeeklyMenuId")
-                        .HasDatabaseName("ix_weekly_menu_items_weekly_menu_id");
+                    b.HasIndex("WeeklyMenuId");
 
-                    b.ToTable("weekly_menu_items", (string)null);
+                    b.ToTable("WeeklyMenuItems");
                 });
 
             modelBuilder.Entity("MealPrep.DAL.Entities.AppUser", b =>
@@ -1042,8 +855,7 @@ namespace MealPrep.DAL.Migrations
                         .WithMany("Users")
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_users_roles_role_id");
+                        .IsRequired();
 
                     b.Navigation("Role");
                 });
@@ -1053,15 +865,13 @@ namespace MealPrep.DAL.Migrations
                     b.HasOne("MealPrep.DAL.Entities.DeliverySlot", "DeliverySlot")
                         .WithMany()
                         .HasForeignKey("DeliverySlotId")
-                        .OnDelete(DeleteBehavior.SetNull)
-                        .HasConstraintName("fk_delivery_orders_delivery_slots_delivery_slot_id");
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("MealPrep.DAL.Entities.Subscription", "Subscription")
                         .WithMany("DeliveryOrders")
                         .HasForeignKey("SubscriptionId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_delivery_orders_subscriptions_subscription_id");
+                        .IsRequired();
 
                     b.Navigation("DeliverySlot");
 
@@ -1074,14 +884,12 @@ namespace MealPrep.DAL.Migrations
                         .WithMany("Items")
                         .HasForeignKey("DeliveryOrderId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_delivery_order_items_delivery_orders_delivery_order_id");
+                        .IsRequired();
 
                     b.HasOne("MealPrep.DAL.Entities.Meal", "Meal")
                         .WithMany()
                         .HasForeignKey("MealId")
-                        .OnDelete(DeleteBehavior.SetNull)
-                        .HasConstraintName("fk_delivery_order_items_meals_meal_id");
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("DeliveryOrder");
 
@@ -1094,15 +902,13 @@ namespace MealPrep.DAL.Migrations
                         .WithMany("NutritionLogs")
                         .HasForeignKey("AppUserId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_nutrition_logs_users_app_user_id");
+                        .IsRequired();
 
                     b.HasOne("MealPrep.DAL.Entities.Meal", "Meal")
                         .WithMany()
                         .HasForeignKey("MealId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_nutrition_logs_meals_meal_id");
+                        .IsRequired();
 
                     b.Navigation("AppUser");
 
@@ -1115,22 +921,19 @@ namespace MealPrep.DAL.Migrations
                         .WithMany("Orders")
                         .HasForeignKey("AppUserId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_orders_users_app_user_id");
+                        .IsRequired();
 
                     b.HasOne("MealPrep.DAL.Entities.DeliverySlot", "DeliverySlot")
                         .WithMany()
                         .HasForeignKey("DeliverySlotId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_orders_delivery_slots_delivery_slot_id");
+                        .IsRequired();
 
                     b.HasOne("MealPrep.DAL.Entities.Subscription", "Subscription")
                         .WithMany("Orders")
                         .HasForeignKey("SubscriptionId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_orders_subscriptions_subscription_id");
+                        .IsRequired();
 
                     b.Navigation("AppUser");
 
@@ -1145,15 +948,13 @@ namespace MealPrep.DAL.Migrations
                         .WithMany()
                         .HasForeignKey("MealId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_order_items_meals_meal_id");
+                        .IsRequired();
 
                     b.HasOne("MealPrep.DAL.Entities.Order", "Order")
                         .WithMany("Items")
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_order_items_orders_order_id");
+                        .IsRequired();
 
                     b.Navigation("Meal");
 
@@ -1166,15 +967,13 @@ namespace MealPrep.DAL.Migrations
                         .WithMany()
                         .HasForeignKey("AppUserId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_payments_users_app_user_id");
+                        .IsRequired();
 
                     b.HasOne("MealPrep.DAL.Entities.Subscription", "Subscription")
                         .WithMany("Payments")
                         .HasForeignKey("SubscriptionId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_payments_subscriptions_subscription_id");
+                        .IsRequired();
 
                     b.Navigation("AppUser");
 
@@ -1187,8 +986,7 @@ namespace MealPrep.DAL.Migrations
                         .WithMany("Transactions")
                         .HasForeignKey("PaymentId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_payment_transactions_payments_payment_id");
+                        .IsRequired();
 
                     b.Navigation("Payment");
                 });
@@ -1199,8 +997,7 @@ namespace MealPrep.DAL.Migrations
                         .WithMany("MealTiers")
                         .HasForeignKey("PlanId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_plan_meal_tiers_plans_plan_id");
+                        .IsRequired();
 
                     b.Navigation("Plan");
                 });
@@ -1211,15 +1008,13 @@ namespace MealPrep.DAL.Migrations
                         .WithMany("Subscriptions")
                         .HasForeignKey("AppUserId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_subscriptions_users_app_user_id");
+                        .IsRequired();
 
                     b.HasOne("MealPrep.DAL.Entities.Plan", "Plan")
                         .WithMany("Subscriptions")
                         .HasForeignKey("PlanId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_subscriptions_plans_plan_id");
+                        .IsRequired();
 
                     b.Navigation("AppUser");
 
@@ -1232,8 +1027,7 @@ namespace MealPrep.DAL.Migrations
                         .WithMany("Allergies")
                         .HasForeignKey("UserNutritionProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_user_allergies_user_nutrition_profiles_user_nutrition_profi");
+                        .IsRequired();
 
                     b.Navigation("UserNutritionProfile");
                 });
@@ -1244,15 +1038,13 @@ namespace MealPrep.DAL.Migrations
                         .WithMany("DislikedMeals")
                         .HasForeignKey("AppUserId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_user_disliked_meals_users_app_user_id");
+                        .IsRequired();
 
                     b.HasOne("MealPrep.DAL.Entities.Meal", "Meal")
                         .WithMany()
                         .HasForeignKey("MealId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_user_disliked_meals_meals_meal_id");
+                        .IsRequired();
 
                     b.Navigation("AppUser");
 
@@ -1265,8 +1057,7 @@ namespace MealPrep.DAL.Migrations
                         .WithOne("NutritionProfile")
                         .HasForeignKey("MealPrep.DAL.Entities.UserNutritionProfile", "AppUserId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_user_nutrition_profiles_users_app_user_id");
+                        .IsRequired();
 
                     b.Navigation("AppUser");
                 });
@@ -1276,8 +1067,7 @@ namespace MealPrep.DAL.Migrations
                     b.HasOne("MealPrep.DAL.Entities.AppUser", "CreatedBy")
                         .WithMany("WeeklyMenus")
                         .HasForeignKey("CreatedByUserId")
-                        .OnDelete(DeleteBehavior.SetNull)
-                        .HasConstraintName("fk_weekly_menus_users_created_by_user_id");
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("CreatedBy");
                 });
@@ -1288,15 +1078,13 @@ namespace MealPrep.DAL.Migrations
                         .WithMany()
                         .HasForeignKey("MealId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_weekly_menu_items_meals_meal_id");
+                        .IsRequired();
 
                     b.HasOne("MealPrep.DAL.Entities.WeeklyMenu", "WeeklyMenu")
                         .WithMany("Items")
                         .HasForeignKey("WeeklyMenuId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_weekly_menu_items_weekly_menus_weekly_menu_id");
+                        .IsRequired();
 
                     b.Navigation("Meal");
 

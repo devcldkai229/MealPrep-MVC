@@ -1,0 +1,209 @@
+@model MealPrep.Web.ViewModels.SubscriptionIndexVm
+@{
+    ViewData["Title"] = "Chọn Gói Đăng Ký";
+}
+
+<div class="container py-5">
+    <!-- Header Section -->
+    <div class="row mb-5">
+        <div class="col-12 text-center">
+            <div class="mb-3">
+                <i class="bi bi-calendar-check-fill" style="font-size: 3rem; color: var(--accent);"></i>
+            </div>
+            <h1 class="fw-bold mb-2 display-5">Chọn Gói Đăng Ký</h1>
+            <p class="text-muted lead">Chọn gói phù hợp với nhu cầu và lối sống của bạn</p>
+        </div>
+    </div>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Plans Grid -->
+    <div class="row g-4 justify-content-center">
+        @foreach (var plan in Model.Plans)
+        {
+            var isPopular = plan.Name == "Monthly";
+            <div class="col-md-6 col-lg-4">
+                <div class="app-card h-100 p-4 position-relative subscription-card @(isPopular ? "popular-plan" : "")" 
+                     style="transition: transform 0.3s ease, box-shadow 0.3s ease;">
+                    @if (isPopular)
+                    {
+                        <div class="popular-badge">
+                            <i class="bi bi-star-fill"></i> Phổ Biến
+                        </div>
+                    }
+                    
+                    <!-- Plan Header -->
+                    <div class="text-center mb-4">
+                        <div class="plan-icon mb-3">
+                            <div class="plan-icon-circle @(isPopular ? "bg-primary" : "bg-secondary")">
+                                <i class="bi bi-@(plan.Name == "Weekly" ? "calendar-week" : "calendar-month")"></i>
+                            </div>
+                        </div>
+                        <h3 class="fw-bold mb-2">@plan.Name</h3>
+                        <span class="badge bg-light text-dark px-3 py-2">
+                            <i class="bi bi-clock"></i> @plan.DurationDays ngày
+                        </span>
+                    </div>
+                    
+                    <p class="text-muted text-center mb-4 small">@plan.Description</p>
+
+                    <!-- Base Price -->
+                    <div class="text-center mb-4 p-3 bg-light rounded">
+                        <div class="text-muted small mb-1">Giá cơ bản</div>
+                        <div class="h4 fw-bold text-primary mb-0">@plan.BasePrice.ToString("N0") <small class="text-muted small">VNĐ</small></div>
+                    </div>
+
+                    <!-- Meal Tiers -->
+                    <div class="mb-4">
+                        <h5 class="fw-semibold mb-3 text-center">
+                            <i class="bi bi-utensils"></i> Chọn số bữa/ngày
+                        </h5>
+                        @foreach (var tier in plan.MealTiers.OrderBy(t => t.MealsPerDay))
+                        {
+                            var totalPrice = plan.BasePrice + tier.ExtraPrice;
+                            <form method="post" asp-action="Checkout" class="tier-form mb-3">
+                                <input type="hidden" name="PlanId" value="@plan.Id" />
+                                <input type="hidden" name="TierId" value="@tier.Id" />
+                                <input type="hidden" name="StartDate" value="@DateOnly.FromDateTime(DateTime.Today)" />
+                                
+                                <div class="tier-option p-3 border rounded-3 hover-lift" 
+                                     style="background: @(tier.ExtraPrice == 0 ? "#F0FDF4" : "#FFFFFF"); 
+                                            border-color: @(tier.ExtraPrice == 0 ? "#86EFAC" : "#E5E7EB") !important;
+                                            transition: all 0.2s ease;">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <div>
+                                            <strong class="d-flex align-items-center gap-2">
+                                                <i class="bi bi-@(tier.MealsPerDay == 1 ? "cup" : tier.MealsPerDay == 2 ? "cup-straw" : "cup-hot")"></i>
+                                                @tier.MealsPerDay bữa/ngày
+                                            </strong>
+                                            @if (tier.ExtraPrice > 0)
+                                            {
+                                                <span class="text-muted small d-block mt-1">
+                                                    <i class="bi bi-plus-circle"></i> +@tier.ExtraPrice.ToString("N0") VNĐ
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-success small d-block mt-1">
+                                                    <i class="bi bi-check-circle"></i> Không phụ phí
+                                                </span>
+                                            }
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                                        <div>
+                                            <div class="text-muted small">Tổng cộng</div>
+                                            <div class="h5 fw-bold text-primary mb-0">
+                                                @totalPrice.ToString("N0") <small class="text-muted small">VNĐ</small>
+                                            </div>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary btn-sm px-4">
+                                            Chọn <i class="bi bi-arrow-right ms-1"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        }
+                    </div>
+
+                    <!-- Features -->
+                    <div class="border-top pt-3">
+                        <ul class="list-unstyled mb-0 small text-muted">
+                            <li class="mb-2">
+                                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                Giao hàng tận nơi
+                            </li>
+                            <li class="mb-2">
+                                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                Chọn món theo tuần
+                            </li>
+                            <li>
+                                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                Hủy bất cứ lúc nào
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .subscription-card {
+        position: relative;
+    }
+    
+    .subscription-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 35px rgba(17,24,39,.1) !important;
+    }
+    
+    .popular-plan {
+        border: 2px solid var(--accent) !important;
+    }
+    
+    .popular-badge {
+        position: absolute;
+        top: -12px;
+        right: 20px;
+        background: linear-gradient(135deg, var(--accent), #22C55E);
+        color: white;
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+        z-index: 1;
+    }
+    
+    .plan-icon-circle {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 2rem;
+        margin: 0 auto;
+    }
+    
+    .tier-option:hover {
+        border-color: var(--accent) !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,.05);
+    }
+    
+    .hover-lift {
+        cursor: pointer;
+    }
+    
+    .hover-lift:hover {
+        transform: translateY(-2px);
+    }
+    
+    .tier-form {
+        margin-bottom: 0.75rem;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        // Add smooth scroll behavior
+        document.querySelectorAll('.tier-option').forEach(option => {
+            option.addEventListener('click', function(e) {
+                if (e.target.tagName !== 'BUTTON' && e.target.tagName !== 'I') {
+                    this.closest('form').querySelector('button[type="submit"]').click();
+                }
+            });
+        });
+    </script>
+}

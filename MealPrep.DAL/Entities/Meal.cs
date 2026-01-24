@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -17,9 +17,9 @@ namespace MealPrep.DAL.Entities
         [Required, StringLength(255)]
         public string Name { get; set; } = string.Empty;
 
-        public string[] Ingredients { get;set; } = Array.Empty<string>();
+        public string Ingredients { get; set; } // JSON array of strings
 
-        public string[] Images { get;set; } = Array.Empty<string>();
+        public string Images { get;set; } // JSON array of image URLs
 
         [StringLength(10000)]
         public string? Description { get; set; }

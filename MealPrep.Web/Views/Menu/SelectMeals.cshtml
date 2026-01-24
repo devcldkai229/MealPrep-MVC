@@ -1,0 +1,298 @@
+@model MealPrep.Web.ViewModels.WeeklySelectionVm
+@{
+    ViewData["Title"] = "Chọn Món Ăn Cho Tuần";
+}
+
+<div class="container py-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <div class="header-icon">
+                    <i class="bi bi-calendar3-range" style="font-size: 2.5rem; color: var(--accent);"></i>
+                </div>
+                <div>
+                    <h2 class="fw-bold mb-1">Chọn Món Ăn Cho Tuần</h2>
+                    <p class="text-muted mb-0">
+                        <i class="bi bi-utensils"></i> Bạn được chọn <strong class="text-primary">@Model.MealsPerDay bữa/ngày</strong>
+                        @if (Model.UserAllergies.Any())
+                        {
+                            <span class="badge bg-warning text-dark ms-2">
+                                <i class="bi bi-exclamation-triangle"></i> Dị ứng: @string.Join(", ", Model.UserAllergies)
+                            </span>
+                        }
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alerts -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Weekly Selection Form -->
+    <form id="mealSelectionForm" method="post" asp-action="SelectMeals">
+        @Html.AntiForgeryToken()
+        
+        <div class="row g-4">
+            @foreach (var daySlot in Model.DailySlots)
+            {
+                var isWeekend = daySlot.DayOfWeek >= 6;
+                <div class="col-12">
+                    <div class="app-card p-4 day-card @(isWeekend ? "weekend-card" : "")" 
+                         style="border-left: 4px solid @(isWeekend ? "var(--accent)" : "var(--primary)");">
+                        <!-- Day Header -->
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="day-number-circle @(isWeekend ? "bg-accent" : "bg-primary")">
+                                    @daySlot.DayOfWeek
+                                </div>
+                                <div>
+                                    <h5 class="fw-bold mb-1">@daySlot.DayName</h5>
+                                    <small class="text-muted">
+                                        <i class="bi bi-calendar3"></i> @daySlot.Date.ToString("dd/MM/yyyy")
+                                    </small>
+                                </div>
+                            </div>
+                            <span class="badge bg-primary px-3 py-2">
+                                <i class="bi bi-utensils"></i> @daySlot.SlotsCount bữa
+                            </span>
+                        </div>
+
+                        <!-- Meal Selection Dropdowns -->
+                        <div class="row g-3" id="day-@daySlot.Date.DayNumber">
+                            @for (int i = 0; i < daySlot.SlotsCount; i++)
+                            {
+                                var mealType = i == 0 ? "Sáng" : i == 1 ? "Trưa" : "Tối";
+                                var mealIcon = i == 0 ? "sunrise" : i == 1 ? "sun" : "moon";
+                                
+                                <div class="col-md-6 col-lg-4">
+                                    <label class="form-label fw-semibold mb-2">
+                                        <i class="bi bi-@mealIcon text-warning"></i> 
+                                        Bữa @mealType <span class="text-danger">*</span>
+                                    </label>
+                                    <select class="form-select meal-select shadow-sm" 
+                                            name="selections[@daySlot.Date.DayNumber].SelectedMealIds[@i]"
+                                            data-date="@daySlot.Date.DayNumber"
+                                            data-slot="@i"
+                                            style="border-radius: 10px; border: 2px solid #E5E7EB; transition: all 0.2s;">
+                                        <option value="">-- Chọn món --</option>
+                                        @foreach (var meal in daySlot.AvailableMeals)
+                                        {
+                                            var optionText = $"{meal.Name} ({meal.Calories} cal)";
+                                            if (meal.HasAllergen)
+                                            {
+                                                optionText = $"⚠️ {optionText}";
+                                            }
+                                            <option value="@meal.MealId" 
+                                                    data-allergen="@(meal.HasAllergen ? "true" : "false")"
+                                                    data-warning="@meal.AllergenWarning"
+                                                    data-calories="@meal.Calories"
+                                                    data-protein="@meal.Protein"
+                                                    data-carbs="@meal.Carbs"
+                                                    data-fat="@meal.Fat"
+                                                    title="@meal.AllergenWarning">
+                                                @optionText
+                                            </option>
+                                        }
+                                    </select>
+                                    
+                                    <!-- Allergen Warning -->
+                                    @if (daySlot.AvailableMeals.Any(m => m.HasAllergen))
+                                    {
+                                        <small class="text-warning d-block mt-2" id="warning-@daySlot.Date.DayNumber-@i" style="display:none;">
+                                            <i class="bi bi-exclamation-triangle-fill"></i> 
+                                            <span class="warning-text"></span>
+                                        </small>
+                                    }
+                                    
+                                    <!-- Nutrition Info -->
+                                    <div class="nutrition-info mt-2" id="nutrition-@daySlot.Date.DayNumber-@i" style="display:none;">
+                                        <div class="d-flex gap-2 flex-wrap">
+                                            <span class="badge bg-info">
+                                                <i class="bi bi-fire"></i> <span class="calories-text"></span> cal
+                                            </span>
+                                            <span class="badge bg-primary">
+                                                <i class="bi bi-droplet"></i> <span class="protein-text"></span>g protein
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+
+                        <input type="hidden" name="selections[@daySlot.Date.DayNumber].Date" value="@daySlot.Date.ToString("yyyy-MM-dd")" />
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="row mt-5">
+            <div class="col-12">
+                <div class="app-card p-4 bg-light">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                        <a asp-controller="Dashboard" asp-action="Index" class="btn btn-outline-secondary btn-lg">
+                            <i class="bi bi-arrow-left"></i> Quay lại Dashboard
+                        </a>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="text-muted small d-none d-md-block">
+                                <i class="bi bi-info-circle"></i> Bạn có thể thay đổi lựa chọn bất cứ lúc nào
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-lg px-5">
+                                <i class="bi bi-check-circle-fill"></i> Lưu Lựa Chọn
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<style>
+    .day-card {
+        transition: all 0.3s ease;
+    }
+    
+    .day-card:hover {
+        box-shadow: 0 12px 30px rgba(17,24,39,.08) !important;
+        transform: translateY(-2px);
+    }
+    
+    .weekend-card {
+        background: linear-gradient(135deg, #FFFFFF 0%, #F9FAFB 100%);
+    }
+    
+    .day-number-circle {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 700;
+        font-size: 1.25rem;
+    }
+    
+    .bg-accent {
+        background: var(--accent) !important;
+    }
+    
+    .meal-select:focus {
+        border-color: var(--accent) !important;
+        box-shadow: 0 0 0 0.2rem rgba(22, 163, 74, 0.25) !important;
+    }
+    
+    .meal-select option[data-allergen="true"] {
+        background-color: #FEF3C7;
+    }
+    
+    .nutrition-info {
+        animation: fadeIn 0.3s ease;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-5px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .header-icon {
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+    }
+</style>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('mealSelectionForm');
+            const mealSelects = document.querySelectorAll('.meal-select');
+
+            // Show allergen warnings and nutrition info when meal is selected
+            mealSelects.forEach(select => {
+                select.addEventListener('change', function() {
+                    const option = this.options[this.selectedIndex];
+                    const hasAllergen = option.dataset.allergen === 'true';
+                    const warning = option.dataset.warning || '';
+                    const date = this.dataset.date;
+                    const slot = this.dataset.slot;
+                    
+                    // Allergen warning
+                    const warningEl = document.getElementById(`warning-${date}-${slot}`);
+                    if (hasAllergen && warningEl) {
+                        warningEl.querySelector('.warning-text').textContent = warning;
+                        warningEl.style.display = 'block';
+                    } else if (warningEl) {
+                        warningEl.style.display = 'none';
+                    }
+                    
+                    // Nutrition info
+                    const nutritionEl = document.getElementById(`nutrition-${date}-${slot}`);
+                    if (option.value && nutritionEl) {
+                        const calories = option.dataset.calories || '0';
+                        const protein = option.dataset.protein || '0';
+                        
+                        nutritionEl.querySelector('.calories-text').textContent = calories;
+                        nutritionEl.querySelector('.protein-text').textContent = protein;
+                        nutritionEl.style.display = 'block';
+                    } else if (nutritionEl) {
+                        nutritionEl.style.display = 'none';
+                    }
+                    
+                    // Visual feedback
+                    if (option.value) {
+                        this.style.borderColor = hasAllergen ? '#F59E0B' : '#22C55E';
+                    } else {
+                        this.style.borderColor = '#E5E7EB';
+                    }
+                });
+            });
+
+            // Form submission with loading state
+            form.addEventListener('submit', function(e) {
+                const submitBtn = form.querySelector('button[type="submit"]');
+                const originalHtml = submitBtn.innerHTML;
+                
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang lưu...';
+                
+                // Re-enable after 10 seconds as fallback
+                setTimeout(() => {
+                    if (submitBtn.disabled) {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = originalHtml;
+                    }
+                }, 10000);
+            });
+            
+            // Add smooth scroll to first empty select on page load
+            const firstEmptySelect = Array.from(mealSelects).find(s => !s.value);
+            if (firstEmptySelect) {
+                setTimeout(() => {
+                    firstEmptySelect.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 300);
+            }
+        });
+    </script>
+}

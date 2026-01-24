@@ -1,0 +1,8 @@
+using MealPrep.DAL.Entities;
+
+namespace MealPrep.BLL.Services;
+
+public interface IMomoService
+{
+    Task<string> CreatePaymentRequestAsync(Payment payment, string returnUrl, string ipnUrl);
+}

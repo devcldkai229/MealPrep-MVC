@@ -57,6 +57,7 @@
                 @if (User.Identity?.IsAuthenticated == true)
                 {
                     <li class="nav-item"><a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Dashboard" ? "active" : "")" asp-controller="Dashboard" asp-action="Index">Bảng Điều Khiển</a></li>
+                    <li class="nav-item"><a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Subscription" ? "active" : "")" asp-controller="Subscription" asp-action="Index">Đăng Ký</a></li>
                     <li class="nav-item"><a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Meal" ? "active" : "")" asp-controller="Meal" asp-action="Index">Món Ăn</a></li>
                     <li class="nav-item"><a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "NutritionLog" ? "active" : "")" asp-controller="NutritionLog" asp-action="Index">Dinh Dưỡng</a></li>
                 }
@@ -80,8 +81,8 @@
                             <li><a class="dropdown-item" asp-controller="Auth" asp-action="Profile">
                                 <i class="bi bi-person"></i> Hồ Sơ
                             </a></li>
-                            <li><a class="dropdown-item" asp-controller="Subscription" asp-action="Create">
-                                <i class="bi bi-calendar-check"></i> Đăng Ký Của Tôi
+                            <li><a class="dropdown-item" asp-controller="Subscription" asp-action="Index">
+                                <i class="bi bi-calendar-check"></i> Đăng Ký Gói
                             </a></li>
                             <li><a class="dropdown-item" asp-controller="NutritionLog" asp-action="Index">
                                 <i class="bi bi-heart-pulse"></i> Nhật Ký Dinh Dưỡng

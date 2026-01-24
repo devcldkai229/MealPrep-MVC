@@ -14,6 +14,8 @@ namespace MealPrep.BLL.Extensions
             services.AddScoped<IMealService, MealService>();
             services.AddScoped<ISubscriptionService, SubscriptionService>();
             services.AddScoped<INutritionLogService, NutritionLogService>();
+            services.AddScoped<IMomoService, MomoPaymentService>();
+            services.AddHttpClient<MomoPaymentService>();
 
             return services;
         }
