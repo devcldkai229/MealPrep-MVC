@@ -235,6 +235,22 @@
                     </a>
                 </div>
                 
+                <div class="admin-nav-section mt-4">Vận Hành</div>
+                <div class="admin-nav-item">
+                    <a class="admin-nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "DeliveryProcessing" ? "active" : "")" 
+                       asp-controller="DeliveryProcessing" asp-action="Index">
+                        <i class="bi bi-boxes"></i>
+                        <span>Xử Lý Giao Hàng</span>
+                    </a>
+                </div>
+                <div class="admin-nav-item">
+                    <a class="admin-nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "MealFeedback" && ViewContext.RouteData.Values["Action"]?.ToString() == "AdminReport" ? "active" : "")" 
+                       asp-controller="MealFeedback" asp-action="AdminReport">
+                        <i class="bi bi-star-half"></i>
+                        <span>Báo Cáo Feedback</span>
+                    </a>
+                </div>
+                
                 <div class="admin-nav-section mt-4">Hệ Thống</div>
                 <div class="admin-nav-item">
                     <a class="admin-nav-link" asp-controller="Auth" asp-action="Logout">

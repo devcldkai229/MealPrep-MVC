@@ -1,0 +1,139 @@
+@model List<MealPrep.BLL.DTOs.MealFeedbackReportDto>
+
+@{
+    ViewData["Title"] = "Low Rated Meals Report";
+    Layout = "_AdminLayout";
+    var minRatings = ViewBag.MinRatings as int? ?? 5;
+}
+
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h2 class="fw-bold">📊 Low Rated Meals Report</h2>
+            <p class="text-muted">Món ăn đang bị đánh giá thấp - cần cải thiện</p>
+        </div>
+        <div class="col-md-6 text-end">
+            <a asp-controller="Admin" asp-action="Index" class="btn btn-secondary">← Back to Admin</a>
+        </div>
+    </div>
+
+    <!-- Filter -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Minimum Ratings Required</label>
+                    <select name="minRatings" class="form-select">
+                        <option value="1" selected="@(minRatings == 1)">1+ ratings</option>
+                        <option value="5" selected="@(minRatings == 5)">5+ ratings</option>
+                        <option value="10" selected="@(minRatings == 10)">10+ ratings</option>
+                        <option value="20" selected="@(minRatings == 20)">20+ ratings</option>
+                    </select>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary">Filter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Report Table -->
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title mb-3">Found: @Model.Count meals</h5>
+            
+            @if (Model.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Meal ID</th>
+                                <th>Meal Name</th>
+                                <th class="text-center">Total Ratings</th>
+                                <th class="text-center">Avg Stars</th>
+                                <th class="text-center">Low (1-2⭐)</th>
+                                <th class="text-center">High (4-5⭐)</th>
+                                <th class="text-center">Block Requests</th>
+                                <th>Common Issues</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var meal in Model)
+                            {
+                                var avgStarsClass = meal.AverageStars >= 4 ? "text-success" 
+                                    : meal.AverageStars >= 3 ? "text-warning" : "text-danger";
+                                
+                                <tr>
+                                    <td><strong>@meal.MealId</strong></td>
+                                    <td>
+                                        <strong>@meal.MealName</strong>
+                                    </td>
+                                    <td class="text-center">@meal.TotalRatings</td>
+                                    <td class="text-center">
+                                        <span class="badge @avgStarsClass">
+                                            @meal.AverageStars.ToString("N1") ⭐
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-danger">@meal.LowRatingsCount</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-success">@meal.HighRatingsCount</span>
+                                    </td>
+                                    <td class="text-center">
+                                        @if (meal.BlockRequestsCount > 0)
+                                        {
+                                            <span class="badge bg-warning text-dark">🚫 @meal.BlockRequestsCount</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">0</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (meal.CommonNegativeTags.Any())
+                                        {
+                                            @foreach (var tag in meal.CommonNegativeTags)
+                                            {
+                                                <span class="badge bg-secondary me-1">@tag</span>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-success">
+                    <strong>🎉 Tuyệt vời!</strong> Không có món nào bị đánh giá thấp với tiêu chí @minRatings+ ratings.
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Recommendations -->
+    @if (Model.Any())
+    {
+        <div class="card mt-4">
+            <div class="card-header bg-warning">
+                <h5 class="mb-0">⚠️ Recommendations</h5>
+            </div>
+            <div class="card-body">
+                <ul>
+                    <li><strong>Ưu tiên cải thiện:</strong> Các món có nhiều low ratings và block requests</li>
+                    <li><strong>Phân tích tags:</strong> Xem common issues để hiểu vấn đề cụ thể (mặn, khô, ít đạm...)</li>
+                    <li><strong>Test recipe:</strong> Thử nghiệm lại công thức nấu và điều chỉnh</li>
+                    <li><strong>Consider removal:</strong> Nếu món có quá nhiều block requests, cân nhắc loại bỏ khỏi menu</li>
+                </ul>
+            </div>
+        </div>
+    }
+</div>

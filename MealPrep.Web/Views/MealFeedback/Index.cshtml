@@ -1,0 +1,180 @@
+@model List<MealPrep.BLL.DTOs.PendingFeedbackDto>
+
+@{
+    ViewData["Title"] = "Meal Feedback";
+    var targetDate = ViewBag.TargetDate as DateOnly? ?? DateOnly.FromDateTime(DateTime.Today.AddDays(-1));
+    var isYesterday = ViewBag.IsYesterday as bool? ?? true;
+}
+
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="fw-bold">⭐ Đánh giá món ăn</h2>
+            <p class="text-muted">
+                @if (isYesterday)
+                {
+                    <span>Hôm qua bạn ăn có ngon không? Chia sẻ trải nghiệm của bạn!</span>
+                }
+                else
+                {
+                    <span>Đánh giá món ăn ngày @targetDate.ToString("dd/MM/yyyy")</span>
+                }
+            </p>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["InfoMessage"] != null)
+    {
+        <div class="alert alert-info alert-dismissible fade show">
+            @TempData["InfoMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (Model.Any())
+    {
+        <div class="row g-4">
+            @foreach (var meal in Model)
+            {
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        @if (!string.IsNullOrEmpty(meal.MealImageUrl))
+                        {
+                            <img src="@meal.MealImageUrl" class="card-img-top" alt="@meal.MealName" 
+                                 style="height: 200px; object-fit: cover;">
+                        }
+                        <div class="card-body">
+                            <h5 class="card-title">@meal.MealName</h5>
+                            <div class="mb-3">
+                                <small class="text-muted">
+                                    <i class="bi bi-fire"></i> @meal.Calories kcal |
+                                    <i class="bi bi-egg"></i> P: @meal.Protein.ToString("N1")g |
+                                    <i class="bi bi-bread-slice"></i> C: @meal.Carbs.ToString("N1")g |
+                                    <i class="bi bi-droplet"></i> F: @meal.Fat.ToString("N1")g
+                                </small>
+                            </div>
+
+                            <form asp-action="SubmitRating" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="deliveryOrderItemId" value="@meal.DeliveryOrderItemId" />
+                                <input type="hidden" name="mealId" value="@meal.MealId" />
+                                <input type="hidden" name="deliveryDate" value="@meal.DeliveryDate" />
+
+                                <!-- Star Rating -->
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Đánh giá của bạn:</label>
+                                    <div class="btn-group w-100" role="group">
+                                        @for (int i = 1; i <= 5; i++)
+                                        {
+                                            <input type="radio" class="btn-check" name="stars" 
+                                                   id="star_@(meal.DeliveryOrderItemId)_@i" value="@i" required>
+                                            <label class="btn btn-outline-warning" for="star_@(meal.DeliveryOrderItemId)_@i">
+                                                @i ⭐
+                                            </label>
+                                        }
+                                    </div>
+                                </div>
+
+                                <!-- Tags -->
+                                <div class="mb-3">
+                                    <label class="form-label">Tags (tùy chọn):</label>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary tag-btn" 
+                                                data-tag="Ngon">Ngon</button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary tag-btn" 
+                                                data-tag="Hơi mặn">Hơi mặn</button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary tag-btn" 
+                                                data-tag="Khô">Khô</button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary tag-btn" 
+                                                data-tag="Ít đạm">Ít đạm</button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary tag-btn" 
+                                                data-tag="Quá nhiều dầu">Quá nhiều dầu</button>
+                                    </div>
+                                    <input type="hidden" name="tags" id="tags_@meal.DeliveryOrderItemId" />
+                                </div>
+
+                                <!-- Comments -->
+                                <div class="mb-3">
+                                    <label class="form-label">Ghi chú (tùy chọn):</label>
+                                    <textarea name="comments" class="form-control" rows="2" 
+                                              placeholder="Chia sẻ thêm về trải nghiệm của bạn..."></textarea>
+                                </div>
+
+                                <!-- Block Option -->
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" 
+                                               name="requestBlock" id="block_@meal.DeliveryOrderItemId">
+                                        <label class="form-check-label" for="block_@meal.DeliveryOrderItemId">
+                                            🚫 Không gợi ý món này cho tôi nữa (nếu rating ≤ 2 sao)
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="btn btn-primary w-100">
+                                    Gửi đánh giá
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <h4>🎉 Tuyệt vời!</h4>
+                <p class="text-muted">Bạn đã đánh giá tất cả các món ăn ngày @targetDate.ToString("dd/MM/yyyy")</p>
+                <a asp-action="MySummary" class="btn btn-primary">Xem thống kê của tôi</a>
+            </div>
+        </div>
+    }
+
+    <!-- Quick Links -->
+    <div class="mt-4 text-center">
+        <a asp-action="MySummary" class="btn btn-outline-primary me-2">
+            📊 Xem thống kê của tôi
+        </a>
+        <a asp-controller="Dashboard" asp-action="Index" class="btn btn-outline-secondary">
+            ← Về Dashboard
+        </a>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Handle tag selection
+        document.querySelectorAll('.tag-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                this.classList.toggle('active');
+                this.classList.toggle('btn-outline-secondary');
+                this.classList.toggle('btn-secondary');
+                
+                // Update hidden input
+                const card = this.closest('.card');
+                const hiddenInput = card.querySelector('input[name="tags"]');
+                const activeTags = Array.from(card.querySelectorAll('.tag-btn.active'))
+                    .map(b => b.dataset.tag);
+                hiddenInput.value = activeTags.join(',');
+            });
+        });
+    </script>
+}

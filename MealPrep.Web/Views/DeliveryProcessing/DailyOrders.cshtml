@@ -1,0 +1,170 @@
+@model List<MealPrep.BLL.DTOs.DeliveryOrderDetailDto>
+@using MealPrep.DAL.Enums
+
+@{
+    ViewData["Title"] = "Daily Orders";
+    Layout = "_AdminLayout";
+    var selectedDate = ViewBag.SelectedDate as DateOnly? ?? DateOnly.FromDateTime(DateTime.Today);
+    var selectedStatus = ViewBag.SelectedStatus as OrderStatus?;
+}
+
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h2 class="fw-bold">📋 Daily Orders - @selectedDate.ToString("dd/MM/yyyy")</h2>
+        </div>
+        <div class="col-md-6 text-end">
+            <a asp-action="Index" class="btn btn-secondary">← Back to Dashboard</a>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Date</label>
+                    <input type="date" name="date" class="form-control" 
+                           value="@selectedDate.ToString("yyyy-MM-dd")">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Status</label>
+                    <select name="status" class="form-select">
+                        <option value="">All Status</option>
+                        <option value="@OrderStatus.Planned" selected="@(selectedStatus == OrderStatus.Planned)">Planned</option>
+                        <option value="@OrderStatus.Preparing" selected="@(selectedStatus == OrderStatus.Preparing)">Preparing</option>
+                        <option value="@OrderStatus.Delivering" selected="@(selectedStatus == OrderStatus.Delivering)">Delivering</option>
+                        <option value="@OrderStatus.Delivered" selected="@(selectedStatus == OrderStatus.Delivered)">Delivered</option>
+                        <option value="@OrderStatus.Cancelled" selected="@(selectedStatus == OrderStatus.Cancelled)">Cancelled</option>
+                    </select>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2">Filter</button>
+                    <a asp-action="DailyOrders" class="btn btn-outline-secondary">Reset</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Orders Table -->
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title mb-3">Total: @Model.Count orders</h5>
+            
+            @if (Model.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Order #</th>
+                                <th>Customer</th>
+                                <th>Contact</th>
+                                <th>Meals</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var order in Model)
+                            {
+                                <tr>
+                                    <td><strong>#@order.Id</strong></td>
+                                    <td>
+                                        <div>@order.CustomerName</div>
+                                        <small class="text-muted">@order.CustomerEmail</small>
+                                    </td>
+                                    <td>@(order.CustomerPhone ?? "N/A")</td>
+                                    <td>
+                                        @foreach (var item in order.Items)
+                                        {
+                                            <div class="small">• @item.MealName (x@item.Quantity)</div>
+                                        }
+                                    </td>
+                                    <td><strong>@order.TotalAmount.ToString("N0") đ</strong></td>
+                                    <td>
+                                        @switch (order.Status)
+                                        {
+                                            case OrderStatus.Planned:
+                                                <span class="badge bg-info">Planned</span>
+                                                break;
+                                            case OrderStatus.Preparing:
+                                                <span class="badge bg-warning">Preparing</span>
+                                                break;
+                                            case OrderStatus.Delivering:
+                                                <span class="badge bg-primary">Delivering</span>
+                                                break;
+                                            case OrderStatus.Delivered:
+                                                <span class="badge bg-success">Delivered</span>
+                                                break;
+                                            case OrderStatus.Cancelled:
+                                                <span class="badge bg-danger">Cancelled</span>
+                                                break;
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            @if (order.Status != OrderStatus.Delivered && order.Status != OrderStatus.Cancelled)
+                                            {
+                                                <form asp-action="UpdateStatus" method="post" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="deliveryOrderId" value="@order.Id" />
+                                                    <input type="hidden" name="returnDate" value="@selectedDate" />
+                                                    
+                                                    @if (order.Status == OrderStatus.Planned)
+                                                    {
+                                                        <button type="submit" name="newStatus" value="@OrderStatus.Preparing" 
+                                                                class="btn btn-sm btn-warning" title="Mark as Preparing">
+                                                            Preparing
+                                                        </button>
+                                                    }
+                                                    else if (order.Status == OrderStatus.Preparing)
+                                                    {
+                                                        <button type="submit" name="newStatus" value="@OrderStatus.Delivering" 
+                                                                class="btn btn-sm btn-primary" title="Mark as Delivering">
+                                                            Delivering
+                                                        </button>
+                                                    }
+                                                    else if (order.Status == OrderStatus.Delivering)
+                                                    {
+                                                        <button type="submit" name="newStatus" value="@OrderStatus.Delivered" 
+                                                                class="btn btn-sm btn-success" title="Mark as Delivered">
+                                                            Delivered
+                                                        </button>
+                                                    }
+                                                </form>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    Không có đơn hàng nào cho ngày @selectedDate.ToString("dd/MM/yyyy")
+                </div>
+            }
+        </div>
+    </div>
+</div>

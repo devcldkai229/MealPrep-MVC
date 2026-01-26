@@ -1,0 +1,133 @@
+@model MealPrep.BLL.DTOs.UserFeedbackSummaryDto
+
+@{
+    ViewData["Title"] = "My Feedback Summary";
+}
+
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h2 class="fw-bold">📊 Thống kê đánh giá của tôi</h2>
+        </div>
+        <div class="col-md-6 text-end">
+            <a asp-action="Index" class="btn btn-primary">⭐ Đánh giá món mới</a>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white h-100">
+                <div class="card-body text-center">
+                    <h6>Total Ratings</h6>
+                    <h2>@Model.TotalRatings</h2>
+                    <small>Đánh giá</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-success text-white h-100">
+                <div class="card-body text-center">
+                    <h6>Average Rating</h6>
+                    <h2>@Model.AverageStars.ToString("N1") ⭐</h2>
+                    <small>Trung bình</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-info text-white h-100">
+                <div class="card-body text-center">
+                    <h6>Meals Consumed</h6>
+                    <h2>@Model.TotalMealsConsumed</h2>
+                    <small>Món đã ăn</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card bg-warning text-white h-100">
+                <div class="card-body text-center">
+                    <h6>Disliked Meals</h6>
+                    <h2>@Model.DislikedMealsCount</h2>
+                    <small>Món đã chặn</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Favorite Tags -->
+    @if (Model.FavoriteTags.Any())
+    {
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">❤️ Tags yêu thích của bạn</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex flex-wrap gap-2">
+                    @foreach (var tag in Model.FavoriteTags)
+                    {
+                        <span class="badge bg-primary fs-6 px-3 py-2">@tag</span>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Insights -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">💡 Insights</h5>
+        </div>
+        <div class="card-body">
+            @if (Model.AverageStars >= 4)
+            {
+                <div class="alert alert-success">
+                    <strong>🎉 Tuyệt vời!</strong> Bạn có trải nghiệm rất tích cực với các món ăn của chúng tôi!
+                    Rating trung bình của bạn là @Model.AverageStars.ToString("N1") sao.
+                </div>
+            }
+            else if (Model.AverageStars >= 3)
+            {
+                <div class="alert alert-info">
+                    <strong>👍 Tốt!</strong> Bạn có trải nghiệm khá tốt với rating trung bình @Model.AverageStars.ToString("N1") sao.
+                    Chúng tôi sẽ cố gắng cải thiện hơn nữa!
+                </div>
+            }
+            else if (Model.TotalRatings > 0)
+            {
+                <div class="alert alert-warning">
+                    <strong>😔 Xin lỗi!</strong> Rating trung bình của bạn là @Model.AverageStars.ToString("N1") sao.
+                    Chúng tôi rất muốn cải thiện trải nghiệm của bạn. Hãy chia sẻ thêm feedback!
+                </div>
+            }
+
+            @if (Model.DislikedMealsCount > 0)
+            {
+                <div class="alert alert-info mt-3">
+                    <strong>🚫 Món đã chặn:</strong> Bạn đã chặn @Model.DislikedMealsCount món.
+                    Chúng tôi sẽ không gợi ý những món này cho bạn nữa.
+                </div>
+            }
+
+            @if (Model.TotalRatings == 0)
+            {
+                <div class="alert alert-secondary">
+                    <strong>👋 Chào mừng!</strong> Bạn chưa có đánh giá nào.
+                    Hãy bắt đầu đánh giá món ăn để giúp chúng tôi cải thiện dịch vụ!
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="mt-4 text-center">
+        <a asp-action="Index" class="btn btn-primary btn-lg me-2">
+            ⭐ Đánh giá món mới
+        </a>
+        <a asp-controller="Dashboard" asp-action="Index" class="btn btn-outline-secondary btn-lg">
+            ← Về Dashboard
+        </a>
+    </div>
+</div>

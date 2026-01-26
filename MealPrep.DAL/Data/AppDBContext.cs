@@ -36,6 +36,9 @@ namespace MealPrep.DAL.Data
         public DbSet<UserNutritionProfile> UserNutritionProfiles => Set<UserNutritionProfile>();
         public DbSet<UserAllergy> UserAllergies => Set<UserAllergy>();
         public DbSet<UserDislikedMeal> UserDislikedMeals => Set<UserDislikedMeal>();
+        
+        // New feedback entity
+        public DbSet<MealRating> MealRatings => Set<MealRating>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -247,6 +250,29 @@ namespace MealPrep.DAL.Data
                 .HasOne(x => x.Order)
                 .WithMany(x => x.Items)
                 .HasForeignKey(x => x.OrderId);
+
+            // MealRating
+            modelBuilder.Entity<MealRating>(entity =>
+            {
+                // Unique constraint: User chỉ rate 1 lần mỗi DeliveryOrderItem
+                entity.HasIndex(r => new { r.AppUserId, r.DeliveryOrderItemId })
+                    .IsUnique();
+
+                entity.HasOne(r => r.AppUser)
+                    .WithMany()
+                    .HasForeignKey(r => r.AppUserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(r => r.DeliveryOrderItem)
+                    .WithMany()
+                    .HasForeignKey(r => r.DeliveryOrderItemId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(r => r.Meal)
+                    .WithMany()
+                    .HasForeignKey(r => r.MealId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
 
             // Use centralized seed data
             SeedData.SeedAll(modelBuilder);

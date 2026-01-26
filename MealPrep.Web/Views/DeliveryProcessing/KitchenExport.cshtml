@@ -1,0 +1,140 @@
+@model MealPrep.BLL.DTOs.KitchenExportDto
+
+@{
+    ViewData["Title"] = "Kitchen Export";
+    Layout = "_AdminLayout";
+}
+
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h2 class="fw-bold">🍳 Kitchen Export - @Model.DeliveryDate.ToString("dd/MM/yyyy")</h2>
+        </div>
+        <div class="col-md-6 text-end">
+            <a asp-action="DownloadKitchenList" asp-route-date="@Model.DeliveryDate" 
+               class="btn btn-success me-2">
+                <i class="bi bi-download"></i> Download CSV
+            </a>
+            <a asp-action="Index" class="btn btn-secondary">← Back</a>
+        </div>
+    </div>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Summary Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h6>Total Orders</h6>
+                    <h3>@Model.TotalDeliveryOrders</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h6>Total Portions</h6>
+                    <h3>@Model.TotalMealPortions</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h6>Total Revenue</h6>
+                    <h3>@Model.TotalRevenue.ToString("N0")đ</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h6>Unique Meals</h6>
+                    <h3>@Model.Items.Count</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kitchen List Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">📋 Danh sách món cần nấu</h5>
+            <small class="text-muted">Generated at: @Model.GeneratedAt.ToString("dd/MM/yyyy HH:mm:ss")</small>
+        </div>
+        <div class="card-body">
+            @if (Model.Items.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Meal Name</th>
+                                <th class="text-center">Total Quantity</th>
+                                <th class="text-end">Unit Price</th>
+                                <th class="text-center">Calories</th>
+                                <th>Ingredients</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.Items)
+                            {
+                                <tr>
+                                    <td><strong>@item.MealId</strong></td>
+                                    <td>
+                                        <strong>@item.MealName</strong>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-primary fs-6">@item.TotalQuantity suất</span>
+                                    </td>
+                                    <td class="text-end">@item.UnitPrice.ToString("N0")đ</td>
+                                    <td class="text-center">@item.Calories kcal</td>
+                                    <td>
+                                        <small class="text-muted">@item.Ingredients</small>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot class="table-light">
+                            <tr>
+                                <th colspan="2">TOTAL</th>
+                                <th class="text-center">@Model.TotalMealPortions suất</th>
+                                <th colspan="3"></th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    Không có món nào cần nấu cho ngày @Model.DeliveryDate.ToString("dd/MM/yyyy")
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Date Selector -->
+    <div class="card mt-4">
+        <div class="card-body">
+            <form method="get" asp-action="KitchenExport" class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Chọn ngày khác</label>
+                    <input type="date" name="date" class="form-control" 
+                           value="@Model.DeliveryDate.ToString("yyyy-MM-dd")">
+                </div>
+                <div class="col-md-6 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary">View Kitchen List</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

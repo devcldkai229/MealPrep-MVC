@@ -30,6 +30,12 @@ namespace MealPrep.BLL.Extensions
             // User Services
             services.AddScoped<IUserSubscriptionService, UserSubscriptionService>();
             
+            // Delivery Processing Services (Flow 5)
+            services.AddScoped<IDeliveryProcessingService, DeliveryProcessingService>();
+            
+            // Meal Feedback Services (Flow 8)
+            services.AddScoped<IMealFeedbackService, MealFeedbackService>();
+            
             // Register Meal Embedding Service (Phase 1: Optional - requires AWS SDK)
             // TODO: Uncomment when AWS Bedrock SDK is installed:
             // services.AddScoped<IMealEmbeddingService, MealEmbeddingService>();
