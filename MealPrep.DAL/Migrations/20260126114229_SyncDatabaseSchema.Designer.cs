@@ -4,6 +4,7 @@ using MealPrep.DAL.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MealPrep.DAL.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260126114229_SyncDatabaseSchema")]
+    partial class SyncDatabaseSchema
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -247,29 +250,6 @@ namespace MealPrep.DAL.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("DeliverySlots");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Capacity = 100,
-                            IsActive = true,
-                            Name = "Morning"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Capacity = 100,
-                            IsActive = true,
-                            Name = "Afternoon"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            Capacity = 100,
-                            IsActive = true,
-                            Name = "Evening"
-                        });
                 });
 
             modelBuilder.Entity("MealPrep.DAL.Entities.Meal", b =>

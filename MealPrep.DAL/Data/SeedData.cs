@@ -164,8 +164,29 @@ namespace MealPrep.DAL.Data
 
         private static void SeedDeliverySlots(ModelBuilder modelBuilder, DateTime seedDate)
         {
-            // DeliverySlot doesn't have CreatedAt property, so we skip it
-            // If needed, add delivery slots manually or update entity
+            modelBuilder.Entity<DeliverySlot>().HasData(
+                new DeliverySlot
+                {
+                    Id = 1,
+                    Name = "Morning",
+                    Capacity = 100,
+                    IsActive = true
+                },
+                new DeliverySlot
+                {
+                    Id = 2,
+                    Name = "Afternoon",
+                    Capacity = 100,
+                    IsActive = true
+                },
+                new DeliverySlot
+                {
+                    Id = 3,
+                    Name = "Evening",
+                    Capacity = 100,
+                    IsActive = true
+                }
+            );
         }
     }
 }
