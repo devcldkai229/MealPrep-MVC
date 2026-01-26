@@ -59,7 +59,7 @@
                     <li class="nav-item"><a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Dashboard" ? "active" : "")" asp-controller="Dashboard" asp-action="Index">Bảng Điều Khiển</a></li>
                     <li class="nav-item"><a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Subscription" ? "active" : "")" asp-controller="Subscription" asp-action="Index">Đăng Ký</a></li>
                     <li class="nav-item"><a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Meal" ? "active" : "")" asp-controller="Meal" asp-action="Index">Món Ăn</a></li>
-                    <li class="nav-item"><a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "MealFeedback" ? "active" : "")" asp-controller="MealFeedback" asp-action="Index">⭐ Đánh Giá</a></li>
+                    <li class="nav-item"><a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "MealFeedback" ? "active" : "")" asp-controller="MealFeedback" asp-action="Index">Đánh Giá</a></li>
                     <li class="nav-item"><a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "NutritionLog" ? "active" : "")" asp-controller="NutritionLog" asp-action="Index">Dinh Dưỡng</a></li>
                     <li class="nav-item"><a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "UserSubscriptions" ? "active" : "")" asp-controller="UserSubscriptions" asp-action="Index">Gói Đăng Ký</a></li>
                     @if (User.IsInRole("Admin"))
@@ -94,7 +94,7 @@
                                 <i class="bi bi-heart-pulse"></i> Nhật Ký Dinh Dưỡng
                             </a></li>
                             <li><a class="dropdown-item" asp-controller="MealFeedback" asp-action="Index">
-                                <i class="bi bi-star"></i> Đánh Giá Món Ăn
+                                <i class="bi bi-chat-left-text"></i> Đánh Giá Món Ăn
                             </a></li>
                             <li><a class="dropdown-item" asp-controller="MealFeedback" asp-action="MySummary">
                                 <i class="bi bi-graph-up"></i> Thống Kê Feedback

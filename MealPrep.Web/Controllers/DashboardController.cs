@@ -29,6 +29,7 @@ public class DashboardController : Controller
             NextDeliveryText = dto.NextDeliveryText,
             TodayCalories = dto.TodayCalories,
             FeaturedMeals = dto.FeaturedMeals,
+            FeaturedMealsWithRatings = dto.FeaturedMealsWithRatings,
             WeekCalories = dto.WeekCalories,
             RecentOrders = dto.RecentOrders
         };

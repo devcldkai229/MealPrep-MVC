@@ -15,17 +15,20 @@ namespace MealPrep.BLL.Services
         private readonly IRepository<DeliveryOrder> _deliveryOrders;
         private readonly IRepository<NutritionLog> _logs;
         private readonly IRepository<Meal> _meals;
+        private readonly IMealFeedbackService _feedbackService;
 
         public DashboardService(
             IRepository<Subscription> subs,
             IRepository<DeliveryOrder> deliveryOrders,
             IRepository<NutritionLog> logs,
-            IRepository<Meal> meals)
+            IRepository<Meal> meals,
+            IMealFeedbackService feedbackService)
         {
             _subs = subs;
             _deliveryOrders = deliveryOrders;
             _logs = logs;
             _meals = meals;
+            _feedbackService = feedbackService;
         }
 
         public async Task<DashboardDto> GetDashboardDataAsync(Guid userId)
@@ -72,6 +75,18 @@ namespace MealPrep.BLL.Services
                 .Take(6)
                 .ToListAsync();
 
+            // Get average ratings for featured meals
+            var featuredMealsWithRatings = new List<MealWithRating>();
+            foreach (var meal in featured)
+            {
+                var avgRating = await _feedbackService.GetMealAverageRatingAsync(meal.Id);
+                featuredMealsWithRatings.Add(new MealWithRating
+                {
+                    Meal = meal,
+                    AverageRating = avgRating
+                });
+            }
+
             // Week summary: last 7 days calories
             var from = today.AddDays(-6);
             var weekLogs = await _logs.Query()
@@ -100,8 +115,6 @@ namespace MealPrep.BLL.Services
                 .ToListAsync();
 
             // Map DeliveryOrder to Order for backward compatibility with DTO
-            // Note: DashboardDto.RecentOrders expects List<Order>, but we're using DeliveryOrder
-            // We need to check the DTO structure
             var recentOrders = recentDeliveryOrders.Select(deliveryOrder => new Order
             {
                 Id = deliveryOrder.Id,
@@ -126,9 +139,17 @@ namespace MealPrep.BLL.Services
                 NextDeliveryText = nextOrder == null ? "No upcoming delivery" : $"{nextOrder.DeliveryDate} • {nextOrder.DeliverySlot?.Name}",
                 TodayCalories = todayCalories,
                 FeaturedMeals = featured,
+                FeaturedMealsWithRatings = featuredMealsWithRatings,
                 WeekCalories = week,
                 RecentOrders = recentOrders
             };
         }
+    }
+
+    // Helper class to store meal with its rating
+    public class MealWithRating
+    {
+        public Meal Meal { get; set; } = null!;
+        public decimal AverageRating { get; set; }
     }
 }

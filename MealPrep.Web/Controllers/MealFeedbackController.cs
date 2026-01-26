@@ -52,8 +52,7 @@ namespace MealPrep.Web.Controllers
             DateOnly deliveryDate,
             int stars,
             string? tags,
-            string? comments,
-            bool requestBlock = false)
+            string? comments)
         {
             var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
@@ -71,8 +70,7 @@ namespace MealPrep.Web.Controllers
                     deliveryDate,
                     stars,
                     tagsList,
-                    comments,
-                    requestBlock
+                    comments
                 );
 
                 var result = await _feedbackService.SubmitMealRatingAsync(userId, dto);
@@ -80,15 +78,10 @@ namespace MealPrep.Web.Controllers
                 if (result.Success)
                 {
                     TempData["SuccessMessage"] = result.Message;
-                    
-                    if (result.BlockedMeal)
-                    {
-                        TempData["InfoMessage"] = "🚫 Món này đã được thêm vào danh sách không thích. Chúng tôi sẽ không gợi ý món này cho bạn nữa.";
-                    }
 
                     if (result.AddedToNutritionLog)
                     {
-                        TempData["InfoMessage"] += " 📊 Đã ghi nhận vào nhật ký dinh dưỡng của bạn.";
+                        TempData["InfoMessage"] = "📊 Đã ghi nhận vào nhật ký dinh dưỡng của bạn.";
                     }
                 }
                 else

@@ -50,8 +50,9 @@
             </div>
 
             <div class="row g-3">
-                @foreach (var m in Model.FeaturedMeals)
+                @foreach (var mealWithRating in Model.FeaturedMealsWithRatings)
                 {
+                    var m = mealWithRating.Meal;
                     var imageUrls = new List<string>();
                     try
                     {
@@ -66,10 +67,28 @@
 
                     <div class="col-md-6 col-xl-4">
                         <div class="app-card p-2">
-                            <div class="meal-thumb mb-2" style="background-image: url('@firstImage'); background-size: cover; background-position: center; height: 150px; border-radius: 8px;"></div>
+                            <div class="meal-thumb mb-2 position-relative" style="background-image: url('@firstImage'); background-size: cover; background-position: center; height: 150px; border-radius: 8px;">
+                                @if (mealWithRating.AverageRating > 0)
+                                {
+                                    <div class="position-absolute top-0 end-0 m-2">
+                                        <span class="badge bg-warning text-dark" style="font-size: 0.85rem;">
+                                            <i class="bi bi-star-fill"></i> @mealWithRating.AverageRating.ToString("N1")
+                                        </span>
+                                    </div>
+                                }
+                            </div>
                             <div class="px-1 pb-1">
                                 <div class="fw-semibold">@m.Name</div>
-                                <div class="meal-meta">@m.Calories kcal • P @m.Protein • C @m.Carbs • F @m.Fat</div>
+                                <div class="meal-meta">
+                                    @m.Calories kcal • P @m.Protein • C @m.Carbs • F @m.Fat
+                                    @if (mealWithRating.AverageRating > 0)
+                                    {
+                                        <span class="d-block mt-1">
+                                            <i class="bi bi-star-fill text-warning"></i>
+                                            <small class="text-muted">@mealWithRating.AverageRating.ToString("N1") / 5.0</small>
+                                        </span>
+                                    }
+                                </div>
                                 <div class="d-flex justify-content-between align-items-center mt-2">
                                     <div class="fw-semibold">@m.BasePrice.ToString("C", new System.Globalization.CultureInfo("vi-VN"))</div>
                                     <a class="btn btn-sm btn-outline-secondary" asp-controller="Meal" asp-action="Details" asp-route-id="@m.Id">Xem</a>
