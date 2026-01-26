@@ -15,5 +15,16 @@ namespace MealPrep.BLL.Services
         Task<Plan?> GetPlanByIdAsync(int planId);
         Task<PlanMealTier?> GetTierByIdAsync(int tierId);
         Task<decimal> CalculateTotalPriceAsync(int planId, int tierId);
+        
+        /// <summary>
+        /// Tạo subscription và payment cho checkout
+        /// </summary>
+        Task<(Subscription subscription, Payment payment)> CreateSubscriptionWithPaymentAsync(
+            Guid userId, int planId, int tierId, DateOnly startDate);
+        
+        /// <summary>
+        /// Xác nhận thanh toán và kích hoạt subscription
+        /// </summary>
+        Task<Subscription?> ConfirmPaymentAsync(string paymentCode, string? momoOrderId = null, string? rawResponse = null);
     }
 }

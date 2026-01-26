@@ -14,11 +14,17 @@ namespace MealPrep.Web.Controllers
 
         public MealController(IMealService svc) => _svc = svc;
 
-        public async Task<IActionResult> Index(string? q, string? sort)
+        public async Task<IActionResult> Index(string? q, string? sort, int page = 1, int pageSize = 12)
         {
             ViewBag.Query = q;
             ViewBag.Sort = sort;
-            var meals = await _svc.SearchAsync(q, sort);
+            ViewBag.Page = page;
+            ViewBag.PageSize = pageSize;
+            
+            var (meals, totalCount) = await _svc.SearchWithPaginationAsync(q, sort, page, pageSize);
+            ViewBag.TotalCount = totalCount;
+            ViewBag.TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+            
             return View(meals);
         }
 

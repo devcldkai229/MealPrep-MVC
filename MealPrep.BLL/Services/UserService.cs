@@ -238,5 +238,14 @@ namespace MealPrep.BLL.Services
             user.IsActive = true;
             await _context.SaveChangesAsync();
         }
+
+        public async Task<List<string>> GetUserAllergiesAsync(Guid userId)
+        {
+            return await _context.Set<UserAllergy>()
+                .Include(a => a.UserNutritionProfile)
+                .Where(a => a.UserNutritionProfile!.AppUserId == userId)
+                .Select(a => a.AllergyName.ToLower())
+                .ToListAsync();
+        }
     }
 }

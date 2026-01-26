@@ -12,10 +12,12 @@ namespace MealPrep.BLL.Services
     public class NutritionLogService : INutritionLogService
     {
         private readonly IRepository<NutritionLog> _logRepo;
+        private readonly IRepository<Meal> _mealRepo;
 
-        public NutritionLogService(IRepository<NutritionLog> logRepo)
+        public NutritionLogService(IRepository<NutritionLog> logRepo, IRepository<Meal> mealRepo)
         {
             _logRepo = logRepo;
+            _mealRepo = mealRepo;
         }
 
         public async Task<List<NutritionLog>> ListAsync(Guid userId, DateOnly? date)
@@ -56,6 +58,14 @@ namespace MealPrep.BLL.Services
                 ))
                 .OrderByDescending(x => x.Date)
                 .ToList();
+        }
+
+        public async Task<List<Meal>> GetActiveMealsAsync()
+        {
+            return await _mealRepo.Query()
+                .Where(m => m.IsActive)
+                .OrderBy(m => m.Name)
+                .ToListAsync();
         }
     }
 }

@@ -16,8 +16,25 @@ namespace MealPrep.BLL.Extensions
             services.AddScoped<IMealService, MealService>();
             services.AddScoped<ISubscriptionService, SubscriptionService>();
             services.AddScoped<INutritionLogService, NutritionLogService>();
+            services.AddScoped<IMenuService, MenuService>();
+            services.AddScoped<IDashboardService, DashboardService>();
+            services.AddScoped<IAiMenuService, AiMenuService>();
             
-            // Register HttpClient for MoMo service
+            // Admin Services
+            services.AddScoped<IAdminUserService, AdminUserService>();
+            services.AddScoped<IAdminPlanService, AdminPlanService>();
+            services.AddScoped<IAdminSubscriptionService, AdminSubscriptionService>();
+            services.AddScoped<IAdminDeliveryOrderService, AdminDeliveryOrderService>();
+            services.AddScoped<IAdminDashboardService, AdminDashboardService>();
+            
+            // User Services
+            services.AddScoped<IUserSubscriptionService, UserSubscriptionService>();
+            
+            // Register Meal Embedding Service (Phase 1: Optional - requires AWS SDK)
+            // TODO: Uncomment when AWS Bedrock SDK is installed:
+            // services.AddScoped<IMealEmbeddingService, MealEmbeddingService>();
+            
+            // Register HttpClient for MoMo service and AI service
             services.AddHttpClient();
             services.AddScoped<IMomoService>(sp =>
             {

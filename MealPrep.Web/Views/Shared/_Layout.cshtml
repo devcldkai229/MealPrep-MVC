@@ -60,6 +60,11 @@
                     <li class="nav-item"><a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Subscription" ? "active" : "")" asp-controller="Subscription" asp-action="Index">Đăng Ký</a></li>
                     <li class="nav-item"><a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Meal" ? "active" : "")" asp-controller="Meal" asp-action="Index">Món Ăn</a></li>
                     <li class="nav-item"><a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "NutritionLog" ? "active" : "")" asp-controller="NutritionLog" asp-action="Index">Dinh Dưỡng</a></li>
+                    <li class="nav-item"><a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "UserSubscriptions" ? "active" : "")" asp-controller="UserSubscriptions" asp-action="Index">Gói Đăng Ký</a></li>
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <li class="nav-item"><a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Admin" ? "active" : "")" asp-controller="Admin" asp-action="Index">Admin</a></li>
+                    }
                 }
                 else
                 {

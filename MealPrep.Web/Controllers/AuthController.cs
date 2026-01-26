@@ -41,7 +41,7 @@ namespace MealPrep.Web.Controllers
                 _logger.LogInformation($"OTP sent successfully to: {email}");
                 return Json(new { success = true, message = "OTP code has been sent to your email" });
             }
-            catch (EmailAlreadyExistsException ex)
+            catch (EmailAlreadyExistsException)
             {
                 _logger.LogWarning($"Email already exists: {email}");
                 return Json(new { success = false, message = "Email already registered" });
@@ -77,10 +77,14 @@ namespace MealPrep.Web.Controllers
         }
 
         [HttpGet] 
-        public IActionResult Login() => View(new LoginVm());
+        public IActionResult Login(string? returnUrl)
+        {
+            ViewBag.ReturnUrl = returnUrl ?? TempData["ReturnUrl"]?.ToString();
+            return View(new LoginVm());
+        }
 
         [HttpPost]
-        public async Task<IActionResult> Login(LoginVm vm)
+        public async Task<IActionResult> Login(LoginVm vm, string? returnUrl)
         {
             if (!ModelState.IsValid) return View(vm);
 
@@ -88,12 +92,31 @@ namespace MealPrep.Web.Controllers
             if (user == null)
             {
                 ModelState.AddModelError("", "Invalid email or password.");
+                ViewBag.ReturnUrl = returnUrl ?? TempData["ReturnUrl"]?.ToString();
                 return View(vm);
             }
 
             await SignInAsync(user);
             
-            // Login thì chuyển thẳng đến Dashboard
+            // Check if user is Admin - redirect to Admin Dashboard
+            if (user.RoleName == "Admin")
+            {
+                return RedirectToAction("Index", "Admin");
+            }
+            
+            // Redirect to returnUrl if provided, otherwise to Dashboard
+            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+            {
+                return Redirect(returnUrl);
+            }
+            
+            var tempReturnUrl = TempData["ReturnUrl"]?.ToString();
+            if (!string.IsNullOrEmpty(tempReturnUrl) && Url.IsLocalUrl(tempReturnUrl))
+            {
+                return Redirect(tempReturnUrl);
+            }
+            
+            // Default redirect to Dashboard
             return RedirectToAction("Index", "Dashboard");
         }
 

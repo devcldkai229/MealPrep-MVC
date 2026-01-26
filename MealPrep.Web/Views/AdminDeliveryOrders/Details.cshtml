@@ -1,0 +1,210 @@
+@model MealPrep.DAL.Entities.DeliveryOrder
+@using MealPrep.DAL.Enums
+@{
+    ViewData["Title"] = "Chi Tiết Đơn Giao Hàng";
+    Layout = "_AdminLayout";
+}
+
+<div>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">Chi Tiết Đơn Giao Hàng</h2>
+            <p class="text-muted mb-0">#@Model.Id</p>
+        </div>
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-2"></i>Quay Lại
+        </a>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="row g-4">
+        <!-- Order Info -->
+        <div class="col-md-6">
+            <div class="app-card p-4">
+                <h5 class="fw-bold mb-4">Thông Tin Đơn Hàng</h5>
+                <dl class="row mb-0">
+                    <dt class="col-sm-5">ID:</dt>
+                    <dd class="col-sm-7">#@Model.Id</dd>
+
+                    @if (Model.Subscription != null)
+                    {
+                        <dt class="col-sm-5">Khách Hàng:</dt>
+                        <dd class="col-sm-7">@Model.Subscription.CustomerName</dd>
+
+                        <dt class="col-sm-5">Email:</dt>
+                        <dd class="col-sm-7">@Model.Subscription.CustomerEmail</dd>
+
+                        <dt class="col-sm-5">Subscription:</dt>
+                        <dd class="col-sm-7">
+                            <a asp-controller="AdminSubscriptions" asp-action="Details" asp-route-id="@Model.Subscription.Id">
+                                #@Model.Subscription.Id - @(Model.Subscription.Plan?.Name ?? "N/A")
+                            </a>
+                        </dd>
+                    }
+
+                    <dt class="col-sm-5">Ngày Giao:</dt>
+                    <dd class="col-sm-7">@Model.DeliveryDate.ToString("dd/MM/yyyy")</dd>
+
+                    <dt class="col-sm-5">Slot:</dt>
+                    <dd class="col-sm-7">@(Model.DeliverySlot?.Name ?? "N/A")</dd>
+
+                    <dt class="col-sm-5">Trạng Thái:</dt>
+                    <dd class="col-sm-7">
+                        @switch (Model.Status)
+                        {
+                            case OrderStatus.Planned:
+                                <span class="badge bg-info">Đã Lên Lịch</span>
+                                break;
+                            case OrderStatus.Preparing:
+                                <span class="badge bg-warning">Đang Chuẩn Bị</span>
+                                break;
+                            case OrderStatus.Delivering:
+                                <span class="badge bg-primary">Đang Giao</span>
+                                break;
+                            case OrderStatus.Delivered:
+                                <span class="badge bg-success">Đã Giao</span>
+                                break;
+                            case OrderStatus.Cancelled:
+                                <span class="badge bg-danger">Đã Hủy</span>
+                                break;
+                            default:
+                                <span class="badge bg-secondary">@Model.Status</span>
+                                break;
+                        }
+                    </dd>
+
+                    <dt class="col-sm-5">Tổng Tiền:</dt>
+                    <dd class="col-sm-7 fw-bold text-primary">@Model.TotalAmount.ToString("N0") đ</dd>
+
+                    @if (!string.IsNullOrEmpty(Model.Note))
+                    {
+                        <dt class="col-sm-5">Ghi Chú:</dt>
+                        <dd class="col-sm-7">@Model.Note</dd>
+                    }
+
+                    <dt class="col-sm-5">Ngày Tạo:</dt>
+                    <dd class="col-sm-7">@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</dd>
+                </dl>
+            </div>
+        </div>
+
+        <!-- Status Update -->
+        <div class="col-md-6">
+            <div class="app-card p-4">
+                <h5 class="fw-bold mb-3">Cập Nhật Trạng Thái</h5>
+                <form asp-action="UpdateStatus" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold mb-2">Trạng Thái Hiện Tại</label>
+                        <div class="mb-3">
+                            @switch (Model.Status)
+                            {
+                                case OrderStatus.Planned:
+                                    <span class="badge bg-info fs-6 px-3 py-2">Đã Lên Lịch</span>
+                                    break;
+                                case OrderStatus.Preparing:
+                                    <span class="badge bg-warning fs-6 px-3 py-2">Đang Chuẩn Bị</span>
+                                    break;
+                                case OrderStatus.Delivering:
+                                    <span class="badge bg-primary fs-6 px-3 py-2">Đang Giao</span>
+                                    break;
+                                case OrderStatus.Delivered:
+                                    <span class="badge bg-success fs-6 px-3 py-2">Đã Giao</span>
+                                    break;
+                                case OrderStatus.Cancelled:
+                                    <span class="badge bg-danger fs-6 px-3 py-2">Đã Hủy</span>
+                                    break;
+                                default:
+                                    <span class="badge bg-secondary fs-6 px-3 py-2">@Model.Status</span>
+                                    break;
+                            }
+                        </div>
+                        <label class="form-label fw-semibold mb-2">Chọn Trạng Thái Mới</label>
+                        <select name="status" class="form-select">
+                            @foreach (OrderStatus status in Enum.GetValues(typeof(OrderStatus)))
+                            {
+                                var statusText = status switch
+                                {
+                                    OrderStatus.Planned => "Đã Lên Lịch",
+                                    OrderStatus.Preparing => "Đang Chuẩn Bị",
+                                    OrderStatus.Delivering => "Đang Giao",
+                                    OrderStatus.Delivered => "Đã Giao",
+                                    OrderStatus.Cancelled => "Đã Hủy",
+                                    _ => status.ToString()
+                                };
+                                <option value="@((int)status)" selected="@(Model.Status == status)">@statusText</option>
+                            }
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-check-circle me-2"></i>Cập Nhật Trạng Thái
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Order Items -->
+        <div class="col-12">
+            <div class="app-card p-4">
+                <h5 class="fw-bold mb-4">Món Ăn (@Model.Items.Count)</h5>
+                @if (Model.Items.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Món Ăn</th>
+                                    <th>Loại</th>
+                                    <th>Số Lượng</th>
+                                    <th>Đơn Giá</th>
+                                    <th>Thành Tiền</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model.Items)
+                                {
+                                    <tr>
+                                        <td>
+                                            @if (item.Meal != null)
+                                            {
+                                                <a asp-controller="AdminMeals" asp-action="Details" asp-route-id="@item.Meal.Id">
+                                                    @item.MealNameSnapshot
+                                                </a>
+                                            }
+                                            else
+                                            {
+                                                @item.MealNameSnapshot
+                                            }
+                                        </td>
+                                        <td>@(item.MealType ?? "N/A")</td>
+                                        <td>@item.Quantity</td>
+                                        <td>@item.UnitPrice.ToString("N0") đ</td>
+                                        <td class="fw-bold">@((item.UnitPrice * item.Quantity).ToString("N0")) đ</td>
+                                    </tr>
+                                }
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="4" class="text-end fw-bold">Tổng Cộng:</td>
+                                    <td class="fw-bold text-primary">@Model.TotalAmount.ToString("N0") đ</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted text-center py-4">Chưa có món ăn nào</p>
+                }
+            </div>
+        </div>
+    </div>
+</div>

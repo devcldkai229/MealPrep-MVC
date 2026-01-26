@@ -14,5 +14,6 @@ namespace MealPrep.BLL.Services
         Task<List<NutritionLog>> ListAsync(Guid userId, DateOnly? date);
         Task CreateAsync(Guid userId, string email, NutritionLog log);
         Task<List<DailySummary>> SummaryAsync(Guid userId, DateOnly from, DateOnly to);
+        Task<List<Meal>> GetActiveMealsAsync();
     }
 }

@@ -24,6 +24,7 @@ public class MealOption
     public int MealId { get; set; }
     public string Name { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
+    public string? ImageUrl { get; set; } // First image URL from Images JSON
     public int Calories { get; set; }
     public decimal Protein { get; set; }
     public decimal Carbs { get; set; }

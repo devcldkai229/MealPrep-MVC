@@ -32,6 +32,8 @@ namespace MealPrep.DAL.Entities
         [Range(1, 6)]
         public int MealsPerDay { get; set; } = 3;
 
+        public int? CaloriesInDay { get; set; }
+
         [StringLength(10000)]
         public string? Notes { get; set; } // bệnh lý nhẹ, sở thích, mục tiêu cụ thể...
 

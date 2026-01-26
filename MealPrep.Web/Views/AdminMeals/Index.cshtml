@@ -1,0 +1,129 @@
+@model List<MealPrep.DAL.Entities.Meal>
+@{
+    ViewData["Title"] = "Quản Lý Món Ăn";
+    Layout = "_AdminLayout";
+}
+
+<div>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">Quản Lý Món Ăn</h2>
+            <p class="text-muted mb-0">Danh sách tất cả món ăn trong hệ thống</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Create" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-2"></i>Thêm Món Mới
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Search and Filter -->
+    <div class="app-card p-3 mb-4">
+        <form method="get" class="row g-3">
+            <div class="col-md-6">
+                <input type="text" name="search" class="form-control" placeholder="Tìm kiếm theo tên, mô tả..." value="@ViewBag.Search">
+            </div>
+            <div class="col-md-3">
+                <select name="isActive" class="form-select">
+                    <option value="">Tất Cả</option>
+                    <option value="true" selected="@(ViewBag.IsActive == true)">Hoạt Động</option>
+                    <option value="false" selected="@(ViewBag.IsActive == false)">Vô Hiệu Hóa</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search me-2"></i>Tìm Kiếm
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Meals Grid -->
+    <div class="row g-3">
+        @foreach (var meal in Model)
+        {
+            <div class="col-md-6 col-lg-4">
+                <div class="app-card p-3 h-100">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h6 class="fw-bold mb-0">@meal.Name</h6>
+                        @if (meal.IsActive)
+                        {
+                            <span class="badge bg-success">Hoạt Động</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">Vô Hiệu Hóa</span>
+                        }
+                    </div>
+                    <p class="text-muted small mb-2" style="min-height: 40px;">
+                        @(meal.Description?.Length > 80 ? meal.Description.Substring(0, 80) + "..." : meal.Description ?? "Không có mô tả")
+                    </p>
+                    <div class="d-flex gap-2 mb-2">
+                        <small class="text-muted"><i class="bi bi-fire"></i> @meal.Calories kcal</small>
+                        <small class="text-muted"><i class="bi bi-droplet"></i> P:@meal.Protein</small>
+                        <small class="text-muted"><i class="bi bi-cup"></i> C:@meal.Carbs</small>
+                        <small class="text-muted"><i class="bi bi-circle"></i> F:@meal.Fat</small>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="fw-bold text-primary">@meal.BasePrice.ToString("N0") đ</span>
+                        <div class="btn-group btn-group-sm">
+                            <a asp-action="Details" asp-route-id="@meal.Id" class="btn btn-outline-primary">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a asp-action="Edit" asp-route-id="@meal.Id" class="btn btn-outline-secondary">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <form asp-action="Delete" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc muốn xóa món ăn này?');">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@meal.Id" />
+                                <button type="submit" class="btn btn-outline-danger">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    @if (Model.Count == 0)
+    {
+        <div class="app-card p-5 text-center">
+            <i class="bi bi-inbox" style="font-size: 3rem; color: var(--muted);"></i>
+            <p class="text-muted mt-3">Không tìm thấy món ăn nào</p>
+        </div>
+    }
+
+    @if (ViewBag.TotalPages > 1)
+    {
+        <div class="app-card p-3 mt-4">
+            <nav>
+                <ul class="pagination justify-content-center mb-0">
+                    @for (int i = 1; i <= ViewBag.TotalPages; i++)
+                    {
+                        <li class="page-item @(i == ViewBag.Page ? "active" : "")">
+                            <a class="page-link" href="?page=@i&search=@ViewBag.Search&isActive=@ViewBag.IsActive">@i</a>
+                        </li>
+                    }
+                </ul>
+            </nav>
+        </div>
+    }
+</div>

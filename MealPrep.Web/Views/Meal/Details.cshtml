@@ -232,7 +232,6 @@
                 </a>
                 @if (User.Identity?.IsAuthenticated == true)
                 {
-                    var userId = Guid.Parse(User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier)!);
                     <form method="post" asp-controller="Auth" asp-action="ToggleDislikedMeal" class="d-inline">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="mealId" value="@Model.Id" />

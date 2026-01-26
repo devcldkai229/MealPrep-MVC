@@ -1,10 +1,8 @@
 ﻿using MealPrep.BLL.Services;
 using MealPrep.DAL.Entities;
-using MealPrep.DAL.Repositories;
 using MealPrep.Web.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace MealPrep.Web.Controllers
@@ -13,13 +11,11 @@ namespace MealPrep.Web.Controllers
     public class NutritionLogController : Controller
     {
         private readonly INutritionLogService _svc;
-        private readonly IRepository<Meal> _mealRepo;
         private readonly IUserService _userService;
 
-        public NutritionLogController(INutritionLogService svc, IRepository<Meal> mealRepo, IUserService userService)
+        public NutritionLogController(INutritionLogService svc, IUserService userService)
         {
             _svc = svc;
-            _mealRepo = mealRepo;
             _userService = userService;
         }
 
@@ -33,7 +29,7 @@ namespace MealPrep.Web.Controllers
         [HttpGet]
         public async Task<IActionResult> Create()
         {
-            ViewBag.Meals = await _mealRepo.Query().Where(m => m.IsActive).OrderBy(m => m.Name).ToListAsync();
+            ViewBag.Meals = await _svc.GetActiveMealsAsync();
             return View(new NutritionLog { Date = DateOnly.FromDateTime(DateTime.Today), Quantity = 1 });
         }
 
@@ -46,7 +42,7 @@ namespace MealPrep.Web.Controllers
 
             if (!ModelState.IsValid)
             {
-                ViewBag.Meals = await _mealRepo.Query().Where(m => m.IsActive).OrderBy(m => m.Name).ToListAsync();
+                ViewBag.Meals = await _svc.GetActiveMealsAsync();
                 return View(model);
             }
             NutritionLog nutritionLog = new NutritionLog

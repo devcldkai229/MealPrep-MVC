@@ -13,6 +13,10 @@
             </div>
 
             <form asp-action="Login" method="post">
+                @if (!string.IsNullOrEmpty(ViewBag.ReturnUrl as string))
+                {
+                    <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
+                }
                 <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
                 <div class="mb-3">

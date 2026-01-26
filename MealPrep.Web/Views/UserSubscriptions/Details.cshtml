@@ -1,0 +1,431 @@
+@model MealPrep.DAL.Entities.Subscription
+@using MealPrep.DAL.Enums
+@using System.Text.Json
+@{
+    ViewData["Title"] = "Chi Tiết Gói Đăng Ký";
+    var totalDays = Model.EndDate.HasValue && Model.StartDate != default 
+        ? (Model.EndDate.Value.DayNumber - Model.StartDate.DayNumber) 
+        : (Model.Plan?.DurationDays ?? 7);
+    var totalMealsNeeded = totalDays * Model.MealsPerDay;
+    var mealsSelected = Model.DeliveryOrders?.Sum(o => o.Items?.Count ?? 0) ?? 0;
+    var mealsRemaining = totalMealsNeeded - mealsSelected;
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">Chi Tiết Gói Đăng Ký</h2>
+            <p class="text-muted mb-0">#@Model.Id - @(Model.Plan?.Name ?? "N/A")</p>
+        </div>
+        <div class="d-flex gap-2">
+            @if (Model.Status == SubscriptionStatus.Active && mealsRemaining > 0)
+            {
+                <a asp-controller="Menu" asp-action="SelectMeals" class="btn btn-primary">
+                    <i class="bi bi-calendar-check me-2"></i>Lên Menu Ăn Uống
+                </a>
+            }
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-2"></i>Quay Lại
+            </a>
+        </div>
+    </div>
+
+    <!-- Alert Messages -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="row g-4">
+        <!-- Subscription Info -->
+        <div class="col-md-6">
+            <div class="app-card p-4">
+                <h5 class="fw-bold mb-4">
+                    <i class="bi bi-info-circle text-primary me-2"></i>Thông Tin Gói
+                </h5>
+                <dl class="row mb-0">
+                    <dt class="col-sm-5">Gói:</dt>
+                    <dd class="col-sm-7 fw-semibold">@(Model.Plan?.Name ?? "N/A")</dd>
+
+                    <dt class="col-sm-5">Thời Hạn:</dt>
+                    <dd class="col-sm-7">@totalDays ngày</dd>
+
+                    <dt class="col-sm-5">Bữa/Ngày:</dt>
+                    <dd class="col-sm-7">@Model.MealsPerDay bữa</dd>
+
+                    <dt class="col-sm-5">Tổng Bữa Cần:</dt>
+                    <dd class="col-sm-7">
+                        <strong>@totalMealsNeeded bữa</strong>
+                        @if (mealsRemaining > 0)
+                        {
+                            <span class="badge bg-warning ms-2">Còn @mealsRemaining bữa</span>
+                        }
+                        else if (mealsSelected > 0)
+                        {
+                            <span class="badge bg-success ms-2">Đã đủ</span>
+                        }
+                    </dd>
+
+                    <dt class="col-sm-5">Ngày Bắt Đầu:</dt>
+                    <dd class="col-sm-7">@Model.StartDate.ToString("dd/MM/yyyy")</dd>
+
+                    <dt class="col-sm-5">Ngày Kết Thúc:</dt>
+                    <dd class="col-sm-7">@(Model.EndDate?.ToString("dd/MM/yyyy") ?? "N/A")</dd>
+
+                    <dt class="col-sm-5">Trạng Thái:</dt>
+                    <dd class="col-sm-7">
+                        @switch (Model.Status)
+                        {
+                            case SubscriptionStatus.PendingPayment:
+                                <span class="badge bg-warning">Chờ Thanh Toán</span>
+                                break;
+                            case SubscriptionStatus.Active:
+                                <span class="badge bg-success">Đang Hoạt Động</span>
+                                break;
+                            case SubscriptionStatus.Paused:
+                                <span class="badge bg-info">Tạm Dừng</span>
+                                break;
+                            case SubscriptionStatus.Cancelled:
+                                <span class="badge bg-danger">Đã Hủy</span>
+                                break;
+                            case SubscriptionStatus.Expired:
+                                <span class="badge bg-secondary">Hết Hạn</span>
+                                break;
+                        }
+                    </dd>
+
+                    <dt class="col-sm-5">Tổng Tiền:</dt>
+                    <dd class="col-sm-7 fw-bold text-primary h5 mb-0">@Model.TotalAmount.ToString("N0")₫</dd>
+                </dl>
+            </div>
+        </div>
+
+        <!-- Payment Info -->
+        <div class="col-md-6">
+            <div class="app-card p-4">
+                <h5 class="fw-bold mb-4">
+                    <i class="bi bi-credit-card text-success me-2"></i>Thông Tin Thanh Toán
+                </h5>
+                @if (Model.Payments != null && Model.Payments.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-sm mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Mã Thanh Toán</th>
+                                    <th>Số Tiền</th>
+                                    <th>Trạng Thái</th>
+                                    <th>Ngày</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var payment in Model.Payments.OrderByDescending(p => p.CreatedAt))
+                                {
+                                    <tr>
+                                        <td><code class="small">@payment.PaymentCode</code></td>
+                                        <td>@payment.Amount.ToString("N0")₫</td>
+                                        <td>
+                                            @if (payment.Status == "Paid")
+                                            {
+                                                <span class="badge bg-success">Đã Thanh Toán</span>
+                                            }
+                                            else if (payment.Status == "Pending")
+                                            {
+                                                <span class="badge bg-warning">Chờ Thanh Toán</span>
+                                            }
+                                            else if (payment.Status == "Failed")
+                                            {
+                                                <span class="badge bg-danger">Thất Bại</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">@payment.Status</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (payment.PaidAt.HasValue)
+                                            {
+                                                <small>@payment.PaidAt.Value.ToString("dd/MM/yyyy HH:mm")</small>
+                                            }
+                                            else
+                                            {
+                                                <small class="text-muted">@payment.CreatedAt.ToString("dd/MM/yyyy HH:mm")</small>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="mt-3 pt-3 border-top">
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">Tổng Đã Thanh Toán:</span>
+                            <strong class="text-success">
+                                @Model.Payments.Where(p => p.Status == "Paid").Sum(p => p.Amount).ToString("N0")₫
+                            </strong>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted text-center py-3 mb-0">Chưa có thông tin thanh toán</p>
+                }
+            </div>
+        </div>
+
+        <!-- Summary Stats -->
+        <div class="col-12">
+            <div class="app-card p-4">
+                <h5 class="fw-bold mb-4">
+                    <i class="bi bi-bar-chart text-info me-2"></i>Tóm Tắt
+                </h5>
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <div class="text-center p-3 bg-light rounded">
+                            <div class="h4 mb-0 text-primary">@(Model.DeliveryOrders?.Count ?? 0)</div>
+                            <small class="text-muted">Tổng Đơn Giao Hàng</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center p-3 bg-light rounded">
+                            <div class="h4 mb-0 text-success">@Model.DeliveryOrders.Count(o => o.Status == OrderStatus.Delivered)</div>
+                            <small class="text-muted">Đã Giao</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center p-3 bg-light rounded">
+                            <div class="h4 mb-0 text-warning">@Model.DeliveryOrders.Count(o => o.Status == OrderStatus.Planned || o.Status == OrderStatus.Preparing)</div>
+                            <small class="text-muted">Đang Chờ</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center p-3 bg-light rounded">
+                            <div class="h4 mb-0 text-info">@mealsSelected / @totalMealsNeeded</div>
+                            <small class="text-muted">Món Đã Chọn</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delivery Orders -->
+        <div class="col-12">
+            <div class="app-card p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="fw-bold mb-0">
+                        <i class="bi bi-truck text-primary me-2"></i>Đơn Giao Hàng
+                    </h5>
+                    <span class="badge bg-primary">@Model.DeliveryOrders.Count đơn</span>
+                </div>
+                @if (Model.DeliveryOrders.Any())
+                {
+                    <div class="row g-4">
+                        @foreach (var order in Model.DeliveryOrders.OrderBy(o => o.DeliveryDate))
+                        {
+                            <div class="col-12">
+                                <div class="app-card p-4 border-start border-4" style="border-color: var(--accent) !important;">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <div class="flex-grow-1">
+                                            <h6 class="fw-bold mb-1">
+                                                <i class="bi bi-calendar-event text-primary me-2"></i>
+                                                Đơn #@order.Id - @order.DeliveryDate.ToString("dd/MM/yyyy")
+                                                @if (order.DeliveryDate == DateOnly.FromDateTime(DateTime.Today))
+                                                {
+                                                    <span class="badge bg-success ms-2">Hôm Nay</span>
+                                                }
+                                                else if (order.DeliveryDate == DateOnly.FromDateTime(DateTime.Today.AddDays(1)))
+                                                {
+                                                    <span class="badge bg-info ms-2">Ngày Mai</span>
+                                                }
+                                                else if (order.DeliveryDate < DateOnly.FromDateTime(DateTime.Today))
+                                                {
+                                                    <span class="badge bg-secondary ms-2">Đã Qua</span>
+                                                }
+                                            </h6>
+                                            <div class="text-muted small mb-2">
+                                                <i class="bi bi-clock me-1"></i>@(order.DeliverySlot?.Name ?? "N/A")
+                                                <span class="ms-3">
+                                                    <i class="bi bi-cash-stack me-1"></i>@order.TotalAmount.ToString("N0")₫
+                                                </span>
+                                                @if (order.Items != null && order.Items.Any())
+                                                {
+                                                    <span class="ms-3">
+                                                        <i class="bi bi-utensils me-1"></i>@order.Items.Count món
+                                                    </span>
+                                                }
+                                            </div>
+                                            <div class="mt-2">
+                                                @switch (order.Status)
+                                                {
+                                                    case OrderStatus.Planned:
+                                                        <span class="badge bg-info">
+                                                            <i class="bi bi-calendar-check me-1"></i>Đã Lên Lịch
+                                                        </span>
+                                                        <small class="text-muted ms-2">Đơn hàng đã được lên lịch, đang chờ chuẩn bị</small>
+                                                        break;
+                                                    case OrderStatus.Preparing:
+                                                        <span class="badge bg-warning">
+                                                            <i class="bi bi-hourglass-split me-1"></i>Đang Chuẩn Bị
+                                                        </span>
+                                                        <small class="text-muted ms-2">Nhà bếp đang chuẩn bị món ăn của bạn</small>
+                                                        break;
+                                                    case OrderStatus.Delivering:
+                                                        <span class="badge bg-primary">
+                                                            <i class="bi bi-truck me-1"></i>Đang Giao
+                                                        </span>
+                                                        <small class="text-muted ms-2">Đơn hàng đang trên đường đến với bạn</small>
+                                                        break;
+                                                    case OrderStatus.Delivered:
+                                                        <span class="badge bg-success">
+                                                            <i class="bi bi-check-circle me-1"></i>Đã Giao
+                                                        </span>
+                                                        <small class="text-muted ms-2">Đơn hàng đã được giao thành công</small>
+                                                        break;
+                                                    case OrderStatus.Cancelled:
+                                                        <span class="badge bg-danger">
+                                                            <i class="bi bi-x-circle me-1"></i>Đã Hủy
+                                                        </span>
+                                                        <small class="text-muted ms-2">Đơn hàng đã bị hủy</small>
+                                                        break;
+                                                    default:
+                                                        <span class="badge bg-secondary">@order.Status</span>
+                                                        break;
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    @if (order.Items != null && order.Items.Any())
+                                    {
+                                        <div class="row g-3">
+                                            @foreach (var item in order.Items)
+                                            {
+                                                var meal = item.Meal;
+                                                var mealName = meal?.Name ?? item.MealNameSnapshot;
+                                                var imageUrls = new List<string>();
+                                                
+                                                try
+                                                {
+                                                    if (meal != null && !string.IsNullOrEmpty(meal.Images))
+                                                    {
+                                                        imageUrls = JsonSerializer.Deserialize<List<string>>(meal.Images) ?? new List<string>();
+                                                    }
+                                                }
+                                                catch { }
+                                                
+                                                var firstImage = imageUrls.FirstOrDefault() ?? "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%23e5e7eb' width='400' height='300'/%3E%3Ctext fill='%239ca3af' font-family='Arial' font-size='16' x='50%25' y='50%25' text-anchor='middle' dominant-baseline='middle'%3ENo Image%3C/text%3E%3C/svg%3E";
+                                                
+                                                <div class="col-md-6 col-lg-4">
+                                                    <div class="card h-100 meal-detail-card" style="transition: transform 0.2s;">
+                                                        <div class="position-relative" style="height: 180px; overflow: hidden;">
+                                                            <img src="@firstImage" 
+                                                                 alt="@mealName" 
+                                                                 class="w-100 h-100" 
+                                                                 style="object-fit: cover;"
+                                                                 onerror="if(this.src.indexOf('data:image') === -1) { this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'300\'%3E%3Crect fill=\'%23e5e7eb\' width=\'400\' height=\'300\'/%3E%3Ctext fill=\'%239ca3af\' font-family=\'Arial\' font-size=\'16\' x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dominant-baseline=\'middle\'%3ENo Image%3C/text%3E%3C/svg%3E'; }" />
+                                                            @if (item.Quantity > 1)
+                                                            {
+                                                                <span class="badge bg-primary position-absolute top-0 end-0 m-2">
+                                                                    x@(item.Quantity)
+                                                                </span>
+                                                            }
+                                                        </div>
+                                                        <div class="card-body p-3">
+                                                            <h6 class="fw-bold mb-2" style="font-size: 0.95rem;">@mealName</h6>
+                                                            @if (meal != null)
+                                                            {
+                                                                <div class="small text-muted mb-2">
+                                                                    <i class="bi bi-fire text-danger"></i> @meal.Calories kcal
+                                                                    <span class="ms-2">
+                                                                        <i class="bi bi-droplet text-primary"></i> P:@meal.Protein C:@meal.Carbs F:@meal.Fat
+                                                                    </span>
+                                                                </div>
+                                                                <div class="d-flex justify-content-between align-items-center">
+                                                                    <span class="fw-semibold text-primary">
+                                                                        @(item.UnitPrice > 0 ? item.UnitPrice.ToString("N0") : meal.BasePrice.ToString("N0"))₫
+                                                                    </span>
+                                                                    <a asp-controller="Meal" asp-action="Details" asp-route-id="@(meal.Id)" 
+                                                                       class="btn btn-sm btn-outline-primary">
+                                                                        <i class="bi bi-eye"></i> Chi tiết
+                                                                    </a>
+                                                                </div>
+                                                            }
+                                                            else
+                                                            {
+                                                                <div class="small text-muted mb-2">
+                                                                    <i class="bi bi-info-circle"></i> Món đã bị xóa hoặc không còn tồn tại
+                                                                </div>
+                                                                <div class="d-flex justify-content-between align-items-center">
+                                                                    <span class="fw-semibold text-primary">
+                                                                        @(item.UnitPrice > 0 ? item.UnitPrice.ToString("N0") : "N/A")₫
+                                                                    </span>
+                                                                </div>
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="text-center py-4">
+                                            <div class="mb-3">
+                                                <i class="bi bi-calendar-x text-muted" style="font-size: 3rem;"></i>
+                                            </div>
+                                            <p class="text-muted mb-2 fw-semibold">Chưa chọn món cho ngày này</p>
+                                            <p class="text-muted small mb-3">Đơn hàng đã được tạo nhưng chưa có món ăn nào được chọn</p>
+                                            @if (Model.Status == SubscriptionStatus.Active && order.DeliveryDate >= DateOnly.FromDateTime(DateTime.Today))
+                                            {
+                                                <a asp-controller="Menu" asp-action="SelectMeals" class="btn btn-primary btn-sm">
+                                                    <i class="bi bi-calendar-check me-2"></i>Chọn Món Ngay
+                                                </a>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-5">
+                        <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
+                        <p class="text-muted mt-3 mb-0">Chưa có đơn giao hàng nào</p>
+                        @if (Model.Status == SubscriptionStatus.Active)
+                        {
+                            <a asp-controller="Menu" asp-action="SelectMeals" class="btn btn-primary mt-3">
+                                <i class="bi bi-calendar-check me-2"></i>Lên Menu Ngay
+                            </a>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+        
+        <style>
+            .meal-detail-card {
+                border: 1px solid #E5E7EB;
+                border-radius: 12px;
+                overflow: hidden;
+            }
+            
+            .meal-detail-card:hover {
+                transform: translateY(-4px);
+                box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+                border-color: var(--accent);
+            }
+        </style>
+    </div>
+</div>

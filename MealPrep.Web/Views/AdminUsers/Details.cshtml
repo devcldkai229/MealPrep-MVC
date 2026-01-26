@@ -1,0 +1,194 @@
+@model MealPrep.DAL.Entities.AppUser
+@{
+    ViewData["Title"] = "Chi Tiết Người Dùng";
+    Layout = "_AdminLayout";
+}
+
+<div>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">Chi Tiết Người Dùng</h2>
+            <p class="text-muted mb-0">@Model.Email</p>
+        </div>
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-2"></i>Quay Lại
+        </a>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="row g-4">
+        <!-- User Info -->
+        <div class="col-md-6">
+            <div class="app-card p-4">
+                <h5 class="fw-bold mb-4">Thông Tin Cá Nhân</h5>
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Email:</dt>
+                    <dd class="col-sm-8">@Model.Email</dd>
+
+                    <dt class="col-sm-4">Họ Tên:</dt>
+                    <dd class="col-sm-8">@Model.FullName</dd>
+
+                    <dt class="col-sm-4">Số Điện Thoại:</dt>
+                    <dd class="col-sm-8">@(Model.PhoneNumber ?? "N/A")</dd>
+
+                    <dt class="col-sm-4">Giới Tính:</dt>
+                    <dd class="col-sm-8">@Model.Gender</dd>
+
+                    <dt class="col-sm-4">Tuổi:</dt>
+                    <dd class="col-sm-8">@Model.Age</dd>
+
+                    <dt class="col-sm-4">Vai Trò:</dt>
+                    <dd class="col-sm-8">
+                        <span class="badge bg-secondary">@(Model.Role?.Name ?? "N/A")</span>
+                    </dd>
+
+                    <dt class="col-sm-4">Trạng Thái:</dt>
+                    <dd class="col-sm-8">
+                        @if (Model.IsActive)
+                        {
+                            <span class="badge bg-success">Hoạt Động</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-danger">Vô Hiệu Hóa</span>
+                        }
+                    </dd>
+
+                    <dt class="col-sm-4">Ngày Tạo:</dt>
+                    <dd class="col-sm-8">@Model.CreatedAtUtc.ToString("dd/MM/yyyy HH:mm")</dd>
+
+                    @if (Model.LastLoginAtUtc.HasValue)
+                    {
+                        <dt class="col-sm-4">Đăng Nhập Cuối:</dt>
+                        <dd class="col-sm-8">@Model.LastLoginAtUtc.Value.ToString("dd/MM/yyyy HH:mm")</dd>
+                    }
+                </dl>
+            </div>
+        </div>
+
+        <!-- Nutrition Profile -->
+        <div class="col-md-6">
+            @if (Model.NutritionProfile != null)
+            {
+                <div class="app-card p-4 mb-4">
+                    <h5 class="fw-bold mb-4">Hồ Sơ Dinh Dưỡng</h5>
+                    <dl class="row mb-0">
+                        <dt class="col-sm-6">Chiều Cao:</dt>
+                        <dd class="col-sm-6">@Model.NutritionProfile.HeightCm cm</dd>
+
+                        <dt class="col-sm-6">Cân Nặng:</dt>
+                        <dd class="col-sm-6">@Model.NutritionProfile.WeightKg kg</dd>
+
+                        <dt class="col-sm-6">Mục Tiêu:</dt>
+                        <dd class="col-sm-6">@Model.NutritionProfile.Goal</dd>
+
+                        <dt class="col-sm-6">Mức Độ Hoạt Động:</dt>
+                        <dd class="col-sm-6">@Model.NutritionProfile.ActivityLevel</dd>
+
+                        <dt class="col-sm-6">Chế Độ Ăn:</dt>
+                        <dd class="col-sm-6">@Model.NutritionProfile.DietPreference</dd>
+
+                        <dt class="col-sm-6">Bữa/Ngày:</dt>
+                        <dd class="col-sm-6">@Model.NutritionProfile.MealsPerDay</dd>
+
+                        @if (Model.NutritionProfile.CaloriesInDay.HasValue)
+                        {
+                            <dt class="col-sm-6">Calories/Ngày:</dt>
+                            <dd class="col-sm-6">@Model.NutritionProfile.CaloriesInDay kcal</dd>
+                        }
+
+                        @if (!string.IsNullOrEmpty(Model.NutritionProfile.Notes))
+                        {
+                            <dt class="col-sm-6">Ghi Chú:</dt>
+                            <dd class="col-sm-6">@Model.NutritionProfile.Notes</dd>
+                        }
+                    </dl>
+
+                    @if (Model.NutritionProfile.Allergies.Any())
+                    {
+                        <div class="mt-3">
+                            <strong>Dị Ứng:</strong>
+                            <div class="mt-2">
+                                @foreach (var allergy in Model.NutritionProfile.Allergies)
+                                {
+                                    <span class="badge bg-warning text-dark me-1">@allergy.AllergyName</span>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+
+            <!-- Actions -->
+            <div class="app-card p-4">
+                <h5 class="fw-bold mb-3">Thao Tác</h5>
+                @if (Model.IsActive)
+                {
+                    <form asp-action="Delete" method="post" onsubmit="return confirm('Bạn có chắc muốn vô hiệu hóa tài khoản này?');">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <button type="submit" class="btn btn-danger w-100">
+                            <i class="bi bi-x-circle me-2"></i>Vô Hiệu Hóa
+                        </button>
+                    </form>
+                }
+                else
+                {
+                    <form asp-action="Activate" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="bi bi-check-circle me-2"></i>Kích Hoạt
+                        </button>
+                    </form>
+                }
+            </div>
+        </div>
+
+        <!-- Subscriptions -->
+        @if (Model.Subscriptions.Any())
+        {
+            <div class="col-12">
+                <div class="app-card p-4">
+                    <h5 class="fw-bold mb-4">Subscriptions (@Model.Subscriptions.Count)</h5>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Gói</th>
+                                    <th>Bữa/Ngày</th>
+                                    <th>Ngày Bắt Đầu</th>
+                                    <th>Ngày Kết Thúc</th>
+                                    <th>Trạng Thái</th>
+                                    <th>Tổng Tiền</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var sub in Model.Subscriptions)
+                                {
+                                    <tr>
+                                        <td>#@sub.Id</td>
+                                        <td>@(sub.Plan?.Name ?? "N/A")</td>
+                                        <td>@sub.MealsPerDay</td>
+                                        <td>@sub.StartDate.ToString("dd/MM/yyyy")</td>
+                                        <td>@(sub.EndDate?.ToString("dd/MM/yyyy") ?? "N/A")</td>
+                                        <td><span class="badge bg-info">@sub.Status</span></td>
+                                        <td>@sub.TotalAmount.ToString("N0") đ</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>

@@ -12,4 +12,6 @@ public class CheckoutVm
 
     [Required]
     public DateOnly StartDate { get; set; } = DateOnly.FromDateTime(DateTime.Today);
+    
+    public DateOnly? EndDate { get; set; } // Optional, will be calculated from StartDate + Plan.DurationDays
 }

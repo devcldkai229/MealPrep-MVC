@@ -1,0 +1,139 @@
+@model List<MealPrep.DAL.Entities.DeliveryOrder>
+@using MealPrep.DAL.Enums
+@{
+    ViewData["Title"] = "Quản Lý Đơn Giao Hàng";
+    Layout = "_AdminLayout";
+}
+
+<div>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">Quản Lý Đơn Giao Hàng</h2>
+            <p class="text-muted mb-0">Danh sách tất cả đơn giao hàng trong hệ thống</p>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Search and Filter -->
+    <div class="app-card p-3 mb-4">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <input type="text" name="search" class="form-control" placeholder="Tìm kiếm theo email, tên..." value="@ViewBag.Search">
+            </div>
+            <div class="col-md-2">
+                <select name="status" class="form-select">
+                    <option value="">Tất Cả</option>
+                    @foreach (OrderStatus status in Enum.GetValues(typeof(OrderStatus)))
+                    {
+                        <option value="@((int)status)" selected="@(ViewBag.Status == status)">@status</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <input type="date" name="fromDate" class="form-control" value="@(ViewBag.FromDate?.ToString("yyyy-MM-dd"))" placeholder="Từ ngày">
+            </div>
+            <div class="col-md-2">
+                <input type="date" name="toDate" class="form-control" value="@(ViewBag.ToDate?.ToString("yyyy-MM-dd"))" placeholder="Đến ngày">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search me-2"></i>Tìm
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Orders Table -->
+    <div class="app-card p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Khách Hàng</th>
+                        <th>Ngày Giao</th>
+                        <th>Slot</th>
+                        <th>Số Món</th>
+                        <th>Trạng Thái</th>
+                        <th>Tổng Tiền</th>
+                        <th class="text-end">Thao Tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var order in Model)
+                    {
+                        <tr>
+                            <td>#@order.Id</td>
+                            <td>
+                                @if (order.Subscription != null)
+                                {
+                                    <div>@order.Subscription.CustomerName</div>
+                                    <small class="text-muted">@order.Subscription.CustomerEmail</small>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">N/A</span>
+                                }
+                            </td>
+                            <td>@order.DeliveryDate.ToString("dd/MM/yyyy")</td>
+                            <td>@(order.DeliverySlot?.Name ?? "N/A")</td>
+                            <td>@order.Items.Count</td>
+                            <td>
+                                @switch (order.Status)
+                                {
+                                    case OrderStatus.Planned:
+                                        <span class="badge bg-info">Đã Lên Lịch</span>
+                                        break;
+                                    case OrderStatus.Preparing:
+                                        <span class="badge bg-warning">Đang Chuẩn Bị</span>
+                                        break;
+                                    case OrderStatus.Delivering:
+                                        <span class="badge bg-primary">Đang Giao</span>
+                                        break;
+                                    case OrderStatus.Delivered:
+                                        <span class="badge bg-success">Đã Giao</span>
+                                        break;
+                                    case OrderStatus.Cancelled:
+                                        <span class="badge bg-danger">Đã Hủy</span>
+                                        break;
+                                    default:
+                                        <span class="badge bg-secondary">@order.Status</span>
+                                        break;
+                                }
+                            </td>
+                            <td>@order.TotalAmount.ToString("N0") đ</td>
+                            <td class="text-end">
+                                <a asp-action="Details" asp-route-id="@order.Id" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (ViewBag.TotalPages > 1)
+        {
+            <div class="p-3 border-top">
+                <nav>
+                    <ul class="pagination justify-content-center mb-0">
+                        @for (int i = 1; i <= ViewBag.TotalPages; i++)
+                        {
+                            <li class="page-item @(i == ViewBag.Page ? "active" : "")">
+                                <a class="page-link" href="?page=@i&search=@ViewBag.Search&status=@ViewBag.Status&fromDate=@ViewBag.FromDate&toDate=@ViewBag.ToDate">@i</a>
+                            </li>
+                        }
+                    </ul>
+                </nav>
+            </div>
+        }
+    </div>
+</div>

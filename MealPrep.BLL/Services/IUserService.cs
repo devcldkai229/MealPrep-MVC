@@ -76,5 +76,10 @@ namespace MealPrep.BLL.Services
         /// Kiểm tra user có không thích món này không
         /// </summary>
         Task<bool> IsMealDislikedAsync(Guid userId, int mealId);
+
+        /// <summary>
+        /// Lấy danh sách allergies của user (lowercase)
+        /// </summary>
+        Task<List<string>> GetUserAllergiesAsync(Guid userId);
     }
 }

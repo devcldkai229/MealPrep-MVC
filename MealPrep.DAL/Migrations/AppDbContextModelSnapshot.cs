@@ -120,7 +120,7 @@ namespace MealPrep.DAL.Migrations
                             FullName = "Administrator",
                             Gender = 1,
                             IsActive = true,
-                            PasswordHash = "$2a$11$pxXoT3Q7rI/BJC7WrofzouutZ/Fa/zkmdCiv3yTMRC6Cx47v0uPXe",
+                            PasswordHash = "$2a$11$BgEVIOqTroolit.QXo8ZVedAuTsoAevkQVuyc/AhK02D9iDFQvimu",
                             PhoneNumber = "0901234567",
                             RoleId = new Guid("11111111-1111-1111-1111-111111111111")
                         },
@@ -134,7 +134,7 @@ namespace MealPrep.DAL.Migrations
                             FullName = "Nguyễn Văn A",
                             Gender = 1,
                             IsActive = true,
-                            PasswordHash = "$2a$11$5HBUykQQvHJfJ9fXFDIqxu6zsTjZcSVnf4SFXQAoSQl4h.UFmaTd2",
+                            PasswordHash = "$2a$11$w6EYO9JNYHx7EsbDMmv85.9akoeiDFVXsAmfmTn3BXtY1mueukRcG",
                             PhoneNumber = "0907654321",
                             RoleId = new Guid("22222222-2222-2222-2222-222222222222")
                         });
@@ -275,6 +275,9 @@ namespace MealPrep.DAL.Migrations
                         .HasMaxLength(10000)
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("EmbeddingJson")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<decimal>("Fat")
                         .HasPrecision(5, 2)
                         .HasColumnType("decimal(5,2)");
@@ -315,38 +318,308 @@ namespace MealPrep.DAL.Migrations
                             Carbs = 18.2m,
                             CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Ức gà nướng thơm lừng với sốt mật ong đậm đà, kèm rau củ tươi ngon. Món ăn giàu protein, ít calo, phù hợp cho chế độ ăn kiêng và tập luyện.",
-                            Fat = 12.8m,
-                            Images = "[\"https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=800\",\"https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=800\"]",
+                            Fat = 8.8m,
+                            Images = "[\"https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=800\"]",
                             Ingredients = "[\"Ức gà\",\"Mật ong\",\"Tỏi\",\"Gừng\",\"Hành tây\",\"Dầu oliu\",\"Muối\",\"Tiêu\"]",
                             IsActive = true,
-                            Name = "Gà Nướng Mật Ong",
-                            Protein = 35.5m
+                            Name = "Ức Gà Nướng Mật Ong",
+                            Protein = 45.5m
                         },
                         new
                         {
                             Id = 2,
                             BasePrice = 120000m,
-                            Calories = 450,
+                            Calories = 480,
                             Carbs = 25.0m,
                             CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Cá hồi tươi ngon áp chảo với lớp da giòn tan, kèm rau củ hấp. Nguồn Omega-3 dồi dào, tốt cho tim mạch và não bộ.",
                             Fat = 22.5m,
-                            Images = "[\"https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=800\",\"https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=800\"]",
+                            Images = "[\"https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=800\"]",
                             Ingredients = "[\"Cá hồi\",\"Bơ\",\"Chanh\",\"Thì là\",\"Khoai tây\",\"Bông cải xanh\",\"Muối\",\"Tiêu\"]",
                             IsActive = true,
                             Name = "Cá Hồi Áp Chảo",
-                            Protein = 38.0m
+                            Protein = 42.0m
                         },
                         new
                         {
                             Id = 3,
+                            BasePrice = 95000m,
+                            Calories = 420,
+                            Carbs = 22.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Thịt bò mềm xào với rau củ tươi, sốt đậm đà. Món ăn giàu sắt và protein, phù hợp cho người tập gym.",
+                            Fat = 18.5m,
+                            Images = "[\"https://images.unsplash.com/photo-1558030006-450675393462?w=800\"]",
+                            Ingredients = "[\"Thịt bò\",\"Cà rốt\",\"Ớt chuông\",\"Hành tây\",\"Nấm\",\"Tỏi\",\"Gừng\",\"Nước tương\",\"Dầu mè\"]",
+                            IsActive = true,
+                            Name = "Bò Xào Rau Củ",
+                            Protein = 38.0m
+                        },
+                        new
+                        {
+                            Id = 4,
+                            BasePrice = 90000m,
+                            Calories = 380,
+                            Carbs = 28.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Ức gà sốt teriyaki đậm đà kiểu Nhật, kèm rau củ xào. Món ăn giàu protein, ít béo, phù hợp cho người tập luyện.",
+                            Fat = 10.5m,
+                            Images = "[\"https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=800\"]",
+                            Ingredients = "[\"Ức gà\",\"Nước tương\",\"Mật ong\",\"Gừng\",\"Tỏi\",\"Hành tây\",\"Ớt chuông\",\"Dầu mè\",\"Hạt mè\"]",
+                            IsActive = true,
+                            Name = "Ức Gà Sốt Teriyaki",
+                            Protein = 42.0m
+                        },
+                        new
+                        {
+                            Id = 5,
+                            BasePrice = 105000m,
+                            Calories = 400,
+                            Carbs = 30.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Cá ngừ tươi nướng vừa chín tới, kèm khoai lang và rau củ. Nguồn protein và Omega-3 dồi dào.",
+                            Fat = 12.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=800\"]",
+                            Ingredients = "[\"Cá ngừ\",\"Chanh\",\"Tỏi\",\"Thì là\",\"Khoai lang\",\"Bông cải xanh\",\"Dầu oliu\",\"Muối\",\"Tiêu\"]",
+                            IsActive = true,
+                            Name = "Cá Ngừ Nướng",
+                            Protein = 48.0m
+                        },
+                        new
+                        {
+                            Id = 6,
+                            BasePrice = 88000m,
+                            Calories = 450,
+                            Carbs = 45.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Gà tây nướng thơm lừng với cơm gạo lứt và đậu xanh. Món ăn cân bằng dinh dưỡng, giàu protein và chất xơ.",
+                            Fat = 10.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=800\"]",
+                            Ingredients = "[\"Gà tây\",\"Gạo lứt\",\"Đậu xanh\",\"Cà rốt\",\"Hành tây\",\"Tỏi\",\"Gia vị nướng\",\"Dầu oliu\"]",
+                            IsActive = true,
+                            Name = "Gà Tây Nướng",
+                            Protein = 44.0m
+                        },
+                        new
+                        {
+                            Id = 7,
+                            BasePrice = 150000m,
+                            Calories = 520,
+                            Carbs = 35.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Thịt bò bít tết mềm ngon, kèm khoai tây nghiền và rau củ. Nguồn protein và sắt cao.",
+                            Fat = 22.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1558030006-450675393462?w=800\"]",
+                            Ingredients = "[\"Thịt bò\",\"Khoai tây nghiền\",\"Bông cải xanh\",\"Cà rốt\",\"Tỏi\",\"Bơ\",\"Muối\",\"Tiêu\",\"Hương thảo\"]",
+                            IsActive = true,
+                            Name = "Thịt Bò Bít Tết",
+                            Protein = 46.0m
+                        },
+                        new
+                        {
+                            Id = 8,
+                            BasePrice = 82000m,
+                            Calories = 350,
+                            Carbs = 32.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Ức gà nướng với thảo mộc thơm lừng, kèm khoai lang và đậu xanh. Protein cao, ít béo.",
+                            Fat = 7.5m,
+                            Images = "[\"https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=800\"]",
+                            Ingredients = "[\"Ức gà\",\"Hương thảo\",\"Thì là\",\"Tỏi\",\"Chanh\",\"Dầu oliu\",\"Khoai lang\",\"Đậu xanh\",\"Muối\"]",
+                            IsActive = true,
+                            Name = "Ức Gà Nướng Thảo Mộc",
+                            Protein = 43.0m
+                        },
+                        new
+                        {
+                            Id = 9,
+                            BasePrice = 98000m,
+                            Calories = 380,
+                            Carbs = 28.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Cá thu nướng thơm ngon, giàu Omega-3 và protein. Kèm khoai tây và rau củ.",
+                            Fat = 14.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=800\"]",
+                            Ingredients = "[\"Cá thu\",\"Chanh\",\"Ớt\",\"Tỏi\",\"Gừng\",\"Rau thơm\",\"Khoai tây\",\"Cà chua\",\"Dầu oliu\"]",
+                            IsActive = true,
+                            Name = "Cá Thu Nướng",
+                            Protein = 40.0m
+                        },
+                        new
+                        {
+                            Id = 10,
+                            BasePrice = 92000m,
+                            Calories = 480,
+                            Carbs = 38.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Thịt heo nướng sốt BBQ đậm đà, kèm rau củ nướng. Protein cao, hương vị đậm đà.",
+                            Fat = 19.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1558030006-450675393462?w=800\"]",
+                            Ingredients = "[\"Thịt heo\",\"Sốt BBQ\",\"Hành tây\",\"Ớt chuông\",\"Bắp\",\"Khoai tây\",\"Tỏi\",\"Gia vị nướng\"]",
+                            IsActive = true,
+                            Name = "Thịt Heo Nướng BBQ",
+                            Protein = 41.0m
+                        },
+                        new
+                        {
+                            Id = 11,
+                            BasePrice = 88000m,
+                            Calories = 420,
+                            Carbs = 40.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Gà nướng muối ớt cay nồng, kèm cơm gạo lứt và rau củ. Protein cao, hương vị đậm đà.",
+                            Fat = 12.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=800\"]",
+                            Ingredients = "[\"Gà\",\"Muối ớt\",\"Tỏi\",\"Chanh\",\"Rau thơm\",\"Gạo lứt\",\"Rau củ\",\"Dầu ăn\"]",
+                            IsActive = true,
+                            Name = "Gà Nướng Muối Ớt",
+                            Protein = 39.0m
+                        },
+                        new
+                        {
+                            Id = 12,
+                            BasePrice = 75000m,
+                            Calories = 450,
+                            Carbs = 42.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Cá basa chiên giòn vàng, kèm rau sống và sốt tartar. Protein cao, giòn ngon.",
+                            Fat = 15.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=800\"]",
+                            Ingredients = "[\"Cá basa\",\"Bột chiên\",\"Trứng\",\"Bánh mì\",\"Rau sống\",\"Sốt tartar\",\"Chanh\",\"Dầu ăn\"]",
+                            IsActive = true,
+                            Name = "Cá Basa Chiên Giòn",
+                            Protein = 36.0m
+                        },
+                        new
+                        {
+                            Id = 13,
+                            BasePrice = 110000m,
+                            Calories = 480,
+                            Carbs = 45.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Bò kho đậm đà, thịt bò mềm ngon với cà rốt và hành tây. Protein và sắt cao.",
+                            Fat = 16.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1558030006-450675393462?w=800\"]",
+                            Ingredients = "[\"Thịt bò\",\"Cà rốt\",\"Hành tây\",\"Gừng\",\"Sả\",\"Nước dừa\",\"Gia vị\",\"Bánh mì\",\"Rau thơm\"]",
+                            IsActive = true,
+                            Name = "Bò Kho",
+                            Protein = 44.0m
+                        },
+                        new
+                        {
+                            Id = 14,
+                            BasePrice = 95000m,
+                            Calories = 440,
+                            Carbs = 38.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Gà nướng lá chanh thơm lừng, kèm cơm và rau củ. Protein cao, hương vị đặc trưng.",
+                            Fat = 14.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=800\"]",
+                            Ingredients = "[\"Gà\",\"Lá chanh\",\"Sả\",\"Tỏi\",\"Ớt\",\"Gừng\",\"Nước mắm\",\"Gạo\",\"Rau củ\"]",
+                            IsActive = true,
+                            Name = "Gà Nướng Lá Chanh",
+                            Protein = 41.0m
+                        },
+                        new
+                        {
+                            Id = 15,
+                            BasePrice = 85000m,
+                            Calories = 360,
+                            Carbs = 32.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Cá chép hấp xì dầu thơm ngon, kèm cơm và rau củ. Protein cao, ít béo.",
+                            Fat = 10.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=800\"]",
+                            Ingredients = "[\"Cá chép\",\"Xì dầu\",\"Gừng\",\"Hành lá\",\"Ớt\",\"Dầu mè\",\"Gạo\",\"Rau củ\"]",
+                            IsActive = true,
+                            Name = "Cá Chép Hấp Xì Dầu",
+                            Protein = 38.0m
+                        },
+                        new
+                        {
+                            Id = 16,
+                            BasePrice = 98000m,
+                            Calories = 420,
+                            Carbs = 35.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Thịt bò xào lăn đậm đà, kèm cơm. Protein cao, hương vị đậm đà.",
+                            Fat = 16.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1558030006-450675393462?w=800\"]",
+                            Ingredients = "[\"Thịt bò\",\"Hành tây\",\"Ớt chuông\",\"Cà chua\",\"Tỏi\",\"Gừng\",\"Nước tương\",\"Dầu mè\",\"Gạo\"]",
+                            IsActive = true,
+                            Name = "Thịt Bò Xào Lăn",
+                            Protein = 40.0m
+                        },
+                        new
+                        {
+                            Id = 17,
+                            BasePrice = 90000m,
+                            Calories = 400,
+                            Carbs = 36.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Gà rang muối giòn ngon, kèm cơm và rau củ. Protein cao, đơn giản nhưng ngon.",
+                            Fat = 13.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=800\"]",
+                            Ingredients = "[\"Gà\",\"Muối\",\"Tỏi\",\"Ớt\",\"Hành lá\",\"Gạo\",\"Rau củ\",\"Dầu ăn\"]",
+                            IsActive = true,
+                            Name = "Gà Rang Muối",
+                            Protein = 38.0m
+                        },
+                        new
+                        {
+                            Id = 18,
+                            BasePrice = 130000m,
+                            Calories = 450,
+                            Carbs = 42.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Bowl cá hồi sashimi tươi ngon, kèm gạo sushi và rau củ. Protein và Omega-3 cao.",
+                            Fat = 15.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=800\"]",
+                            Ingredients = "[\"Cá hồi\",\"Gạo sushi\",\"Rong biển\",\"Dưa chuột\",\"Cà rốt\",\"Sốt teriyaki\",\"Wasabi\",\"Gừng ngâm\"]",
+                            IsActive = true,
+                            Name = "Cá Hồi Sashimi Bowl",
+                            Protein = 44.0m
+                        },
+                        new
+                        {
+                            Id = 19,
+                            BasePrice = 105000m,
+                            Calories = 380,
+                            Carbs = 28.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Thịt bò nướng lụi thơm lừng, kèm bánh tráng và rau sống. Protein cao, hương vị đậm đà.",
+                            Fat = 16.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1558030006-450675393462?w=800\"]",
+                            Ingredients = "[\"Thịt bò\",\"Sả\",\"Tỏi\",\"Ớt\",\"Gia vị nướng\",\"Bánh tráng\",\"Rau sống\",\"Nước chấm\"]",
+                            IsActive = true,
+                            Name = "Thịt Bò Nướng Lụi",
+                            Protein = 39.0m
+                        },
+                        new
+                        {
+                            Id = 20,
+                            BasePrice = 92000m,
+                            Calories = 410,
+                            Carbs = 38.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Gà nướng mật ong tỏi ngọt ngào, kèm khoai tây và rau củ. Protein cao, hương vị đặc biệt.",
+                            Fat = 14.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=800\"]",
+                            Ingredients = "[\"Gà\",\"Mật ong\",\"Tỏi\",\"Gừng\",\"Hành tây\",\"Khoai tây\",\"Rau củ\",\"Dầu oliu\"]",
+                            IsActive = true,
+                            Name = "Gà Nướng Mật Ong Tỏi",
+                            Protein = 40.0m
+                        },
+                        new
+                        {
+                            Id = 21,
                             BasePrice = 75000m,
                             Calories = 280,
                             Carbs = 15.0m,
                             CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Salad tươi ngon với ức gà nướng, rau xanh giòn, phô mai feta và hạt óc chó. Món ăn nhẹ, giàu chất xơ và vitamin.",
                             Fat = 14.0m,
-                            Images = "[\"https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800\",\"https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800\"]",
+                            Images = "[\"https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800\"]",
                             Ingredients = "[\"Ức gà\",\"Xà lách\",\"Cà chua bi\",\"Dưa chuột\",\"Ớt chuông\",\"Dầu giấm\",\"Phô mai feta\",\"Hạt óc chó\"]",
                             IsActive = true,
                             Name = "Salad Gà Nướng",
@@ -354,44 +627,14 @@ namespace MealPrep.DAL.Migrations
                         },
                         new
                         {
-                            Id = 4,
-                            BasePrice = 95000m,
-                            Calories = 380,
-                            Carbs = 22.0m,
-                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Thịt bò mềm xào với rau củ tươi, sốt đậm đà. Món ăn giàu sắt và protein, phù hợp cho người tập gym.",
-                            Fat = 18.5m,
-                            Images = "[\"https://images.unsplash.com/photo-1558030006-450675393462?w=800\",\"https://images.unsplash.com/photo-1558030006-450675393462?w=800\"]",
-                            Ingredients = "[\"Thịt bò\",\"Cà rốt\",\"Ớt chuông\",\"Hành tây\",\"Nấm\",\"Tỏi\",\"Gừng\",\"Nước tương\",\"Dầu mè\"]",
-                            IsActive = true,
-                            Name = "Bò Xào Rau Củ",
-                            Protein = 32.0m
-                        },
-                        new
-                        {
-                            Id = 5,
-                            BasePrice = 88000m,
-                            Calories = 420,
-                            Carbs = 45.0m,
-                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Gà tây nướng thơm lừng với cơm gạo lứt và đậu xanh. Món ăn cân bằng dinh dưỡng, giàu protein và chất xơ.",
-                            Fat = 10.0m,
-                            Images = "[\"https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=800\",\"https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=800\"]",
-                            Ingredients = "[\"Gà tây\",\"Gạo lứt\",\"Đậu xanh\",\"Cà rốt\",\"Hành tây\",\"Tỏi\",\"Gia vị nướng\",\"Dầu oliu\"]",
-                            IsActive = true,
-                            Name = "Cơm Gà Tây Nướng",
-                            Protein = 40.0m
-                        },
-                        new
-                        {
-                            Id = 6,
+                            Id = 22,
                             BasePrice = 110000m,
                             Calories = 250,
                             Carbs = 20.0m,
                             CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Tôm tươi sốt cam chua ngọt, kèm rau củ. Món ăn giàu protein, ít calo, phù hợp cho chế độ ăn kiêng.",
                             Fat = 8.0m,
-                            Images = "[\"https://images.unsplash.com/photo-1559339352-11d035aa65de?w=800\",\"https://images.unsplash.com/photo-1559339352-11d035aa65de?w=800\"]",
+                            Images = "[\"https://images.unsplash.com/photo-1559339352-11d035aa65de?w=800\"]",
                             Ingredients = "[\"Tôm tươi\",\"Cam\",\"Mật ong\",\"Gừng\",\"Tỏi\",\"Ớt\",\"Hành lá\",\"Dầu oliu\",\"Muối\"]",
                             IsActive = true,
                             Name = "Tôm Sốt Cam",
@@ -399,63 +642,1173 @@ namespace MealPrep.DAL.Migrations
                         },
                         new
                         {
-                            Id = 7,
-                            BasePrice = 70000m,
-                            Calories = 320,
-                            Carbs = 38.0m,
+                            Id = 23,
+                            BasePrice = 95000m,
+                            Calories = 290,
+                            Carbs = 18.0m,
                             CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Cháo yến mạch ấm nóng với thịt bò băm nhuyễn, rau củ. Món ăn dễ tiêu, giàu chất xơ và protein.",
-                            Fat = 9.5m,
-                            Images = "[\"https://images.unsplash.com/photo-1571091718767-18b5b1457add?w=800\",\"https://images.unsplash.com/photo-1571091718767-18b5b1457add?w=800\"]",
-                            Ingredients = "[\"Yến mạch\",\"Thịt bò băm\",\"Hành tây\",\"Cà rốt\",\"Nấm\",\"Hành lá\",\"Gừng\",\"Nước dùng\",\"Muối\"]",
+                            Description = "Salad cá ngừ tươi ngon, kèm rau xanh và quả bơ. Protein cao, ít calo, giàu Omega-3.",
+                            Fat = 12.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800\"]",
+                            Ingredients = "[\"Cá ngừ\",\"Xà lách\",\"Cà chua\",\"Dưa chuột\",\"Hành tây đỏ\",\"Dầu giấm\",\"Quả bơ\",\"Hạt hướng dương\"]",
                             IsActive = true,
-                            Name = "Cháo Yến Mạch Thịt Bò",
-                            Protein = 25.0m
+                            Name = "Salad Cá Ngừ",
+                            Protein = 32.0m
                         },
                         new
                         {
-                            Id = 8,
-                            BasePrice = 90000m,
-                            Calories = 350,
+                            Id = 24,
+                            BasePrice = 78000m,
+                            Calories = 320,
+                            Carbs = 22.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Gà luộc mềm ngon, kèm rau củ hấp. Ít calo, giàu protein, phù hợp cho chế độ giảm cân.",
+                            Fat = 9.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=800\"]",
+                            Ingredients = "[\"Gà\",\"Cà rốt\",\"Bông cải xanh\",\"Đậu que\",\"Khoai tây\",\"Hành tây\",\"Gia vị\",\"Nước dùng\"]",
+                            IsActive = true,
+                            Name = "Gà Luộc Rau Củ",
+                            Protein = 35.0m
+                        },
+                        new
+                        {
+                            Id = 25,
+                            BasePrice = 88000m,
+                            Calories = 300,
                             Carbs = 28.0m,
                             CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ức gà sốt teriyaki đậm đà kiểu Nhật, kèm rau củ xào. Món ăn giàu protein, ít béo, phù hợp cho người tập luyện.",
-                            Fat = 10.5m,
-                            Images = "[\"https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=800\",\"https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=800\"]",
-                            Ingredients = "[\"Ức gà\",\"Nước tương\",\"Mật ong\",\"Gừng\",\"Tỏi\",\"Hành tây\",\"Ớt chuông\",\"Dầu mè\",\"Hạt mè\"]",
+                            Description = "Cá hấp gừng thơm ngon, kèm cơm gạo lứt và rau củ. Ít calo, giàu protein.",
+                            Fat = 8.5m,
+                            Images = "[\"https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=800\"]",
+                            Ingredients = "[\"Cá\",\"Gừng\",\"Hành lá\",\"Ớt\",\"Nước tương\",\"Dầu mè\",\"Rau củ\",\"Gạo lứt\"]",
                             IsActive = true,
-                            Name = "Ức Gà Sốt Teriyaki",
+                            Name = "Cá Hấp Gừng",
+                            Protein = 34.0m
+                        },
+                        new
+                        {
+                            Id = 26,
+                            BasePrice = 82000m,
+                            Calories = 270,
+                            Carbs = 16.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Salad quả bơ và gà tươi ngon, giàu chất béo tốt và protein. Ít calo, bổ dưỡng.",
+                            Fat = 13.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800\"]",
+                            Ingredients = "[\"Ức gà\",\"Quả bơ\",\"Xà lách\",\"Cà chua\",\"Dưa chuột\",\"Hành tây\",\"Dầu oliu\",\"Chanh\",\"Muối\"]",
+                            IsActive = true,
+                            Name = "Salad Quả Bơ Gà",
+                            Protein = 26.0m
+                        },
+                        new
+                        {
+                            Id = 27,
+                            BasePrice = 105000m,
+                            Calories = 240,
+                            Carbs = 22.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Tôm hấp bia thơm ngon, kèm cơm gạo lứt và rau củ. Ít calo, giàu protein.",
+                            Fat = 6.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1559339352-11d035aa65de?w=800\"]",
+                            Ingredients = "[\"Tôm\",\"Bia\",\"Sả\",\"Ớt\",\"Chanh\",\"Muối\",\"Rau củ\",\"Gạo lứt\"]",
+                            IsActive = true,
+                            Name = "Tôm Hấp Bia",
+                            Protein = 28.0m
+                        },
+                        new
+                        {
+                            Id = 28,
+                            BasePrice = 75000m,
+                            Calories = 260,
+                            Carbs = 20.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Gà nướng không da ít béo, kèm rau củ và khoai lang. Protein cao, calo thấp.",
+                            Fat = 5.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=800\"]",
+                            Ingredients = "[\"Ức gà không da\",\"Gia vị\",\"Chanh\",\"Rau củ hấp\",\"Khoai lang\",\"Dầu oliu\"]",
+                            IsActive = true,
+                            Name = "Gà Nướng Không Da",
                             Protein = 38.0m
                         },
                         new
                         {
-                            Id = 9,
-                            BasePrice = 105000m,
-                            Calories = 380,
-                            Carbs = 30.0m,
+                            Id = 29,
+                            BasePrice = 90000m,
+                            Calories = 280,
+                            Carbs = 26.0m,
                             CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Cá ngừ tươi nướng vừa chín tới, kèm khoai lang và rau củ. Nguồn protein và Omega-3 dồi dào.",
-                            Fat = 12.0m,
-                            Images = "[\"https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=800\",\"https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=800\"]",
-                            Ingredients = "[\"Cá ngừ\",\"Chanh\",\"Tỏi\",\"Thì là\",\"Khoai lang\",\"Bông cải xanh\",\"Dầu oliu\",\"Muối\",\"Tiêu\"]",
+                            Description = "Cá nướng giấy bạc giữ nguyên hương vị, kèm cơm gạo lứt. Ít calo, giàu protein.",
+                            Fat = 7.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=800\"]",
+                            Ingredients = "[\"Cá\",\"Chanh\",\"Gừng\",\"Hành lá\",\"Ớt\",\"Rau củ\",\"Gạo lứt\",\"Dầu oliu\"]",
                             IsActive = true,
-                            Name = "Cá Ngừ Nướng",
-                            Protein = 42.0m
+                            Name = "Cá Nướng Giấy Bạc",
+                            Protein = 32.0m
                         },
                         new
                         {
-                            Id = 10,
+                            Id = 30,
+                            BasePrice = 65000m,
+                            Calories = 220,
+                            Carbs = 12.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Salad trứng luộc tươi ngon, giàu protein. Ít calo, bổ dưỡng.",
+                            Fat = 11.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800\"]",
+                            Ingredients = "[\"Trứng\",\"Xà lách\",\"Cà chua\",\"Dưa chuột\",\"Hành tây\",\"Dầu giấm\",\"Hạt chia\",\"Rau thơm\"]",
+                            IsActive = true,
+                            Name = "Salad Trứng Luộc",
+                            Protein = 18.0m
+                        },
+                        new
+                        {
+                            Id = 31,
+                            BasePrice = 80000m,
+                            Calories = 290,
+                            Carbs = 24.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Gà xào rau củ tươi ngon, ít calo. Protein cao, giàu chất xơ.",
+                            Fat = 8.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=800\"]",
+                            Ingredients = "[\"Ức gà\",\"Cà rốt\",\"Ớt chuông\",\"Bông cải xanh\",\"Nấm\",\"Tỏi\",\"Dầu oliu\",\"Gia vị\"]",
+                            IsActive = true,
+                            Name = "Gà Xào Rau Củ",
+                            Protein = 32.0m
+                        },
+                        new
+                        {
+                            Id = 32,
+                            BasePrice = 115000m,
+                            Calories = 310,
+                            Carbs = 28.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Cá hồi nướng kèm rau củ, giàu Omega-3. Ít calo, bổ dưỡng.",
+                            Fat = 10.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=800\"]",
+                            Ingredients = "[\"Cá hồi\",\"Bông cải xanh\",\"Cà rốt\",\"Khoai lang\",\"Dầu oliu\",\"Chanh\",\"Gia vị\"]",
+                            IsActive = true,
+                            Name = "Cá Hồi Nướng Rau Củ",
+                            Protein = 36.0m
+                        },
+                        new
+                        {
+                            Id = 33,
+                            BasePrice = 98000m,
+                            Calories = 260,
+                            Carbs = 14.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Salad tôm và bơ tươi ngon, giàu protein và chất béo tốt. Ít calo.",
+                            Fat = 12.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800\"]",
+                            Ingredients = "[\"Tôm\",\"Quả bơ\",\"Xà lách\",\"Cà chua\",\"Dưa chuột\",\"Hành tây\",\"Dầu giấm\",\"Chanh\"]",
+                            IsActive = true,
+                            Name = "Salad Tôm Bơ",
+                            Protein = 24.0m
+                        },
+                        new
+                        {
+                            Id = 34,
+                            BasePrice = 78000m,
+                            Calories = 300,
+                            Carbs = 26.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Gà luộc mềm ngon chấm muối tiêu, kèm rau củ. Ít calo, giàu protein.",
+                            Fat = 8.5m,
+                            Images = "[\"https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=800\"]",
+                            Ingredients = "[\"Gà\",\"Muối\",\"Tiêu\",\"Chanh\",\"Rau củ hấp\",\"Gạo lứt\"]",
+                            IsActive = true,
+                            Name = "Gà Luộc Chấm Muối Tiêu",
+                            Protein = 34.0m
+                        },
+                        new
+                        {
+                            Id = 35,
+                            BasePrice = 85000m,
+                            Calories = 280,
+                            Carbs = 30.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Cá kho tộ đậm đà, kèm cơm và rau củ. Ít calo, giàu protein.",
+                            Fat = 6.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=800\"]",
+                            Ingredients = "[\"Cá\",\"Nước mắm\",\"Đường\",\"Ớt\",\"Gừng\",\"Hành tây\",\"Gạo\",\"Rau củ\"]",
+                            IsActive = true,
+                            Name = "Cá Kho Tộ",
+                            Protein = 30.0m
+                        },
+                        new
+                        {
+                            Id = 36,
+                            BasePrice = 72000m,
+                            Calories = 250,
+                            Carbs = 16.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Salad ức gà nướng tươi ngon, giàu protein. Ít calo, bổ dưỡng.",
+                            Fat = 9.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800\"]",
+                            Ingredients = "[\"Ức gà\",\"Xà lách\",\"Cà chua\",\"Dưa chuột\",\"Ớt chuông\",\"Dầu giấm\",\"Hạt hướng dương\"]",
+                            IsActive = true,
+                            Name = "Salad Ức Gà Nướng",
+                            Protein = 30.0m
+                        },
+                        new
+                        {
+                            Id = 37,
+                            BasePrice = 102000m,
+                            Calories = 270,
+                            Carbs = 32.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Tôm rang me chua ngọt, kèm cơm. Ít calo, giàu protein.",
+                            Fat = 7.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1559339352-11d035aa65de?w=800\"]",
+                            Ingredients = "[\"Tôm\",\"Me\",\"Đường\",\"Tỏi\",\"Ớt\",\"Hành lá\",\"Gạo\",\"Rau củ\"]",
+                            IsActive = true,
+                            Name = "Tôm Rang Me",
+                            Protein = 26.0m
+                        },
+                        new
+                        {
+                            Id = 38,
+                            BasePrice = 76000m,
+                            Calories = 290,
+                            Carbs = 24.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Gà hấp muối mềm ngon, kèm rau củ. Ít calo, giàu protein.",
+                            Fat = 8.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=800\"]",
+                            Ingredients = "[\"Gà\",\"Muối\",\"Gừng\",\"Hành lá\",\"Rau củ\",\"Gạo lứt\"]",
+                            IsActive = true,
+                            Name = "Gà Hấp Muối",
+                            Protein = 33.0m
+                        },
+                        new
+                        {
+                            Id = 39,
+                            BasePrice = 88000m,
+                            Calories = 260,
+                            Carbs = 22.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Cá nướng muối ớt cay nồng, kèm rau củ. Ít calo, giàu protein.",
+                            Fat = 7.5m,
+                            Images = "[\"https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=800\"]",
+                            Ingredients = "[\"Cá\",\"Muối ớt\",\"Chanh\",\"Rau củ\",\"Gạo lứt\",\"Dầu oliu\"]",
+                            IsActive = true,
+                            Name = "Cá Nướng Muối Ớt",
+                            Protein = 28.0m
+                        },
+                        new
+                        {
+                            Id = 40,
+                            BasePrice = 68000m,
+                            Calories = 240,
+                            Carbs = 14.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Salad cá ngừ đóng hộp tiện lợi, giàu protein. Ít calo, bổ dưỡng.",
+                            Fat = 10.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800\"]",
+                            Ingredients = "[\"Cá ngừ\",\"Xà lách\",\"Cà chua\",\"Dưa chuột\",\"Hành tây\",\"Dầu giấm\",\"Trứng luộc\"]",
+                            IsActive = true,
+                            Name = "Salad Cá Ngừ Đóng Hộp",
+                            Protein = 22.0m
+                        },
+                        new
+                        {
+                            Id = 41,
+                            BasePrice = 88000m,
+                            Calories = 420,
+                            Carbs = 45.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Gà tây nướng thơm lừng với cơm gạo lứt và đậu xanh. Món ăn cân bằng dinh dưỡng, giàu protein và chất xơ.",
+                            Fat = 10.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=800\"]",
+                            Ingredients = "[\"Gà tây\",\"Gạo lứt\",\"Đậu xanh\",\"Cà rốt\",\"Hành tây\",\"Tỏi\",\"Gia vị nướng\",\"Dầu oliu\"]",
+                            IsActive = true,
+                            Name = "Cơm Gà Tây Nướng",
+                            Protein = 40.0m
+                        },
+                        new
+                        {
+                            Id = 42,
                             BasePrice = 92000m,
                             Calories = 400,
                             Carbs = 42.0m,
                             CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Bowl quinoa đầy đủ dinh dưỡng với ức gà, rau củ tươi và sốt tahini. Món ăn healthy, giàu protein và chất xơ.",
                             Fat = 12.5m,
-                            Images = "[\"https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800\",\"https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800\"]",
+                            Images = "[\"https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800\"]",
                             Ingredients = "[\"Quinoa\",\"Ức gà\",\"Bơ\",\"Cà chua\",\"Dưa chuột\",\"Hành tây đỏ\",\"Rau mầm\",\"Sốt tahini\",\"Chanh\"]",
                             IsActive = true,
                             Name = "Bowl Quinoa Gà",
                             Protein = 35.0m
+                        },
+                        new
+                        {
+                            Id = 43,
+                            BasePrice = 85000m,
+                            Calories = 480,
+                            Carbs = 50.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Thịt kho tàu đậm đà, kèm trứng và cơm. Món ăn cân bằng dinh dưỡng, hương vị đậm đà.",
+                            Fat = 18.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1558030006-450675393462?w=800\"]",
+                            Ingredients = "[\"Thịt ba chỉ\",\"Trứng\",\"Nước dừa\",\"Nước mắm\",\"Đường\",\"Hành tây\",\"Gạo\",\"Dưa chua\"]",
+                            IsActive = true,
+                            Name = "Cơm Thịt Kho Tàu",
+                            Protein = 32.0m
+                        },
+                        new
+                        {
+                            Id = 44,
+                            BasePrice = 98000m,
+                            Calories = 520,
+                            Carbs = 48.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Sườn heo nướng mật ong thơm ngon, kèm cơm và rau củ. Cân bằng dinh dưỡng.",
+                            Fat = 22.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1558030006-450675393462?w=800\"]",
+                            Ingredients = "[\"Sườn heo\",\"Mật ong\",\"Tỏi\",\"Gừng\",\"Gạo\",\"Rau củ\",\"Dầu oliu\"]",
+                            IsActive = true,
+                            Name = "Cơm Sườn Nướng",
+                            Protein = 35.0m
+                        },
+                        new
+                        {
+                            Id = 45,
+                            BasePrice = 90000m,
+                            Calories = 450,
+                            Carbs = 42.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Gà nướng muối ớt cay nồng, kèm cơm và rau củ. Cân bằng dinh dưỡng, hương vị đậm đà.",
+                            Fat = 16.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=800\"]",
+                            Ingredients = "[\"Gà\",\"Muối ớt\",\"Tỏi\",\"Chanh\",\"Gạo\",\"Rau củ\",\"Dầu ăn\"]",
+                            IsActive = true,
+                            Name = "Cơm Gà Nướng Muối Ớt",
+                            Protein = 38.0m
+                        },
+                        new
+                        {
+                            Id = 46,
+                            BasePrice = 88000m,
+                            Calories = 380,
+                            Carbs = 40.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Cá kho tộ đậm đà, kèm cơm và rau củ. Cân bằng dinh dưỡng, hương vị truyền thống.",
+                            Fat = 12.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=800\"]",
+                            Ingredients = "[\"Cá\",\"Nước mắm\",\"Đường\",\"Ớt\",\"Gừng\",\"Hành tây\",\"Gạo\",\"Rau củ\"]",
+                            IsActive = true,
+                            Name = "Cơm Cá Kho Tộ",
+                            Protein = 32.0m
+                        },
+                        new
+                        {
+                            Id = 47,
+                            BasePrice = 102000m,
+                            Calories = 440,
+                            Carbs = 38.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Thịt bò xào đậm đà, kèm cơm. Cân bằng dinh dưỡng, giàu protein.",
+                            Fat = 18.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1558030006-450675393462?w=800\"]",
+                            Ingredients = "[\"Thịt bò\",\"Hành tây\",\"Ớt chuông\",\"Cà chua\",\"Tỏi\",\"Gừng\",\"Nước tương\",\"Gạo\",\"Dầu mè\"]",
+                            IsActive = true,
+                            Name = "Cơm Thịt Bò Xào",
+                            Protein = 36.0m
+                        },
+                        new
+                        {
+                            Id = 48,
+                            BasePrice = 80000m,
+                            Calories = 400,
+                            Carbs = 40.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Gà luộc mềm ngon, kèm cơm và rau củ. Cân bằng dinh dưỡng, đơn giản nhưng ngon.",
+                            Fat = 12.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=800\"]",
+                            Ingredients = "[\"Gà\",\"Muối\",\"Gừng\",\"Hành lá\",\"Gạo\",\"Rau củ\",\"Nước dùng\"]",
+                            IsActive = true,
+                            Name = "Cơm Gà Luộc",
+                            Protein = 35.0m
+                        },
+                        new
+                        {
+                            Id = 49,
+                            BasePrice = 110000m,
+                            Calories = 420,
+                            Carbs = 45.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Tôm rang me chua ngọt, kèm cơm. Cân bằng dinh dưỡng, hương vị đặc biệt.",
+                            Fat = 14.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1559339352-11d035aa65de?w=800\"]",
+                            Ingredients = "[\"Tôm\",\"Me\",\"Đường\",\"Tỏi\",\"Ớt\",\"Hành lá\",\"Gạo\",\"Rau củ\"]",
+                            IsActive = true,
+                            Name = "Cơm Tôm Rang Me",
+                            Protein = 28.0m
+                        },
+                        new
+                        {
+                            Id = 50,
+                            BasePrice = 85000m,
+                            Calories = 460,
+                            Carbs = 48.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Cá chiên giòn vàng, kèm cơm và rau sống. Cân bằng dinh dưỡng, giòn ngon.",
+                            Fat = 18.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=800\"]",
+                            Ingredients = "[\"Cá\",\"Bột chiên\",\"Trứng\",\"Gạo\",\"Rau sống\",\"Nước mắm\",\"Chanh\",\"Dầu ăn\"]",
+                            IsActive = true,
+                            Name = "Cơm Cá Chiên",
+                            Protein = 30.0m
+                        },
+                        new
+                        {
+                            Id = 51,
+                            BasePrice = 95000m,
+                            Calories = 500,
+                            Carbs = 46.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Thịt heo quay giòn tan, kèm cơm và dưa chua. Cân bằng dinh dưỡng, hương vị đậm đà.",
+                            Fat = 22.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1558030006-450675393462?w=800\"]",
+                            Ingredients = "[\"Thịt heo quay\",\"Gạo\",\"Dưa chua\",\"Rau củ\",\"Nước mắm\",\"Tỏi\",\"Ớt\"]",
+                            IsActive = true,
+                            Name = "Cơm Thịt Heo Quay",
+                            Protein = 34.0m
+                        },
+                        new
+                        {
+                            Id = 52,
+                            BasePrice = 92000m,
+                            Calories = 480,
+                            Carbs = 44.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Gà xối mỡ thơm lừng, kèm cơm và rau củ. Cân bằng dinh dưỡng, hương vị đặc trưng.",
+                            Fat = 20.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=800\"]",
+                            Ingredients = "[\"Gà\",\"Mỡ\",\"Tỏi\",\"Gừng\",\"Gạo\",\"Rau củ\",\"Nước mắm\"]",
+                            IsActive = true,
+                            Name = "Cơm Gà Xối Mỡ",
+                            Protein = 36.0m
+                        },
+                        new
+                        {
+                            Id = 53,
+                            BasePrice = 90000m,
+                            Calories = 390,
+                            Carbs = 38.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Cá lóc kho tộ đậm đà, kèm cơm. Cân bằng dinh dưỡng, hương vị truyền thống.",
+                            Fat = 13.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=800\"]",
+                            Ingredients = "[\"Cá lóc\",\"Nước mắm\",\"Đường\",\"Ớt\",\"Gừng\",\"Hành tây\",\"Gạo\",\"Rau củ\"]",
+                            IsActive = true,
+                            Name = "Cơm Cá Lóc Kho Tộ",
+                            Protein = 34.0m
+                        },
+                        new
+                        {
+                            Id = 54,
+                            BasePrice = 115000m,
+                            Calories = 460,
+                            Carbs = 40.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Thịt bò nướng thơm lừng, kèm cơm và rau củ. Cân bằng dinh dưỡng, giàu protein.",
+                            Fat = 18.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1558030006-450675393462?w=800\"]",
+                            Ingredients = "[\"Thịt bò\",\"Gia vị nướng\",\"Tỏi\",\"Gừng\",\"Gạo\",\"Rau củ\",\"Dầu oliu\"]",
+                            IsActive = true,
+                            Name = "Cơm Thịt Bò Nướng",
+                            Protein = 40.0m
+                        },
+                        new
+                        {
+                            Id = 55,
+                            BasePrice = 88000m,
+                            Calories = 520,
+                            Carbs = 50.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Gà rán giòn vàng, kèm cơm và rau củ. Cân bằng dinh dưỡng, giòn ngon.",
+                            Fat = 22.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=800\"]",
+                            Ingredients = "[\"Gà\",\"Bột chiên\",\"Gia vị\",\"Gạo\",\"Rau củ\",\"Dầu ăn\"]",
+                            IsActive = true,
+                            Name = "Cơm Gà Rán",
+                            Protein = 32.0m
+                        },
+                        new
+                        {
+                            Id = 56,
+                            BasePrice = 78000m,
+                            Calories = 470,
+                            Carbs = 46.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Cá basa chiên giòn, kèm cơm và rau sống. Cân bằng dinh dưỡng, giòn ngon.",
+                            Fat = 20.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=800\"]",
+                            Ingredients = "[\"Cá basa\",\"Bột chiên\",\"Trứng\",\"Gạo\",\"Rau sống\",\"Nước mắm\",\"Dầu ăn\"]",
+                            IsActive = true,
+                            Name = "Cơm Cá Basa Chiên",
+                            Protein = 28.0m
+                        },
+                        new
+                        {
+                            Id = 57,
+                            BasePrice = 90000m,
+                            Calories = 490,
+                            Carbs = 44.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Thịt heo nướng thơm lừng, kèm cơm và rau củ. Cân bằng dinh dưỡng, hương vị đậm đà.",
+                            Fat = 21.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1558030006-450675393462?w=800\"]",
+                            Ingredients = "[\"Thịt heo\",\"Gia vị nướng\",\"Mật ong\",\"Tỏi\",\"Gạo\",\"Rau củ\",\"Dầu oliu\"]",
+                            IsActive = true,
+                            Name = "Cơm Thịt Heo Nướng",
+                            Protein = 33.0m
+                        },
+                        new
+                        {
+                            Id = 58,
+                            BasePrice = 85000m,
+                            Calories = 410,
+                            Carbs = 42.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Gà nấu nấm thơm ngon, kèm cơm và rau củ. Cân bằng dinh dưỡng, bổ dưỡng.",
+                            Fat = 14.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=800\"]",
+                            Ingredients = "[\"Gà\",\"Nấm\",\"Hành tây\",\"Tỏi\",\"Gừng\",\"Gạo\",\"Rau củ\",\"Nước dùng\"]",
+                            IsActive = true,
+                            Name = "Cơm Gà Nấu Nấm",
+                            Protein = 34.0m
+                        },
+                        new
+                        {
+                            Id = 59,
+                            BasePrice = 88000m,
+                            Calories = 370,
+                            Carbs = 36.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Cá hấp xì dầu thơm ngon, kèm cơm và rau củ. Cân bằng dinh dưỡng, ít béo.",
+                            Fat = 11.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=800\"]",
+                            Ingredients = "[\"Cá\",\"Xì dầu\",\"Gừng\",\"Hành lá\",\"Ớt\",\"Gạo\",\"Rau củ\",\"Dầu mè\"]",
+                            IsActive = true,
+                            Name = "Cơm Cá Hấp Xì Dầu",
+                            Protein = 32.0m
+                        },
+                        new
+                        {
+                            Id = 60,
+                            BasePrice = 110000m,
+                            Calories = 480,
+                            Carbs = 46.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Thịt bò kho đậm đà, kèm cơm. Cân bằng dinh dưỡng, hương vị đặc trưng.",
+                            Fat = 17.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1558030006-450675393462?w=800\"]",
+                            Ingredients = "[\"Thịt bò\",\"Cà rốt\",\"Hành tây\",\"Gừng\",\"Sả\",\"Nước dừa\",\"Gạo\",\"Rau thơm\"]",
+                            IsActive = true,
+                            Name = "Cơm Thịt Bò Kho",
+                            Protein = 38.0m
+                        },
+                        new
+                        {
+                            Id = 61,
+                            BasePrice = 75000m,
+                            Calories = 350,
+                            Carbs = 55.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Bowl quinoa với rau củ tươi, sốt tahini. Món ăn vegan healthy, giàu protein thực vật và chất xơ.",
+                            Fat = 10.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800\"]",
+                            Ingredients = "[\"Quinoa\",\"Bông cải xanh\",\"Cà rốt\",\"Ớt chuông\",\"Cà chua\",\"Dưa chuột\",\"Hành tây\",\"Sốt tahini\",\"Chanh\"]",
+                            IsActive = true,
+                            Name = "Bowl Quinoa Rau Củ",
+                            Protein = 12.0m
+                        },
+                        new
+                        {
+                            Id = 62,
+                            BasePrice = 68000m,
+                            Calories = 280,
+                            Carbs = 20.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Salad đậu hũ nướng tươi ngon, giàu protein thực vật. Món ăn vegan, ít calo.",
+                            Fat = 14.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800\"]",
+                            Ingredients = "[\"Đậu hũ\",\"Xà lách\",\"Cà chua\",\"Dưa chuột\",\"Ớt chuông\",\"Hành tây\",\"Dầu giấm\",\"Hạt hướng dương\"]",
+                            IsActive = true,
+                            Name = "Salad Đậu Hũ Nướng",
+                            Protein = 18.0m
+                        },
+                        new
+                        {
+                            Id = 63,
+                            BasePrice = 65000m,
+                            Calories = 380,
+                            Carbs = 52.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Đậu hũ chiên giòn, kèm cơm và rau củ. Món ăn vegan, giàu protein thực vật.",
+                            Fat = 12.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800\"]",
+                            Ingredients = "[\"Đậu hũ\",\"Bột chiên\",\"Gạo\",\"Rau củ\",\"Nước tương\",\"Dầu ăn\",\"Hành lá\"]",
+                            IsActive = true,
+                            Name = "Cơm Đậu Hũ Chiên",
+                            Protein = 16.0m
+                        },
+                        new
+                        {
+                            Id = 64,
+                            BasePrice = 70000m,
+                            Calories = 320,
+                            Carbs = 48.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Bowl đậu lăng với rau củ, giàu protein và chất xơ. Món ăn vegan bổ dưỡng.",
+                            Fat = 8.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800\"]",
+                            Ingredients = "[\"Đậu lăng\",\"Cà rốt\",\"Cần tây\",\"Hành tây\",\"Cà chua\",\"Gia vị\",\"Rau thơm\",\"Dầu oliu\"]",
+                            IsActive = true,
+                            Name = "Bowl Đậu Lăng Rau Củ",
+                            Protein = 20.0m
+                        },
+                        new
+                        {
+                            Id = 65,
+                            BasePrice = 72000m,
+                            Calories = 260,
+                            Carbs = 18.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Salad tempeh tươi ngon, giàu protein thực vật. Món ăn vegan, ít calo.",
+                            Fat = 12.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800\"]",
+                            Ingredients = "[\"Tempeh\",\"Xà lách\",\"Cà chua\",\"Dưa chuột\",\"Hành tây\",\"Dầu giấm\",\"Hạt chia\",\"Rau thơm\"]",
+                            IsActive = true,
+                            Name = "Salad Tempeh",
+                            Protein = 22.0m
+                        },
+                        new
+                        {
+                            Id = 66,
+                            BasePrice = 68000m,
+                            Calories = 360,
+                            Carbs = 50.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Đậu hũ sốt cà chua đậm đà, kèm cơm. Món ăn vegan, giàu protein thực vật.",
+                            Fat = 10.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800\"]",
+                            Ingredients = "[\"Đậu hũ\",\"Cà chua\",\"Hành tây\",\"Tỏi\",\"Gừng\",\"Gạo\",\"Rau củ\",\"Dầu oliu\"]",
+                            IsActive = true,
+                            Name = "Cơm Đậu Hũ Sốt Cà Chua",
+                            Protein = 15.0m
+                        },
+                        new
+                        {
+                            Id = 67,
+                            BasePrice = 73000m,
+                            Calories = 340,
+                            Carbs = 46.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Bowl đậu gà với rau củ, giàu protein và chất xơ. Món ăn vegan bổ dưỡng.",
+                            Fat = 11.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800\"]",
+                            Ingredients = "[\"Đậu gà\",\"Bông cải xanh\",\"Cà rốt\",\"Ớt chuông\",\"Hành tây\",\"Sốt tahini\",\"Chanh\",\"Dầu oliu\"]",
+                            IsActive = true,
+                            Name = "Bowl Đậu Gà Rau Củ",
+                            Protein = 18.0m
+                        },
+                        new
+                        {
+                            Id = 68,
+                            BasePrice = 75000m,
+                            Calories = 300,
+                            Carbs = 22.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Salad quả bơ và đậu hũ, giàu chất béo tốt và protein thực vật. Món ăn vegan.",
+                            Fat = 16.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800\"]",
+                            Ingredients = "[\"Đậu hũ\",\"Quả bơ\",\"Xà lách\",\"Cà chua\",\"Dưa chuột\",\"Hành tây\",\"Dầu giấm\",\"Hạt hướng dương\"]",
+                            IsActive = true,
+                            Name = "Salad Quả Bơ Đậu Hũ",
+                            Protein = 14.0m
+                        },
+                        new
+                        {
+                            Id = 69,
+                            BasePrice = 70000m,
+                            Calories = 370,
+                            Carbs = 48.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Đậu hũ nướng thơm lừng, kèm cơm và rau củ. Món ăn vegan, giàu protein thực vật.",
+                            Fat = 13.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800\"]",
+                            Ingredients = "[\"Đậu hũ\",\"Gia vị nướng\",\"Tỏi\",\"Gừng\",\"Gạo\",\"Rau củ\",\"Dầu oliu\"]",
+                            IsActive = true,
+                            Name = "Cơm Đậu Hũ Nướng",
+                            Protein = 17.0m
+                        },
+                        new
+                        {
+                            Id = 70,
+                            BasePrice = 78000m,
+                            Calories = 330,
+                            Carbs = 42.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Bowl seitan với rau củ, giàu protein thực vật. Món ăn vegan, hương vị đậm đà.",
+                            Fat = 9.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800\"]",
+                            Ingredients = "[\"Seitan\",\"Bông cải xanh\",\"Cà rốt\",\"Ớt chuông\",\"Hành tây\",\"Sốt teriyaki\",\"Dầu oliu\"]",
+                            IsActive = true,
+                            Name = "Bowl Seitan Rau Củ",
+                            Protein = 25.0m
+                        },
+                        new
+                        {
+                            Id = 71,
+                            BasePrice = 60000m,
+                            Calories = 380,
+                            Carbs = 45.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Trứng chiên thơm ngon, kèm cơm và rau củ. Món ăn vegetarian, giàu protein.",
+                            Fat = 14.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800\"]",
+                            Ingredients = "[\"Trứng\",\"Hành lá\",\"Gạo\",\"Rau củ\",\"Dầu ăn\",\"Nước mắm\"]",
+                            IsActive = true,
+                            Name = "Cơm Trứng Chiên",
+                            Protein = 20.0m
+                        },
+                        new
+                        {
+                            Id = 72,
+                            BasePrice = 68000m,
+                            Calories = 350,
+                            Carbs = 48.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Đậu hũ sốt nấm thơm ngon, kèm cơm. Món ăn vegetarian, giàu protein thực vật.",
+                            Fat = 11.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800\"]",
+                            Ingredients = "[\"Đậu hũ\",\"Nấm\",\"Hành tây\",\"Tỏi\",\"Gừng\",\"Gạo\",\"Rau củ\",\"Nước tương\"]",
+                            IsActive = true,
+                            Name = "Cơm Đậu Hũ Sốt Nấm",
+                            Protein = 16.0m
+                        },
+                        new
+                        {
+                            Id = 73,
+                            BasePrice = 72000m,
+                            Calories = 320,
+                            Carbs = 20.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Salad trứng và quả bơ, giàu protein và chất béo tốt. Món ăn vegetarian.",
+                            Fat = 18.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800\"]",
+                            Ingredients = "[\"Trứng\",\"Quả bơ\",\"Xà lách\",\"Cà chua\",\"Dưa chuột\",\"Hành tây\",\"Dầu giấm\",\"Hạt chia\"]",
+                            IsActive = true,
+                            Name = "Salad Trứng Quả Bơ",
+                            Protein = 16.0m
+                        },
+                        new
+                        {
+                            Id = 74,
+                            BasePrice = 75000m,
+                            Calories = 420,
+                            Carbs = 50.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Cơm phô mai nướng thơm lừng, kèm rau củ. Món ăn vegetarian, giàu protein và canxi.",
+                            Fat = 16.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800\"]",
+                            Ingredients = "[\"Phô mai\",\"Gạo\",\"Rau củ\",\"Bơ\",\"Tỏi\",\"Gia vị\"]",
+                            IsActive = true,
+                            Name = "Cơm Phô Mai Nướng",
+                            Protein = 18.0m
+                        },
+                        new
+                        {
+                            Id = 75,
+                            BasePrice = 78000m,
+                            Calories = 360,
+                            Carbs = 44.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Bowl trứng và quinoa với rau củ, giàu protein. Món ăn vegetarian bổ dưỡng.",
+                            Fat = 13.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800\"]",
+                            Ingredients = "[\"Trứng\",\"Quinoa\",\"Bông cải xanh\",\"Cà rốt\",\"Ớt chuông\",\"Sốt tahini\",\"Chanh\"]",
+                            IsActive = true,
+                            Name = "Bowl Trứng Quinoa",
+                            Protein = 19.0m
+                        },
+                        new
+                        {
+                            Id = 76,
+                            BasePrice = 70000m,
+                            Calories = 340,
+                            Carbs = 46.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Đậu hũ xào rau củ tươi ngon, kèm cơm. Món ăn vegetarian, giàu protein thực vật.",
+                            Fat = 10.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800\"]",
+                            Ingredients = "[\"Đậu hũ\",\"Cà rốt\",\"Ớt chuông\",\"Bông cải xanh\",\"Nấm\",\"Tỏi\",\"Gạo\",\"Nước tương\"]",
+                            IsActive = true,
+                            Name = "Cơm Đậu Hũ Xào Rau Củ",
+                            Protein = 15.0m
+                        },
+                        new
+                        {
+                            Id = 77,
+                            BasePrice = 72000m,
+                            Calories = 290,
+                            Carbs = 18.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Salad trứng và đậu hũ, giàu protein. Món ăn vegetarian, ít calo.",
+                            Fat = 15.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800\"]",
+                            Ingredients = "[\"Trứng\",\"Đậu hũ\",\"Xà lách\",\"Cà chua\",\"Dưa chuột\",\"Dầu giấm\",\"Hạt hướng dương\"]",
+                            IsActive = true,
+                            Name = "Salad Trứng Đậu Hũ",
+                            Protein = 20.0m
+                        },
+                        new
+                        {
+                            Id = 78,
+                            BasePrice = 62000m,
+                            Calories = 370,
+                            Carbs = 44.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Trứng ốp la thơm ngon, kèm cơm và rau củ. Món ăn vegetarian, giàu protein.",
+                            Fat = 15.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800\"]",
+                            Ingredients = "[\"Trứng\",\"Hành lá\",\"Gạo\",\"Rau củ\",\"Dầu ăn\",\"Nước mắm\",\"Tiêu\"]",
+                            IsActive = true,
+                            Name = "Cơm Trứng Ốp La",
+                            Protein = 19.0m
+                        },
+                        new
+                        {
+                            Id = 79,
+                            BasePrice = 75000m,
+                            Calories = 350,
+                            Carbs = 48.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Bowl đậu hũ và quinoa với rau củ, giàu protein thực vật. Món ăn vegetarian.",
+                            Fat = 12.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800\"]",
+                            Ingredients = "[\"Đậu hũ\",\"Quinoa\",\"Bông cải xanh\",\"Cà rốt\",\"Ớt chuông\",\"Sốt tahini\",\"Chanh\",\"Dầu oliu\"]",
+                            IsActive = true,
+                            Name = "Bowl Đậu Hũ Quinoa",
+                            Protein = 17.0m
+                        },
+                        new
+                        {
+                            Id = 80,
+                            BasePrice = 70000m,
+                            Calories = 390,
+                            Carbs = 50.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Đậu hũ chiên xù giòn tan, kèm cơm và rau củ. Món ăn vegetarian, giòn ngon.",
+                            Fat = 14.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800\"]",
+                            Ingredients = "[\"Đậu hũ\",\"Bột chiên xù\",\"Gạo\",\"Rau củ\",\"Nước tương\",\"Dầu ăn\",\"Hành lá\"]",
+                            IsActive = true,
+                            Name = "Cơm Đậu Hũ Chiên Xù",
+                            Protein = 16.0m
+                        },
+                        new
+                        {
+                            Id = 81,
+                            BasePrice = 85000m,
+                            Calories = 320,
+                            Carbs = 8.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Salad gà keto, ít carb, giàu protein và chất béo tốt. Phù hợp cho chế độ low-carb/keto.",
+                            Fat = 18.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800\"]",
+                            Ingredients = "[\"Ức gà\",\"Xà lách\",\"Cà chua\",\"Dưa chuột\",\"Quả bơ\",\"Dầu oliu\",\"Chanh\",\"Hạt chia\"]",
+                            IsActive = true,
+                            Name = "Salad Gà Keto",
+                            Protein = 35.0m
+                        },
+                        new
+                        {
+                            Id = 82,
+                            BasePrice = 120000m,
+                            Calories = 380,
+                            Carbs = 10.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Cá hồi với rau củ keto, ít carb, giàu Omega-3. Phù hợp cho chế độ low-carb/keto.",
+                            Fat = 24.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=800\"]",
+                            Ingredients = "[\"Cá hồi\",\"Bông cải xanh\",\"Cà rốt\",\"Bơ\",\"Dầu oliu\",\"Chanh\",\"Gia vị\"]",
+                            IsActive = true,
+                            Name = "Cá Hồi Rau Củ Keto",
+                            Protein = 36.0m
+                        },
+                        new
+                        {
+                            Id = 83,
+                            BasePrice = 98000m,
+                            Calories = 350,
+                            Carbs = 12.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Thịt bò xào rau củ keto, ít carb, giàu protein. Phù hợp cho chế độ low-carb/keto.",
+                            Fat = 18.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1558030006-450675393462?w=800\"]",
+                            Ingredients = "[\"Thịt bò\",\"Bông cải xanh\",\"Ớt chuông\",\"Nấm\",\"Tỏi\",\"Dầu oliu\",\"Gia vị\"]",
+                            IsActive = true,
+                            Name = "Thịt Bò Xào Rau Củ Keto",
+                            Protein = 38.0m
+                        },
+                        new
+                        {
+                            Id = 84,
+                            BasePrice = 88000m,
+                            Calories = 330,
+                            Carbs = 9.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Gà nướng với rau củ keto, ít carb, giàu protein. Phù hợp cho chế độ low-carb/keto.",
+                            Fat = 16.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=800\"]",
+                            Ingredients = "[\"Ức gà\",\"Bông cải xanh\",\"Cà rốt\",\"Bơ\",\"Dầu oliu\",\"Gia vị nướng\"]",
+                            IsActive = true,
+                            Name = "Gà Nướng Rau Củ Keto",
+                            Protein = 40.0m
+                        },
+                        new
+                        {
+                            Id = 85,
+                            BasePrice = 95000m,
+                            Calories = 300,
+                            Carbs = 7.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Salad cá ngừ keto, ít carb, giàu protein và Omega-3. Phù hợp cho chế độ low-carb/keto.",
+                            Fat = 16.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800\"]",
+                            Ingredients = "[\"Cá ngừ\",\"Xà lách\",\"Quả bơ\",\"Dưa chuột\",\"Dầu oliu\",\"Chanh\",\"Hạt chia\"]",
+                            IsActive = true,
+                            Name = "Salad Cá Ngừ Keto",
+                            Protein = 32.0m
+                        },
+                        new
+                        {
+                            Id = 86,
+                            BasePrice = 105000m,
+                            Calories = 360,
+                            Carbs = 11.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Thịt bò nướng với rau củ keto, ít carb, giàu protein. Phù hợp cho chế độ low-carb/keto.",
+                            Fat = 19.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1558030006-450675393462?w=800\"]",
+                            Ingredients = "[\"Thịt bò\",\"Bông cải xanh\",\"Cà rốt\",\"Bơ\",\"Dầu oliu\",\"Gia vị nướng\"]",
+                            IsActive = true,
+                            Name = "Thịt Bò Nướng Rau Củ Keto",
+                            Protein = 39.0m
+                        },
+                        new
+                        {
+                            Id = 87,
+                            BasePrice = 90000m,
+                            Calories = 310,
+                            Carbs = 8.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Cá hấp với rau củ keto, ít carb, giàu protein. Phù hợp cho chế độ low-carb/keto.",
+                            Fat = 15.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=800\"]",
+                            Ingredients = "[\"Cá\",\"Bông cải xanh\",\"Cà rốt\",\"Bơ\",\"Dầu oliu\",\"Gừng\",\"Chanh\"]",
+                            IsActive = true,
+                            Name = "Cá Hấp Rau Củ Keto",
+                            Protein = 34.0m
+                        },
+                        new
+                        {
+                            Id = 88,
+                            BasePrice = 82000m,
+                            Calories = 320,
+                            Carbs = 10.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Gà xào rau củ keto, ít carb, giàu protein. Phù hợp cho chế độ low-carb/keto.",
+                            Fat = 14.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=800\"]",
+                            Ingredients = "[\"Ức gà\",\"Bông cải xanh\",\"Ớt chuông\",\"Nấm\",\"Tỏi\",\"Dầu oliu\",\"Gia vị\"]",
+                            IsActive = true,
+                            Name = "Gà Xào Rau Củ Keto",
+                            Protein = 36.0m
+                        },
+                        new
+                        {
+                            Id = 89,
+                            BasePrice = 110000m,
+                            Calories = 280,
+                            Carbs = 6.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Salad tôm keto, ít carb, giàu protein. Phù hợp cho chế độ low-carb/keto.",
+                            Fat = 14.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1559339352-11d035aa65de?w=800\"]",
+                            Ingredients = "[\"Tôm\",\"Xà lách\",\"Quả bơ\",\"Dưa chuột\",\"Dầu oliu\",\"Chanh\",\"Hạt chia\"]",
+                            IsActive = true,
+                            Name = "Salad Tôm Keto",
+                            Protein = 28.0m
+                        },
+                        new
+                        {
+                            Id = 90,
+                            BasePrice = 100000m,
+                            Calories = 340,
+                            Carbs = 9.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Thịt bò xào nấm keto, ít carb, giàu protein. Phù hợp cho chế độ low-carb/keto.",
+                            Fat = 17.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1558030006-450675393462?w=800\"]",
+                            Ingredients = "[\"Thịt bò\",\"Nấm\",\"Bông cải xanh\",\"Tỏi\",\"Dầu oliu\",\"Gia vị\"]",
+                            IsActive = true,
+                            Name = "Thịt Bò Xào Nấm Keto",
+                            Protein = 37.0m
+                        },
+                        new
+                        {
+                            Id = 91,
+                            BasePrice = 88000m,
+                            Calories = 420,
+                            Carbs = 44.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Cơm gà halal thơm ngon, kèm rau củ. Món ăn halal, giàu protein.",
+                            Fat = 14.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=800\"]",
+                            Ingredients = "[\"Gà halal\",\"Gạo\",\"Rau củ\",\"Gia vị halal\",\"Dầu oliu\",\"Hành tây\"]",
+                            IsActive = true,
+                            Name = "Cơm Gà Halal",
+                            Protein = 38.0m
+                        },
+                        new
+                        {
+                            Id = 92,
+                            BasePrice = 115000m,
+                            Calories = 460,
+                            Carbs = 42.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Cơm thịt bò halal đậm đà, kèm rau củ. Món ăn halal, giàu protein và sắt.",
+                            Fat = 18.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1558030006-450675393462?w=800\"]",
+                            Ingredients = "[\"Thịt bò halal\",\"Gạo\",\"Rau củ\",\"Gia vị halal\",\"Dầu oliu\",\"Tỏi\"]",
+                            IsActive = true,
+                            Name = "Cơm Thịt Bò Halal",
+                            Protein = 40.0m
+                        },
+                        new
+                        {
+                            Id = 93,
+                            BasePrice = 92000m,
+                            Calories = 440,
+                            Carbs = 40.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Gà nướng halal thơm lừng, kèm cơm và rau củ. Món ăn halal, giàu protein.",
+                            Fat = 16.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=800\"]",
+                            Ingredients = "[\"Gà halal\",\"Gia vị nướng halal\",\"Gạo\",\"Rau củ\",\"Dầu oliu\",\"Chanh\"]",
+                            IsActive = true,
+                            Name = "Cơm Gà Nướng Halal",
+                            Protein = 39.0m
+                        },
+                        new
+                        {
+                            Id = 94,
+                            BasePrice = 125000m,
+                            Calories = 480,
+                            Carbs = 38.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Cơm thịt cừu halal đậm đà, kèm rau củ. Món ăn halal, giàu protein.",
+                            Fat = 22.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1558030006-450675393462?w=800\"]",
+                            Ingredients = "[\"Thịt cừu halal\",\"Gạo\",\"Rau củ\",\"Gia vị halal\",\"Dầu oliu\",\"Hành tây\"]",
+                            IsActive = true,
+                            Name = "Cơm Thịt Cừu Halal",
+                            Protein = 42.0m
+                        },
+                        new
+                        {
+                            Id = 95,
+                            BasePrice = 85000m,
+                            Calories = 400,
+                            Carbs = 38.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Gà xào halal thơm ngon, kèm cơm. Món ăn halal, giàu protein.",
+                            Fat = 15.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=800\"]",
+                            Ingredients = "[\"Gà halal\",\"Hành tây\",\"Ớt chuông\",\"Nấm\",\"Gạo\",\"Gia vị halal\",\"Dầu oliu\"]",
+                            IsActive = true,
+                            Name = "Cơm Gà Xào Halal",
+                            Protein = 36.0m
+                        },
+                        new
+                        {
+                            Id = 96,
+                            BasePrice = 88000m,
+                            Calories = 410,
+                            Carbs = 46.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Cơm gạo lứt với gà nướng, không chứa gluten. Món ăn gluten-free, giàu chất xơ.",
+                            Fat = 13.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=800\"]",
+                            Ingredients = "[\"Gà\",\"Gạo lứt\",\"Rau củ\",\"Dầu oliu\",\"Gia vị\",\"Chanh\"]",
+                            IsActive = true,
+                            Name = "Cơm Gạo Lứt Gà Nướng",
+                            Protein = 37.0m
+                        },
+                        new
+                        {
+                            Id = 97,
+                            BasePrice = 118000m,
+                            Calories = 390,
+                            Carbs = 40.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Bowl quinoa với cá hồi, không chứa gluten. Món ăn gluten-free, giàu Omega-3.",
+                            Fat = 16.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800\"]",
+                            Ingredients = "[\"Cá hồi\",\"Quinoa\",\"Bông cải xanh\",\"Cà rốt\",\"Dầu oliu\",\"Chanh\",\"Gia vị\"]",
+                            IsActive = true,
+                            Name = "Bowl Quinoa Cá Hồi",
+                            Protein = 34.0m
+                        },
+                        new
+                        {
+                            Id = 98,
+                            BasePrice = 108000m,
+                            Calories = 450,
+                            Carbs = 44.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Cơm gạo lứt với thịt bò, không chứa gluten. Món ăn gluten-free, giàu protein.",
+                            Fat = 17.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1558030006-450675393462?w=800\"]",
+                            Ingredients = "[\"Thịt bò\",\"Gạo lứt\",\"Rau củ\",\"Dầu oliu\",\"Gia vị\",\"Tỏi\"]",
+                            IsActive = true,
+                            Name = "Cơm Gạo Lứt Thịt Bò",
+                            Protein = 38.0m
+                        },
+                        new
+                        {
+                            Id = 99,
+                            BasePrice = 92000m,
+                            Calories = 400,
+                            Carbs = 42.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Bowl quinoa với gà, không chứa gluten. Món ăn gluten-free, giàu protein và chất xơ.",
+                            Fat = 14.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800\"]",
+                            Ingredients = "[\"Gà\",\"Quinoa\",\"Bông cải xanh\",\"Cà rốt\",\"Ớt chuông\",\"Dầu oliu\",\"Gia vị\"]",
+                            IsActive = true,
+                            Name = "Bowl Quinoa Gà",
+                            Protein = 36.0m
+                        },
+                        new
+                        {
+                            Id = 100,
+                            BasePrice = 90000m,
+                            Calories = 380,
+                            Carbs = 40.0m,
+                            CreatedAt = new DateTime(2026, 1, 24, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Cơm gạo lứt với cá nướng, không chứa gluten. Món ăn gluten-free, giàu protein.",
+                            Fat = 12.0m,
+                            Images = "[\"https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=800\"]",
+                            Ingredients = "[\"Cá\",\"Gạo lứt\",\"Rau củ\",\"Dầu oliu\",\"Chanh\",\"Gia vị\"]",
+                            IsActive = true,
+                            Name = "Cơm Gạo Lứt Cá Nướng",
+                            Protein = 32.0m
                         });
                 });
 
@@ -967,6 +2320,9 @@ namespace MealPrep.DAL.Migrations
                     b.Property<Guid>("AppUserId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<int?>("CaloriesInDay")
+                        .HasColumnType("int");
+
                     b.Property<int>("DietPreference")
                         .HasColumnType("int");
 
@@ -1004,7 +2360,7 @@ namespace MealPrep.DAL.Migrations
                             Goal = 2,
                             HeightCm = 175,
                             MealsPerDay = 3,
-                            Notes = "Tập gym 3-4 lần/tuần, muốn tăng cơ",
+                            Notes = "Tập gym 3-4 lần/tuần, muốn tăng cơ, thích ăn ngọt nhiều và cay ít",
                             WeightKg = 75.5m
                         });
                 });

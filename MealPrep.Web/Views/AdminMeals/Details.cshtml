@@ -1,0 +1,252 @@
+@model MealPrep.DAL.Entities.Meal
+@using System.Text.Json
+@{
+    ViewData["Title"] = "Chi Tiết Món Ăn";
+    Layout = "_AdminLayout";
+    var ingredients = new List<string>();
+    var images = new List<string>();
+    
+    try
+    {
+        if (!string.IsNullOrEmpty(Model.Ingredients))
+        {
+            ingredients = JsonSerializer.Deserialize<List<string>>(Model.Ingredients) ?? new List<string>();
+        }
+        if (!string.IsNullOrEmpty(Model.Images))
+        {
+            images = JsonSerializer.Deserialize<List<string>>(Model.Images) ?? new List<string>();
+        }
+    }
+    catch { }
+}
+
+<div>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">Chi Tiết Món Ăn</h2>
+            <p class="text-muted mb-0">@Model.Name</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">
+                <i class="bi bi-pencil me-2"></i>Chỉnh Sửa
+            </a>
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-2"></i>Quay Lại
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Main Info -->
+        <div class="col-md-8">
+            <div class="app-card p-4 mb-4">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <h4 class="fw-bold mb-0">@Model.Name</h4>
+                    @if (Model.IsActive)
+                    {
+                        <span class="badge bg-success">Hoạt Động</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary">Vô Hiệu Hóa</span>
+                    }
+                </div>
+                
+                @if (!string.IsNullOrEmpty(Model.Description))
+                {
+                    <p class="text-muted">@Model.Description</p>
+                }
+
+                <hr>
+
+                <h6 class="fw-bold mb-3">Thành Phần</h6>
+                @if (ingredients.Any())
+                {
+                    <div class="d-flex flex-wrap gap-2">
+                        @foreach (var ing in ingredients)
+                        {
+                            <span class="badge bg-light text-dark">@ing</span>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted">Chưa có thông tin thành phần</p>
+                }
+            </div>
+
+            <!-- Images -->
+            @if (images.Any())
+            {
+                <div class="app-card p-4">
+                    <h6 class="fw-bold mb-3">Hình Ảnh</h6>
+                    <div class="row g-2">
+                        @foreach (var img in images)
+                        {
+                            <div class="col-md-4">
+                                <img src="@img" class="img-fluid rounded" alt="@Model.Name" style="height: 150px; object-fit: cover; width: 100%;">
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-md-4">
+            <!-- Nutrition Info -->
+            <div class="app-card p-4 mb-4">
+                <h6 class="fw-bold mb-3">Thông Tin Dinh Dưỡng</h6>
+                <dl class="row mb-0">
+                    <dt class="col-sm-6">Calories:</dt>
+                    <dd class="col-sm-6 fw-bold">@Model.Calories kcal</dd>
+
+                    <dt class="col-sm-6">Protein:</dt>
+                    <dd class="col-sm-6">@Model.Protein g</dd>
+
+                    <dt class="col-sm-6">Carbs:</dt>
+                    <dd class="col-sm-6">@Model.Carbs g</dd>
+
+                    <dt class="col-sm-6">Fat:</dt>
+                    <dd class="col-sm-6">@Model.Fat g</dd>
+                </dl>
+            </div>
+
+            <!-- Pricing -->
+            <div class="app-card p-4 mb-4">
+                <h6 class="fw-bold mb-3">Giá Cả</h6>
+                <div class="d-flex align-items-baseline gap-2">
+                    <span class="h4 fw-bold text-primary mb-0">@Model.BasePrice.ToString("N0")</span>
+                    <span class="text-muted">đ</span>
+                </div>
+            </div>
+
+            <!-- Metadata -->
+            <div class="app-card p-4">
+                <h6 class="fw-bold mb-3">Thông Tin Khác</h6>
+                <dl class="row mb-0 small">
+                    <dt class="col-sm-6">ID:</dt>
+                    <dd class="col-sm-6">#@Model.Id</dd>
+
+                    <dt class="col-sm-6">Ngày Tạo:</dt>
+                    <dd class="col-sm-6">@Model.CreatedAt.ToString("dd/MM/yyyy")</dd>
+
+                    @if (Model.UpdatedAt.HasValue)
+                    {
+                        <dt class="col-sm-6">Cập Nhật:</dt>
+                        <dd class="col-sm-6">@Model.UpdatedAt.Value.ToString("dd/MM/yyyy")</dd>
+                    }
+
+                    <dt class="col-sm-6">Có Embedding:</dt>
+                    <dd class="col-sm-6">
+                        @if (!string.IsNullOrEmpty(Model.EmbeddingJson))
+                        {
+                            <span class="badge bg-success">Có</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-warning">Chưa có</span>
+                        }
+                    </dd>
+                </dl>
+            </div>
+
+            <!-- Embedding Actions -->
+            <div class="app-card p-4 mb-4">
+                <h6 class="fw-bold mb-3">
+                    <i class="bi bi-cpu text-primary me-2"></i>Generate Embedding
+                </h6>
+                @if (string.IsNullOrEmpty(Model.EmbeddingJson))
+                {
+                    <p class="text-muted small mb-3">Món ăn này chưa có embedding. Generate để hỗ trợ AI recommendation.</p>
+                    <button type="button" id="generateEmbeddingBtn" class="btn btn-primary w-100" data-meal-id="@Model.Id">
+                        <i class="bi bi-arrow-repeat me-2"></i>Generate Embedding
+                    </button>
+                }
+                else
+                {
+                    <p class="text-muted small mb-3">Món ăn đã có embedding. Bạn có thể regenerate nếu đã cập nhật thông tin.</p>
+                    <button type="button" id="generateEmbeddingBtn" class="btn btn-outline-primary w-100" data-meal-id="@Model.Id">
+                        <i class="bi bi-arrow-clockwise me-2"></i>Regenerate Embedding
+                    </button>
+                }
+                <div id="embeddingResult" class="mt-3" style="display: none;"></div>
+            </div>
+
+            <!-- Actions -->
+            <div class="app-card p-4">
+                <form asp-action="Delete" method="post" onsubmit="return confirm('Bạn có chắc muốn xóa món ăn này?');">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <button type="submit" class="btn btn-danger w-100">
+                        <i class="bi bi-trash me-2"></i>Xóa Món Ăn
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.getElementById('generateEmbeddingBtn')?.addEventListener('click', async function() {
+            const btn = this;
+            const mealId = btn.getAttribute('data-meal-id');
+            const resultDiv = document.getElementById('embeddingResult');
+            const originalText = btn.innerHTML;
+            
+            // Disable button and show loading
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang xử lý...';
+            resultDiv.style.display = 'none';
+            resultDiv.innerHTML = '';
+
+            try {
+                const formData = new FormData();
+                formData.append('mealId', mealId);
+                // Get anti-forgery token from the page
+                const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+                if (tokenInput) {
+                    formData.append('__RequestVerificationToken', tokenInput.value);
+                }
+
+                const response = await fetch('@Url.Action("GenerateSingleMealEmbedding", "Admin")', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    resultDiv.className = 'alert alert-success';
+                    resultDiv.innerHTML = `
+                        <h6 class="fw-bold mb-2"><i class="bi bi-check-circle me-2"></i>Thành Công!</h6>
+                        <p class="mb-0">${result.message}</p>
+                    `;
+                    
+                    // Reload page after 1.5 seconds to show updated embedding status
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    resultDiv.className = 'alert alert-danger';
+                    resultDiv.innerHTML = `
+                        <h6 class="fw-bold mb-2"><i class="bi bi-exclamation-triangle me-2"></i>Lỗi</h6>
+                        <p class="mb-0">${result.message}</p>
+                    `;
+                }
+                resultDiv.style.display = 'block';
+            } catch (error) {
+                resultDiv.className = 'alert alert-danger';
+                resultDiv.innerHTML = `
+                    <h6 class="fw-bold mb-2"><i class="bi bi-exclamation-triangle me-2"></i>Lỗi</h6>
+                    <p class="mb-0">Có lỗi xảy ra: ${error.message}</p>
+                `;
+                resultDiv.style.display = 'block';
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        });
+    </script>
+}

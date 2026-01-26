@@ -1,0 +1,112 @@
+@model List<MealPrep.DAL.Entities.Plan>
+@{
+    ViewData["Title"] = "Quản Lý Gói Dịch Vụ";
+    Layout = "_AdminLayout";
+}
+
+<div>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">Quản Lý Gói Dịch Vụ</h2>
+            <p class="text-muted mb-0">Danh sách tất cả gói dịch vụ trong hệ thống</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Create" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-2"></i>Thêm Gói Mới
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="row g-4">
+        @foreach (var plan in Model)
+        {
+            <div class="col-md-6">
+                <div class="app-card p-4 h-100">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h5 class="fw-bold mb-1">@plan.Name</h5>
+                            <p class="text-muted small mb-0">@plan.Description</p>
+                        </div>
+                        @if (plan.IsActive)
+                        {
+                            <span class="badge bg-success">Hoạt Động</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">Vô Hiệu Hóa</span>
+                        }
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Thời Hạn:</span>
+                            <strong>@plan.DurationDays ngày</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Giá Cơ Bản:</span>
+                            <strong class="text-primary">@plan.BasePrice.ToString("N0") đ</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Số Tier:</span>
+                            <strong>@plan.MealTiers.Count tier</strong>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">Subscriptions:</span>
+                            <strong>@plan.Subscriptions.Count</strong>
+                        </div>
+                    </div>
+
+                    @if (plan.MealTiers.Any())
+                    {
+                        <div class="mb-3 p-2 bg-light rounded">
+                            <small class="text-muted d-block mb-2">Bảng Giá:</small>
+                            @foreach (var tier in plan.MealTiers.OrderBy(t => t.MealsPerDay))
+                            {
+                                <div class="d-flex justify-content-between small">
+                                    <span>@tier.MealsPerDay bữa/ngày:</span>
+                                    <strong>+@tier.ExtraPrice.ToString("N0") đ</strong>
+                                </div>
+                            }
+                        </div>
+                    }
+
+                    <div class="d-flex gap-2">
+                        <a asp-action="Details" asp-route-id="@plan.Id" class="btn btn-outline-primary flex-fill">
+                            <i class="bi bi-eye me-2"></i>Chi Tiết
+                        </a>
+                        <a asp-action="Edit" asp-route-id="@plan.Id" class="btn btn-outline-secondary">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    @if (Model.Count == 0)
+    {
+        <div class="app-card p-5 text-center">
+            <i class="bi bi-inbox" style="font-size: 3rem; color: var(--muted);"></i>
+            <p class="text-muted mt-3">Chưa có gói dịch vụ nào</p>
+            <a asp-action="Create" class="btn btn-primary mt-3">
+                <i class="bi bi-plus-circle me-2"></i>Tạo Gói Đầu Tiên
+            </a>
+        </div>
+    }
+</div>

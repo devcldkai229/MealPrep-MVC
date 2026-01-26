@@ -112,4 +112,21 @@ public class MomoPaymentService : IMomoService
         var hashBytes = hmac.ComputeHash(Encoding.UTF8.GetBytes(data));
         return BitConverter.ToString(hashBytes).Replace("-", "").ToLower();
     }
+
+    public bool VerifySignature(string rawData, string signature)
+    {
+        try
+        {
+            var secretKey = _configuration["Momo:SecretKey"] 
+                ?? throw new InvalidOperationException("Momo:SecretKey is not configured");
+            
+            var computedSignature = ComputeHmacSha256(rawData, secretKey);
+            return computedSignature.Equals(signature, StringComparison.OrdinalIgnoreCase);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to verify signature");
+            return false;
+        }
+    }
 }

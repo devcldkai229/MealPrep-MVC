@@ -1,0 +1,194 @@
+@model MealPrep.DAL.Entities.Plan
+@using MealPrep.DAL.Enums
+@{
+    ViewData["Title"] = "Chi Tiết Gói Dịch Vụ";
+    Layout = "_AdminLayout";
+}
+
+<div>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">Chi Tiết Gói Dịch Vụ</h2>
+            <p class="text-muted mb-0">@Model.Name</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">
+                <i class="bi bi-pencil me-2"></i>Chỉnh Sửa
+            </a>
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-2"></i>Quay Lại
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="row g-4">
+        <!-- Plan Info -->
+        <div class="col-md-6">
+            <div class="app-card p-4">
+                <h5 class="fw-bold mb-4">Thông Tin Gói</h5>
+                <dl class="row mb-0">
+                    <dt class="col-sm-5">Tên Gói:</dt>
+                    <dd class="col-sm-7">@Model.Name</dd>
+
+                    <dt class="col-sm-5">Mô Tả:</dt>
+                    <dd class="col-sm-7">@(Model.Description ?? "N/A")</dd>
+
+                    <dt class="col-sm-5">Thời Hạn:</dt>
+                    <dd class="col-sm-7">@Model.DurationDays ngày</dd>
+
+                    <dt class="col-sm-5">Giá Cơ Bản:</dt>
+                    <dd class="col-sm-7 fw-bold text-primary">@Model.BasePrice.ToString("N0") đ</dd>
+
+                    <dt class="col-sm-5">Trạng Thái:</dt>
+                    <dd class="col-sm-7">
+                        @if (Model.IsActive)
+                        {
+                            <span class="badge bg-success">Hoạt Động</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">Vô Hiệu Hóa</span>
+                        }
+                    </dd>
+
+                    <dt class="col-sm-5">Ngày Tạo:</dt>
+                    <dd class="col-sm-7">@Model.CreatedAt.ToString("dd/MM/yyyy")</dd>
+                </dl>
+            </div>
+        </div>
+
+        <!-- Meal Tiers -->
+        <div class="col-md-6">
+            <div class="app-card p-4">
+                <h5 class="fw-bold mb-4">Bảng Giá Theo Bữa/Ngày</h5>
+                @if (Model.MealTiers.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Bữa/Ngày</th>
+                                    <th>Giá Thêm</th>
+                                    <th>Tổng Giá</th>
+                                    <th>Trạng Thái</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var tier in Model.MealTiers.OrderBy(t => t.MealsPerDay))
+                                {
+                                    <tr>
+                                        <td>@tier.MealsPerDay</td>
+                                        <td>+@tier.ExtraPrice.ToString("N0") đ</td>
+                                        <td class="fw-bold">@((Model.BasePrice + tier.ExtraPrice).ToString("N0")) đ</td>
+                                        <td>
+                                            @if (tier.IsActive)
+                                            {
+                                                <span class="badge bg-success">Hoạt Động</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">Vô Hiệu Hóa</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted">Chưa có tier nào</p>
+                }
+            </div>
+        </div>
+
+        <!-- Subscriptions -->
+        @if (Model.Subscriptions.Any())
+        {
+            <div class="col-12">
+                <div class="app-card p-4">
+                    <h5 class="fw-bold mb-4">Subscriptions (@Model.Subscriptions.Count)</h5>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Khách Hàng</th>
+                                    <th>Bữa/Ngày</th>
+                                    <th>Ngày Bắt Đầu</th>
+                                    <th>Trạng Thái</th>
+                                    <th>Tổng Tiền</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var sub in Model.Subscriptions.OrderByDescending(s => s.CreatedAt))
+                                {
+                                    <tr>
+                                        <td>#@sub.Id</td>
+                                        <td>
+                                            <div>@sub.CustomerName</div>
+                                            <small class="text-muted">@sub.CustomerEmail</small>
+                                        </td>
+                                        <td>@sub.MealsPerDay</td>
+                                        <td>@sub.StartDate.ToString("dd/MM/yyyy")</td>
+                                        <td>
+                                            @switch (sub.Status)
+                                            {
+                                                case SubscriptionStatus.PendingPayment:
+                                                    <span class="badge bg-warning">Chờ Thanh Toán</span>
+                                                    break;
+                                                case SubscriptionStatus.Active:
+                                                    <span class="badge bg-success">Đang Hoạt Động</span>
+                                                    break;
+                                                case SubscriptionStatus.Paused:
+                                                    <span class="badge bg-info">Tạm Dừng</span>
+                                                    break;
+                                                case SubscriptionStatus.Cancelled:
+                                                    <span class="badge bg-danger">Đã Hủy</span>
+                                                    break;
+                                                case SubscriptionStatus.Expired:
+                                                    <span class="badge bg-secondary">Hết Hạn</span>
+                                                    break;
+                                            }
+                                        </td>
+                                        <td>@sub.TotalAmount.ToString("N0") đ</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Actions -->
+        <div class="col-12">
+            <div class="app-card p-4">
+                <form asp-action="Delete" method="post" onsubmit="return confirm('Bạn có chắc muốn xóa gói này? Gói đang có @Model.Subscriptions.Count subscription(s).');">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash me-2"></i>Xóa Gói
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

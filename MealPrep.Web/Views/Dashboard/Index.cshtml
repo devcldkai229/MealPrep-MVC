@@ -46,7 +46,7 @@
         <div class="app-card p-3">
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <h5 class="fw-semibold mb-0">Món Ăn Nổi Bật</h5>
-                <a class="link-muted" asp-controller="Meals" asp-action="Index">Xem tất cả →</a>
+                <a class="link-muted" asp-controller="Meal" asp-action="Index">Xem tất cả →</a>
             </div>
 
             <div class="row g-3">
@@ -62,7 +62,7 @@
                     }
                     catch { }
 
-                    var firstImage = imageUrls.FirstOrDefault() ?? "/images/placeholder-meal.jpg";
+                    var firstImage = imageUrls.FirstOrDefault() ?? "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%23e5e7eb' width='400' height='300'/%3E%3Ctext fill='%239ca3af' font-family='Arial' font-size='16' x='50%25' y='50%25' text-anchor='middle' dominant-baseline='middle'%3ENo Image%3C/text%3E%3C/svg%3E";
 
                     <div class="col-md-6 col-xl-4">
                         <div class="app-card p-2">
@@ -72,7 +72,7 @@
                                 <div class="meal-meta">@m.Calories kcal • P @m.Protein • C @m.Carbs • F @m.Fat</div>
                                 <div class="d-flex justify-content-between align-items-center mt-2">
                                     <div class="fw-semibold">@m.BasePrice.ToString("C")</div>
-                                    <a class="btn btn-sm btn-outline-secondary" asp-controller="Meals" asp-action="Details" asp-route-id="@m.Id">Xem</a>
+                                    <a class="btn btn-sm btn-outline-secondary" asp-controller="Meal" asp-action="Details" asp-route-id="@m.Id">Xem</a>
                                 </div>
                             </div>
                         </div>
@@ -86,7 +86,7 @@
         <div class="app-card p-3 mb-3">
             <h5 class="fw-semibold">Thao Tác Nhanh</h5>
             <div class="d-grid gap-2">
-                <a class="btn btn-outline-secondary" asp-controller="Meals" asp-action="Index">Xem món ăn</a>
+                <a class="btn btn-outline-secondary" asp-controller="Meal" asp-action="Index">Xem món ăn</a>
                 <a class="btn btn-outline-secondary" asp-controller="Subscription" asp-action="Create">Tạo đăng ký</a>
                 <a class="btn btn-outline-secondary" asp-controller="NutritionLog" asp-action="Create">Thêm nhật ký</a>
             </div>
@@ -124,7 +124,15 @@
 <div class="app-card p-3 mt-3">
     <div class="d-flex justify-content-between align-items-center mb-2">
         <h5 class="fw-semibold mb-0">Đơn Hàng Gần Đây</h5>
-        <span class="text-secondary small">5 đơn gần nhất</span>
+        <div class="d-flex align-items-center gap-2">
+            <span class="text-secondary small">5 đơn gần nhất</span>
+            @if (Model.RecentOrders.Count > 0)
+            {
+                <a asp-controller="UserSubscriptions" asp-action="Index" class="btn btn-sm btn-outline-primary">
+                    Xem tất cả <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+            }
+        </div>
     </div>
 
     <table class="table mb-0">
@@ -134,12 +142,13 @@
                 <th>Khung Giờ</th>
                 <th>Trạng Thái</th>
                 <th>Món Ăn</th>
+                <th>Thao Tác</th>
             </tr>
         </thead>
         <tbody>
             @if (Model.RecentOrders.Count == 0)
             {
-                <tr><td colspan="4" class="text-secondary">Chưa có đơn hàng.</td></tr>
+                <tr><td colspan="5" class="text-secondary text-center py-4">Chưa có đơn hàng.</td></tr>
             }
             else
             {
@@ -147,9 +156,53 @@
                 {
                     <tr>
                         <td>@o.DeliveryDate.ToString("dd/MM/yyyy")</td>
-                        <td>@o.DeliverySlot?.Name</td>
-                        <td>@o.Status</td>
-                        <td class="text-secondary">@string.Join(", ", o.Items.Select(i => $"{i.Meal?.Name} x{i.Quantity}"))</td>
+                        <td>@(o.DeliverySlot?.Name ?? "N/A")</td>
+                        <td>
+                            @switch (o.Status.ToString())
+                            {
+                                case "Planned":
+                                    <span class="badge bg-info">Đã Lên Lịch</span>
+                                    break;
+                                case "Preparing":
+                                    <span class="badge bg-warning">Đang Chuẩn Bị</span>
+                                    break;
+                                case "Delivering":
+                                    <span class="badge bg-primary">Đang Giao</span>
+                                    break;
+                                case "Delivered":
+                                    <span class="badge bg-success">Đã Giao</span>
+                                    break;
+                                case "Cancelled":
+                                    <span class="badge bg-danger">Đã Hủy</span>
+                                    break;
+                                default:
+                                    <span class="badge bg-secondary">@o.Status</span>
+                                    break;
+                            }
+                        </td>
+                        <td class="text-secondary">
+                            @if (o.Items != null && o.Items.Any())
+                            {
+                                <span>@string.Join(", ", o.Items.Take(2).Select(i => $"{i.Meal?.Name ?? "N/A"} x{i.Quantity}"))</span>
+                                @if (o.Items.Count > 2)
+                                {
+                                    <span class="text-muted">+@(o.Items.Count - 2) món khác</span>
+                                }
+                            }
+                            else
+                            {
+                                <span class="text-muted">Chưa có món</span>
+                            }
+                        </td>
+                        <td>
+                            @if (o.SubscriptionId > 0)
+                            {
+                                <a asp-controller="UserSubscriptions" asp-action="Details" asp-route-id="@o.SubscriptionId" 
+                                   class="btn btn-sm btn-outline-primary" title="Xem chi tiết subscription">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            }
+                        </td>
                     </tr>
                 }
             }

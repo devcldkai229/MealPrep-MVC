@@ -1,160 +1,80 @@
-using MealPrep.DAL.Data;
+using MealPrep.BLL.Services;
 using MealPrep.DAL.Entities;
-using MealPrep.DAL.Enums;
-using MealPrep.DAL.Repositories;
 using MealPrep.Web.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace MealPrep.Web.Controllers;
 
 [Authorize]
 public class MenuController : Controller
 {
-    private readonly IRepository<Subscription> _subRepo;
-    private readonly IRepository<WeeklyMenu> _menuRepo;
-    private readonly IRepository<Meal> _mealRepo;
-    private readonly IRepository<Order> _orderRepo;
-    private readonly IRepository<OrderItem> _orderItemRepo;
-    private readonly IRepository<UserAllergy> _allergyRepo;
-    private readonly IRepository<DeliverySlot> _slotRepo;
-    private readonly AppDbContext _dbContext;
+    private readonly IMenuService _menuService;
+    private readonly IAiMenuService _aiMenuService;
+    private readonly IMealService _mealService;
+    private readonly IUserService _userService;
+    private readonly MealPrep.DAL.Data.AppDbContext _context;
     private readonly ILogger<MenuController> _logger;
 
     public MenuController(
-        IRepository<Subscription> subRepo,
-        IRepository<WeeklyMenu> menuRepo,
-        IRepository<Meal> mealRepo,
-        IRepository<Order> orderRepo,
-        IRepository<OrderItem> orderItemRepo,
-        IRepository<UserAllergy> allergyRepo,
-        IRepository<DeliverySlot> slotRepo,
-        AppDbContext dbContext,
+        IMenuService menuService, 
+        IAiMenuService aiMenuService,
+        IMealService mealService,
+        IUserService userService,
+        MealPrep.DAL.Data.AppDbContext context,
         ILogger<MenuController> logger)
     {
-        _subRepo = subRepo;
-        _menuRepo = menuRepo;
-        _mealRepo = mealRepo;
-        _orderRepo = orderRepo;
-        _orderItemRepo = orderItemRepo;
-        _allergyRepo = allergyRepo;
-        _slotRepo = slotRepo;
-        _dbContext = dbContext;
+        _menuService = menuService;
+        _aiMenuService = aiMenuService;
+        _mealService = mealService;
+        _userService = userService;
+        _context = context;
         _logger = logger;
     }
 
     [HttpGet]
-    public async Task<IActionResult> SelectMeals()
+    public async Task<IActionResult> SelectMeals(DateOnly? startDate = null)
     {
         var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
-        // Check if user has active subscription
-        var activeSubscription = await _subRepo.Query()
-            .Where(s => s.AppUserId == userId && s.Status == SubscriptionStatus.Active)
-            .OrderByDescending(s => s.Id)
-            .FirstOrDefaultAsync();
-
-        if (activeSubscription == null)
+        var dto = await _menuService.GetWeeklySelectionAsync(userId, startDate);
+        
+        if (dto == null)
         {
             TempData["ErrorMessage"] = "Bạn cần có đăng ký đang hoạt động để chọn món ăn.";
             return RedirectToAction("Index", "Subscription");
         }
 
-        // Get current week (Monday to Sunday)
-        var today = DateOnly.FromDateTime(DateTime.Today);
-        var daysUntilMonday = ((int)today.DayOfWeek - (int)DayOfWeek.Monday + 7) % 7;
-        var weekStart = today.AddDays(-daysUntilMonday);
-        var weekEnd = weekStart.AddDays(6);
-
-        // Load weekly menu for current week
-        var weeklyMenu = await _menuRepo.Query()
-            .Include(m => m.Items)
-                .ThenInclude(i => i.Meal)
-            .Where(m => m.WeekStart <= weekStart && m.WeekEnd >= weekEnd)
-            .FirstOrDefaultAsync();
-
-        // If no weekly menu, use all active meals as fallback
-        if (weeklyMenu == null)
-        {
-            _logger.LogWarning("No weekly menu found for week {WeekStart} to {WeekEnd}, using all active meals", weekStart, weekEnd);
-        }
-
-        // Load user allergies
-        var userAllergies = await _allergyRepo.Query()
-            .Include(a => a.UserNutritionProfile)
-            .Where(a => a.UserNutritionProfile!.AppUserId == userId)
-            .Select(a => a.AllergyName.ToLower())
-            .ToListAsync();
-
-        // Load all active meals for fallback
-        var allMeals = await _mealRepo.Query()
-            .Where(m => m.IsActive)
-            .ToListAsync();
-
-        // Build daily slots
-        var dailySlots = new List<DailySlot>();
-        var dayNames = new[] { "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy", "Chủ Nhật" };
-
-        for (int i = 0; i < 7; i++)
-        {
-            var date = weekStart.AddDays(i);
-            var dayOfWeek = i + 1; // 1=Monday, 7=Sunday
-
-            // Get meals for this day from weekly menu
-            List<Meal> dayMenuItems;
-            if (weeklyMenu != null)
-            {
-                dayMenuItems = weeklyMenu.Items
-                    .Where(item => item.DayOfWeek == dayOfWeek)
-                    .Select(item => item.Meal)
-                    .Where(m => m != null && m.IsActive)
-                    .Cast<Meal>()
-                    .ToList();
-
-                // If no meals in menu for this day, use all active meals
-                if (!dayMenuItems.Any())
-                {
-                    dayMenuItems = allMeals;
-                }
-            }
-            else
-            {
-                // No weekly menu, use all active meals
-                dayMenuItems = allMeals;
-            }
-
-            var mealOptions = dayMenuItems.Select(meal => new MealOption
-            {
-                MealId = meal!.Id,
-                Name = meal.Name,
-                Description = meal.Description ?? "",
-                Calories = meal.Calories,
-                Protein = meal.Protein,
-                Carbs = meal.Carbs,
-                Fat = meal.Fat,
-                HasAllergen = CheckAllergen(meal.Ingredients ?? "", userAllergies),
-                AllergenWarning = GetAllergenWarning(meal.Ingredients ?? "", userAllergies)
-            }).ToList();
-
-            dailySlots.Add(new DailySlot
-            {
-                Date = date,
-                DayName = dayNames[i],
-                DayOfWeek = dayOfWeek,
-                AvailableMeals = mealOptions,
-                SlotsCount = activeSubscription.MealsPerDay
-            });
-        }
-
+        // Map DTO to ViewModel
         var vm = new WeeklySelectionVm
         {
-            SubscriptionId = activeSubscription.Id,
-            MealsPerDay = activeSubscription.MealsPerDay,
-            DailySlots = dailySlots,
-            UserAllergies = userAllergies
+            SubscriptionId = dto.SubscriptionId,
+            MealsPerDay = dto.MealsPerDay,
+            UserAllergies = dto.UserAllergies,
+            DailySlots = dto.DailySlots.Select(ds => new DailySlot
+            {
+                Date = ds.Date,
+                DayName = ds.DayName,
+                DayOfWeek = ds.DayOfWeek,
+                SlotsCount = ds.SlotsCount,
+                AvailableMeals = ds.AvailableMeals.Select(mo => new MealOption
+                {
+                    MealId = mo.MealId,
+                    Name = mo.Name,
+                    Description = mo.Description,
+                    ImageUrl = mo.ImageUrl,
+                    Calories = mo.Calories,
+                    Protein = mo.Protein,
+                    Carbs = mo.Carbs,
+                    Fat = mo.Fat,
+                    HasAllergen = mo.HasAllergen,
+                    AllergenWarning = mo.AllergenWarning
+                }).ToList()
+            }).ToList()
         };
 
         return View(vm);
@@ -167,24 +87,13 @@ public class MenuController : Controller
     {
         var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
-        // Verify active subscription
-        var activeSubscription = await _subRepo.Query()
-            .Where(s => s.AppUserId == userId && s.Status == SubscriptionStatus.Active)
-            .FirstOrDefaultAsync();
-
-        if (activeSubscription == null)
-        {
-            TempData["ErrorMessage"] = "Không tìm thấy đăng ký đang hoạt động.";
-            return RedirectToAction("Index", "Subscription");
-        }
-
         // Parse form data into selections
         var selections = new List<MealSelectionRequest>();
         var dateGroups = new Dictionary<string, MealSelectionRequest>();
 
         foreach (var key in Request.Form.Keys)
         {
-            var match = System.Text.RegularExpressions.Regex.Match(key, @"selections\[(\d+)\]\.(.+)");
+            var match = Regex.Match(key, @"selections\[(\d+)\]\.(.+)");
             if (match.Success)
             {
                 var dayNumber = match.Groups[1].Value;
@@ -214,148 +123,365 @@ public class MenuController : Controller
 
         selections = dateGroups.Values.Where(s => s.Date != default && s.SelectedMealIds.Any()).ToList();
 
-        // Validate selections
-        foreach (var selection in selections)
+        // Get subscription ID from form or get from service
+        var dto = await _menuService.GetWeeklySelectionAsync(userId);
+        if (dto == null)
         {
-            if (selection.SelectedMealIds.Count > activeSubscription.MealsPerDay)
-            {
-                TempData["ErrorMessage"] = $"Ngày {selection.Date:dd/MM/yyyy}: Bạn chỉ được chọn tối đa {activeSubscription.MealsPerDay} món.";
-                return RedirectToAction(nameof(SelectMeals));
-            }
+            TempData["ErrorMessage"] = "Không tìm thấy đăng ký đang hoạt động.";
+            return RedirectToAction("Index", "Subscription");
         }
 
-        // Get default delivery slot (first active slot)
-        var defaultSlot = await _slotRepo.Query()
-            .Where(s => s.IsActive)
-            .FirstOrDefaultAsync();
-
-        if (defaultSlot == null)
+        // Map ViewModel selections to DTO
+        var selectionDtos = selections.Select(s => new MealPrep.BLL.DTOs.MealSelectionRequestDto
         {
-            TempData["ErrorMessage"] = "Không tìm thấy khung giờ giao hàng. Vui lòng liên hệ quản trị viên.";
-            return RedirectToAction(nameof(SelectMeals));
-        }
+            Date = s.Date,
+            SelectedMealIds = s.SelectedMealIds
+        }).ToList();
 
-        // Start transaction
-        using var transaction = await _dbContext.Database.BeginTransactionAsync();
         try
         {
-            // Delete existing orders for this subscription in the selected week
-            if (selections.Any())
-            {
-                var weekStart = selections.Min(s => s.Date);
-                var weekEnd = selections.Max(s => s.Date);
-
-                var existingOrders = await _orderRepo.Query()
-                    .Include(o => o.Items)
-                    .Where(o => o.SubscriptionId == activeSubscription.Id &&
-                               o.DeliveryDate >= weekStart &&
-                               o.DeliveryDate <= weekEnd)
-                    .ToListAsync();
-
-                foreach (var order in existingOrders)
-                {
-                    foreach (var item in order.Items)
-                    {
-                        _orderItemRepo.Remove(item);
-                    }
-                    _orderRepo.Remove(order);
-                }
-            }
-
-            // Create new orders
-            foreach (var selection in selections)
-            {
-                if (selection.SelectedMealIds.Any())
-                {
-                    var order = new Order
-                    {
-                        AppUserId = userId,
-                        SubscriptionId = activeSubscription.Id,
-                        DeliveryDate = selection.Date,
-                        DeliverySlotId = defaultSlot.Id,
-                        Status = OrderStatus.Planned
-                    };
-
-                    await _orderRepo.AddAsync(order);
-                    
-                    // Create order items
-                    foreach (var mealId in selection.SelectedMealIds)
-                    {
-                        var orderItem = new OrderItem
-                        {
-                            OrderId = order.Id,
-                            MealId = mealId,
-                            Quantity = 1
-                        };
-                        await _orderItemRepo.AddAsync(orderItem);
-                    }
-                }
-            }
-
-            // Save all changes within transaction
-            await _dbContext.SaveChangesAsync();
-            await transaction.CommitAsync();
-
-            _logger.LogInformation("Meal selections saved for user {UserId}, subscription {SubscriptionId}", userId, activeSubscription.Id);
-
+            await _menuService.SaveMealSelectionsAsync(userId, dto.SubscriptionId, selectionDtos);
             TempData["SuccessMessage"] = "Đã lưu lựa chọn món ăn thành công!";
             return RedirectToAction("Index", "Dashboard");
         }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogError(ex, "Failed to save meal selections");
+            TempData["ErrorMessage"] = ex.Message;
+            return RedirectToAction(nameof(SelectMeals));
+        }
         catch (Exception ex)
         {
-            await transaction.RollbackAsync();
             _logger.LogError(ex, "Failed to save meal selections");
             TempData["ErrorMessage"] = "Có lỗi xảy ra khi lưu lựa chọn. Vui lòng thử lại.";
             return RedirectToAction(nameof(SelectMeals));
         }
     }
 
-    private bool CheckAllergen(string ingredients, List<string> userAllergies)
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> GenerateAiMenu([FromForm] string? weeklyNotes)
     {
-        if (string.IsNullOrWhiteSpace(ingredients) || !userAllergies.Any())
-            return false;
+        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
         try
         {
-            var ingredientList = JsonSerializer.Deserialize<List<string>>(ingredients) ?? new List<string>();
-            var ingredientsLower = ingredientList.Select(i => i.ToLower()).ToList();
+            // Get active subscription
+            var weeklySelection = await _menuService.GetWeeklySelectionAsync(userId);
+            if (weeklySelection == null)
+            {
+                return Json(new { success = false, message = "Bạn cần có đăng ký đang hoạt động." });
+            }
 
-            return userAllergies.Any(allergy => 
-                ingredientsLower.Any(ing => ing.Contains(allergy, StringComparison.OrdinalIgnoreCase)));
+            // Use subscription StartDate as weekStart (not current Monday)
+            // This ensures AI plans for the correct dates matching the subscription
+            var weekStart = weeklySelection.DailySlots.FirstOrDefault()?.Date 
+                ?? DateOnly.FromDateTime(DateTime.Today);
+
+            // Get subscription details to validate date range
+            var subscription = await _context.Set<Subscription>()
+                .Include(s => s.Plan)
+                .FirstOrDefaultAsync(s => s.Id == weeklySelection.SubscriptionId && s.AppUserId == userId);
+            
+            if (subscription == null)
+            {
+                return Json(new { success = false, message = "Không tìm thấy thông tin đăng ký." });
+            }
+
+            // Calculate weekEnd, ensuring it doesn't exceed subscription EndDate
+            var weekEnd = weekStart.AddDays(6);
+            if (subscription.EndDate.HasValue && weekEnd > subscription.EndDate.Value)
+            {
+                weekEnd = subscription.EndDate.Value;
+            }
+
+            // Generate AI recommendations with optional weekly notes
+            // If weeklyNotes is provided, it will override profile.Notes
+            var aiPlan = await _aiMenuService.GenerateMenuAsync(userId, weekStart, weeklyNotes);
+
+            // Load all active meals for selection
+            var allMeals = await _mealService.GetAllActiveMealsAsync();
+
+            // Load user allergies
+            var userAllergies = await _userService.GetUserAllergiesAsync(userId);
+
+            // Build ViewModel
+            var vm = new AiMenuRecommendationVm
+            {
+                SubscriptionId = weeklySelection.SubscriptionId,
+                MealsPerDay = weeklySelection.MealsPerDay,
+                UserAllergies = userAllergies,
+                WeekStart = weekStart,
+                WeekEnd = weekEnd
+            };
+
+            // Map AI recommendations
+            var dayNames = new[] { "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy", "Chủ Nhật" };
+            foreach (var dayPlan in aiPlan.OrderBy(d => d.day))
+            {
+                // Validate day range (1-7)
+                if (dayPlan.day < 1 || dayPlan.day > 7)
+                {
+                    _logger.LogWarning("Invalid day from AI: {Day}, skipping", dayPlan.day);
+                    continue;
+                }
+
+                var date = weekStart.AddDays(dayPlan.day - 1);
+                
+                // Validate meal IDs exist and count is exactly 2
+                if (dayPlan.meal_ids.Count != 2)
+                {
+                    _logger.LogWarning("AI returned {Count} meals for day {Day}, expected exactly 2", 
+                        dayPlan.meal_ids.Count, dayPlan.day);
+                    // Truncate or pad to 2 meals
+                    if (dayPlan.meal_ids.Count > 2)
+                    {
+                        dayPlan.meal_ids = dayPlan.meal_ids.Take(2).ToList();
+                    }
+                    else
+                    {
+                        _logger.LogError("AI returned less than 2 meals for day {Day}, cannot proceed", dayPlan.day);
+                        continue; // Skip this day if less than 2 meals
+                    }
+                }
+                
+                var validMealIds = dayPlan.meal_ids.Where(id => allMeals.Any(m => m.Id == id)).ToList();
+                if (validMealIds.Count != dayPlan.meal_ids.Count)
+                {
+                    var invalidIds = dayPlan.meal_ids.Except(validMealIds).ToList();
+                    _logger.LogWarning("AI returned invalid meal IDs: {InvalidIds} for day {Day}", 
+                        string.Join(", ", invalidIds), dayPlan.day);
+                }
+                
+                // Ensure we have exactly 2 valid meals
+                if (validMealIds.Count != 2)
+                {
+                    _logger.LogWarning("Day {Day} has {Count} valid meals, expected 2. Skipping.", 
+                        dayPlan.day, validMealIds.Count);
+                    continue;
+                }
+
+                var recommendedMeals = allMeals
+                    .Where(m => validMealIds.Contains(m.Id))
+                    .Select(m => 
+                    {
+                        // Parse Images JSON to get first image URL
+                        string? imageUrl = null;
+                        if (!string.IsNullOrEmpty(m.Images))
+                        {
+                            try
+                            {
+                                var images = System.Text.Json.JsonSerializer.Deserialize<List<string>>(m.Images);
+                                imageUrl = images?.FirstOrDefault();
+                            }
+                            catch { }
+                        }
+
+                        return new MealOption
+                        {
+                            MealId = m.Id,
+                            Name = m.Name,
+                            Description = m.Description ?? "",
+                            ImageUrl = imageUrl,
+                            Calories = m.Calories,
+                            Protein = m.Protein,
+                            Carbs = m.Carbs,
+                            Fat = m.Fat,
+                            HasAllergen = _menuService.CheckAllergen(m.Ingredients ?? "", userAllergies),
+                            AllergenWarning = _menuService.GetAllergenWarning(m.Ingredients ?? "", userAllergies)
+                        };
+                    })
+                    .ToList();
+
+                vm.AiRecommendations.Add(new AiDayRecommendation
+                {
+                    Day = dayPlan.day,
+                    DayName = dayNames[dayPlan.day - 1], // Safe: already validated day is 1-7
+                    Date = date,
+                    RecommendedMealIds = validMealIds, // Use validated meal IDs
+                    Reason = dayPlan.reason,
+                    RecommendedMeals = recommendedMeals
+                });
+            }
+
+            // Ensure we have recommendations for all 7 days
+            // If AI returned fewer days, fill missing days with empty recommendations
+            var existingDays = vm.AiRecommendations.Select(r => r.Day).ToHashSet();
+            for (int day = 1; day <= 7; day++)
+            {
+                if (!existingDays.Contains(day))
+                {
+                    var date = weekStart.AddDays(day - 1);
+                    vm.AiRecommendations.Add(new AiDayRecommendation
+                    {
+                        Day = day,
+                        DayName = dayNames[day - 1],
+                        Date = date,
+                        RecommendedMealIds = new List<int>(),
+                        Reason = "Chưa có đề xuất từ AI",
+                        RecommendedMeals = new List<MealOption>()
+                    });
+                }
+            }
+
+            // Re-sort by day to ensure correct order
+            vm.AiRecommendations = vm.AiRecommendations.OrderBy(r => r.Day).ToList();
+
+            // Map all available meals
+            vm.AvailableMeals = allMeals.Select(m => 
+            {
+                // Parse Images JSON to get first image URL
+                string? imageUrl = null;
+                if (!string.IsNullOrEmpty(m.Images))
+                {
+                    try
+                    {
+                        var images = System.Text.Json.JsonSerializer.Deserialize<List<string>>(m.Images);
+                        imageUrl = images?.FirstOrDefault();
+                    }
+                    catch { }
+                }
+
+                return new MealOption
+                {
+                    MealId = m.Id,
+                    Name = m.Name,
+                    Description = m.Description ?? "",
+                    ImageUrl = imageUrl,
+                    Calories = m.Calories,
+                    Protein = m.Protein,
+                    Carbs = m.Carbs,
+                    Fat = m.Fat,
+                    HasAllergen = _menuService.CheckAllergen(m.Ingredients ?? "", userAllergies),
+                    AllergenWarning = _menuService.GetAllergenWarning(m.Ingredients ?? "", userAllergies)
+                };
+            }).ToList();
+
+            return PartialView("_AiMenuRecommendations", vm);
         }
-        catch
+        catch (Exception ex)
         {
-            // If JSON parsing fails, do simple string check
-            var ingredientsLower = ingredients.ToLower();
-            return userAllergies.Any(allergy => ingredientsLower.Contains(allergy));
+            _logger.LogError(ex, "Error generating AI menu");
+            return Json(new { success = false, message = $"Lỗi khi tạo menu AI: {ex.Message}" });
         }
     }
 
-    private string GetAllergenWarning(string ingredients, List<string> userAllergies)
+    [HttpGet]
+    public async Task<IActionResult> GetMealsForSelection(string? search = null, int page = 1, int pageSize = 4)
     {
-        if (string.IsNullOrWhiteSpace(ingredients) || !userAllergies.Any())
-            return "";
+        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        
+        var (meals, totalCount) = await _menuService.GetMealsForSelectionAsync(search, page, pageSize, userId);
+        
+        return Json(new
+        {
+            meals = meals.Select(m => new
+            {
+                mealId = m.MealId,
+                name = m.Name,
+                description = m.Description,
+                imageUrl = m.ImageUrl,
+                calories = m.Calories,
+                protein = m.Protein,
+                carbs = m.Carbs,
+                fat = m.Fat,
+                hasAllergen = m.HasAllergen,
+                allergenWarning = m.AllergenWarning
+            }),
+            totalCount = totalCount,
+            page = page,
+            pageSize = pageSize,
+            totalPages = (int)Math.Ceiling((double)totalCount / pageSize)
+        });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AcceptAiMenu([FromBody] AcceptAiMenuRequest request)
+    {
+        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
         try
         {
-            var ingredientList = JsonSerializer.Deserialize<List<string>>(ingredients) ?? new List<string>();
-            var ingredientsLower = ingredientList.Select(i => i.ToLower()).ToList();
+            // Get active subscription
+            var weeklySelection = await _menuService.GetWeeklySelectionAsync(userId);
+            if (weeklySelection == null)
+            {
+                return Json(new { success = false, message = "Không tìm thấy đăng ký đang hoạt động." });
+            }
 
-            var foundAllergies = userAllergies.Where(allergy =>
-                ingredientsLower.Any(ing => ing.Contains(allergy, StringComparison.OrdinalIgnoreCase)))
-                .ToList();
+            // Get subscription to validate dates
+            var subscription = await _context.Set<Subscription>()
+                .FirstOrDefaultAsync(s => s.Id == weeklySelection.SubscriptionId && s.AppUserId == userId);
+            
+            if (subscription == null)
+            {
+                return Json(new { success = false, message = "Không tìm thấy thông tin đăng ký." });
+            }
 
-            return foundAllergies.Any() 
-                ? $"⚠️ Có thể chứa: {string.Join(", ", foundAllergies)}"
-                : "";
+            // Convert AI recommendations to meal selections
+            var selections = new List<MealPrep.BLL.DTOs.MealSelectionRequestDto>();
+            foreach (var ds in request.DaySelections)
+            {
+                if (DateOnly.TryParse(ds.Date, out var date))
+                {
+                    // Validate date is within subscription period
+                    if (date < subscription.StartDate)
+                    {
+                        _logger.LogWarning("Date {Date} is before subscription start {StartDate}, skipping", 
+                            date, subscription.StartDate);
+                        continue;
+                    }
+                    
+                    if (subscription.EndDate.HasValue && date > subscription.EndDate.Value)
+                    {
+                        _logger.LogWarning("Date {Date} is after subscription end {EndDate}, skipping", 
+                            date, subscription.EndDate);
+                        continue;
+                    }
+                    
+                    // Validate meal count doesn't exceed meals per day
+                    if (ds.MealIds.Count > subscription.MealsPerDay)
+                    {
+                        _logger.LogWarning("Date {Date} has {Count} meals, but subscription allows only {MealsPerDay}, truncating", 
+                            date, ds.MealIds.Count, subscription.MealsPerDay);
+                        ds.MealIds = ds.MealIds.Take(subscription.MealsPerDay).ToList();
+                    }
+                    
+                    selections.Add(new MealPrep.BLL.DTOs.MealSelectionRequestDto
+                    {
+                        Date = date,
+                        SelectedMealIds = ds.MealIds
+                    });
+                }
+            }
+            
+            if (selections.Count == 0)
+            {
+                return Json(new { success = false, message = "Không có lựa chọn hợp lệ nào được tìm thấy." });
+            }
+
+            // Save selections and create orders
+            await _menuService.SaveMealSelectionsAsync(userId, weeklySelection.SubscriptionId, selections);
+
+            return Json(new { success = true, message = "Đã lưu menu AI thành công!" });
         }
-        catch
+        catch (Exception ex)
         {
-            var ingredientsLower = ingredients.ToLower();
-            var foundAllergies = userAllergies.Where(allergy => ingredientsLower.Contains(allergy)).ToList();
-            return foundAllergies.Any() 
-                ? $"⚠️ Có thể chứa: {string.Join(", ", foundAllergies)}"
-                : "";
+            _logger.LogError(ex, "Error accepting AI menu");
+            return Json(new { success = false, message = $"Lỗi khi lưu menu: {ex.Message}" });
         }
     }
+
+}
+
+public class AcceptAiMenuRequest
+{
+    public List<DaySelection> DaySelections { get; set; } = new();
+}
+
+public class DaySelection
+{
+    public string Date { get; set; } = string.Empty; // ISO format: "yyyy-MM-dd"
+    public List<int> MealIds { get; set; } = new();
 }

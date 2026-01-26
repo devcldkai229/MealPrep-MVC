@@ -1,0 +1,99 @@
+@model List<MealPrep.DAL.Entities.Subscription>
+@using MealPrep.DAL.Enums
+@{
+    ViewData["Title"] = "Gói Đăng Ký Của Tôi";
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">Gói Đăng Ký Của Tôi</h2>
+            <p class="text-muted mb-0">Danh sách các gói đăng ký bạn đã mua</p>
+        </div>
+        <a asp-controller="Subscription" asp-action="Index" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-2"></i>Đăng Ký Gói Mới
+        </a>
+    </div>
+
+    @if (Model.Count == 0)
+    {
+        <div class="app-card p-5 text-center">
+            <i class="bi bi-inbox" style="font-size: 3rem; color: var(--muted);"></i>
+            <h5 class="mt-3">Chưa có gói đăng ký nào</h5>
+            <p class="text-muted">Hãy đăng ký gói dịch vụ để bắt đầu sử dụng</p>
+            <a asp-controller="Subscription" asp-action="Index" class="btn btn-primary mt-3">
+                <i class="bi bi-plus-circle me-2"></i>Đăng Ký Ngay
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var sub in Model)
+            {
+                <div class="col-md-6">
+                    <div class="app-card p-4 h-100">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h5 class="fw-bold mb-1">@(sub.Plan?.Name ?? "N/A")</h5>
+                                <p class="text-muted small mb-0">#@sub.Id</p>
+                            </div>
+                            @switch (sub.Status)
+                            {
+                                case SubscriptionStatus.PendingPayment:
+                                    <span class="badge bg-warning">Chờ Thanh Toán</span>
+                                    break;
+                                case SubscriptionStatus.Active:
+                                    <span class="badge bg-success">Đang Hoạt Động</span>
+                                    break;
+                                case SubscriptionStatus.Paused:
+                                    <span class="badge bg-info">Tạm Dừng</span>
+                                    break;
+                                case SubscriptionStatus.Cancelled:
+                                    <span class="badge bg-danger">Đã Hủy</span>
+                                    break;
+                                case SubscriptionStatus.Expired:
+                                    <span class="badge bg-secondary">Hết Hạn</span>
+                                    break;
+                            }
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">Bữa/Ngày:</span>
+                                <strong>@sub.MealsPerDay</strong>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">Ngày Bắt Đầu:</span>
+                                <strong>@sub.StartDate.ToString("dd/MM/yyyy")</strong>
+                            </div>
+                            @if (sub.EndDate.HasValue)
+                            {
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted">Ngày Kết Thúc:</span>
+                                    <strong>@sub.EndDate.Value.ToString("dd/MM/yyyy")</strong>
+                                </div>
+                            }
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted">Tổng Tiền:</span>
+                                <strong class="text-primary">@sub.TotalAmount.ToString("N0") đ</strong>
+                            </div>
+                        </div>
+
+                        @if (sub.DeliveryOrders.Any())
+                        {
+                            <div class="mb-3 p-2 bg-light rounded">
+                                <small class="text-muted d-block mb-1">Đơn giao hàng:</small>
+                                <strong>@sub.DeliveryOrders.Count đơn</strong>
+                            </div>
+                        }
+
+                        <a asp-action="Details" asp-route-id="@sub.Id" class="btn btn-outline-primary w-100">
+                            <i class="bi bi-eye me-2"></i>Xem Chi Tiết
+                        </a>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

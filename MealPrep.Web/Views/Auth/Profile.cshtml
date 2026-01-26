@@ -382,7 +382,7 @@
                                         <option value="">-- Chọn món ăn --</option>
                                         @if (ViewBag.AvailableMeals != null)
                                         {
-                                            var availableMeals = ViewBag.AvailableMeals as List<MealPrep.DAL.Entities.Meal>;
+                                            var availableMeals = ViewBag.AvailableMeals as List<MealPrep.DAL.Entities.Meal> ?? new List<MealPrep.DAL.Entities.Meal>();
                                             var dislikedMealIds = Model.DislikedMeals?.Select(dm => dm.MealId).ToList() ?? new List<int>();
                                             
                                             @foreach (var meal in availableMeals)

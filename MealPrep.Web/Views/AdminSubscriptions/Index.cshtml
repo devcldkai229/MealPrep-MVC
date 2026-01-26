@@ -1,0 +1,128 @@
+@model List<MealPrep.DAL.Entities.Subscription>
+@using MealPrep.DAL.Enums
+@{
+    ViewData["Title"] = "Quản Lý Subscriptions";
+    Layout = "_AdminLayout";
+}
+
+<div>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">Quản Lý Subscriptions</h2>
+            <p class="text-muted mb-0">Danh sách tất cả đăng ký trong hệ thống</p>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Search and Filter -->
+    <div class="app-card p-3 mb-4">
+        <form method="get" class="row g-3">
+            <div class="col-md-6">
+                <input type="text" name="search" class="form-control" placeholder="Tìm kiếm theo email, tên..." value="@ViewBag.Search">
+            </div>
+            <div class="col-md-3">
+                <select name="status" class="form-select">
+                    <option value="">Tất Cả Trạng Thái</option>
+                    @foreach (SubscriptionStatus status in Enum.GetValues(typeof(SubscriptionStatus)))
+                    {
+                        <option value="@((int)status)" selected="@(ViewBag.Status == status)">@status</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search me-2"></i>Tìm Kiếm
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Subscriptions Table -->
+    <div class="app-card p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Khách Hàng</th>
+                        <th>Gói</th>
+                        <th>Bữa/Ngày</th>
+                        <th>Ngày Bắt Đầu</th>
+                        <th>Ngày Kết Thúc</th>
+                        <th>Trạng Thái</th>
+                        <th>Tổng Tiền</th>
+                        <th class="text-end">Thao Tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var sub in Model)
+                    {
+                        <tr>
+                            <td>#@sub.Id</td>
+                            <td>
+                                <div>@sub.CustomerName</div>
+                                <small class="text-muted">@sub.CustomerEmail</small>
+                            </td>
+                            <td>@(sub.Plan?.Name ?? "N/A")</td>
+                            <td>@sub.MealsPerDay</td>
+                            <td>@sub.StartDate.ToString("dd/MM/yyyy")</td>
+                            <td>@(sub.EndDate?.ToString("dd/MM/yyyy") ?? "N/A")</td>
+                            <td>
+                                @switch (sub.Status)
+                                {
+                                    case SubscriptionStatus.PendingPayment:
+                                        <span class="badge bg-warning">Chờ Thanh Toán</span>
+                                        break;
+                                    case SubscriptionStatus.Active:
+                                        <span class="badge bg-success">Đang Hoạt Động</span>
+                                        break;
+                                    case SubscriptionStatus.Paused:
+                                        <span class="badge bg-info">Tạm Dừng</span>
+                                        break;
+                                    case SubscriptionStatus.Cancelled:
+                                        <span class="badge bg-danger">Đã Hủy</span>
+                                        break;
+                                    case SubscriptionStatus.Expired:
+                                        <span class="badge bg-secondary">Hết Hạn</span>
+                                        break;
+                                    default:
+                                        <span class="badge bg-secondary">@sub.Status</span>
+                                        break;
+                                }
+                            </td>
+                            <td>@sub.TotalAmount.ToString("N0") đ</td>
+                            <td class="text-end">
+                                <a asp-action="Details" asp-route-id="@sub.Id" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (ViewBag.TotalPages > 1)
+        {
+            <div class="p-3 border-top">
+                <nav>
+                    <ul class="pagination justify-content-center mb-0">
+                        @for (int i = 1; i <= ViewBag.TotalPages; i++)
+                        {
+                            <li class="page-item @(i == ViewBag.Page ? "active" : "")">
+                                <a class="page-link" href="?page=@i&search=@ViewBag.Search&status=@ViewBag.Status">@i</a>
+                            </li>
+                        }
+                    </ul>
+                </nav>
+            </div>
+        }
+    </div>
+</div>

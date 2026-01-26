@@ -2,10 +2,10 @@
 @using MealPrep.DAL.Enums
 @{
     ViewData["Title"] = "Chi Tiết Đăng Ký";
-    var totalOrders = Model.Orders.Count;
-    var deliveredOrders = Model.Orders.Count(o => o.Status == OrderStatus.Delivered);
-    var upcomingOrders = Model.Orders.Count(o => o.Status == OrderStatus.Planned);
-    var deliveringOrders = Model.Orders.Count(o => o.Status == OrderStatus.Delivering);
+    var totalOrders = Model.DeliveryOrders?.Count ?? 0;
+    var deliveredOrders = Model.DeliveryOrders?.Count(o => o.Status == OrderStatus.Delivered) ?? 0;
+    var upcomingOrders = Model.DeliveryOrders?.Count(o => o.Status == OrderStatus.Planned) ?? 0;
+    var deliveringOrders = Model.DeliveryOrders?.Count(o => o.Status == OrderStatus.Delivering) ?? 0;
 }
 
 <div class="container py-4">
@@ -177,7 +177,7 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    @if(Model.Orders.Any())
+                    @if(Model.DeliveryOrders != null && Model.DeliveryOrders.Any())
                     {
                         <!-- Filter Tabs -->
                         <ul class="nav nav-pills mb-4" role="tablist">
@@ -207,19 +207,74 @@
                         <div class="tab-content">
                             <!-- All Orders -->
                             <div class="tab-pane fade show active" id="allOrders">
-                                @foreach (var order in Model.Orders.OrderBy(o => o.DeliveryDate))
+                                @foreach (var order in Model.DeliveryOrders.OrderBy(o => o.DeliveryDate))
                                 {
-                                    <partial name="_OrderCard" model="order" />
+                                    <div class="card mb-3">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div>
+                                                    <h6 class="fw-bold mb-1">Đơn #@order.Id</h6>
+                                                    <p class="text-muted small mb-1">
+                                                        <i class="bi bi-calendar"></i> @order.DeliveryDate.ToString("dd/MM/yyyy")
+                                                        @if (order.DeliverySlot != null)
+                                                        {
+                                                            <span class="ms-2"><i class="bi bi-clock"></i> @order.DeliverySlot.Name</span>
+                                                        }
+                                                    </p>
+                                                    <p class="mb-0">
+                                                        @switch (order.Status)
+                                                        {
+                                                            case OrderStatus.Planned:
+                                                                <span class="badge bg-info">Đã Lên Lịch</span>
+                                                                break;
+                                                            case OrderStatus.Preparing:
+                                                                <span class="badge bg-warning">Đang Chuẩn Bị</span>
+                                                                break;
+                                                            case OrderStatus.Delivering:
+                                                                <span class="badge bg-primary">Đang Giao</span>
+                                                                break;
+                                                            case OrderStatus.Delivered:
+                                                                <span class="badge bg-success">Đã Giao</span>
+                                                                break;
+                                                            case OrderStatus.Cancelled:
+                                                                <span class="badge bg-danger">Đã Hủy</span>
+                                                                break;
+                                                        }
+                                                        <span class="ms-2 text-muted">@order.Items.Count món • @order.TotalAmount.ToString("N0")₫</span>
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 }
                             </div>
 
                             <!-- Planned Orders -->
                             <div class="tab-pane fade" id="upcomingOrders">
-                                @foreach (var order in Model.Orders.Where(o => o.Status == OrderStatus.Planned).OrderBy(o => o.DeliveryDate))
+                                @foreach (var order in Model.DeliveryOrders.Where(o => o.Status == OrderStatus.Planned).OrderBy(o => o.DeliveryDate))
                                 {
-                                    <partial name="_OrderCard" model="order" />
+                                    <div class="card mb-3">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div>
+                                                    <h6 class="fw-bold mb-1">Đơn #@order.Id</h6>
+                                                    <p class="text-muted small mb-1">
+                                                        <i class="bi bi-calendar"></i> @order.DeliveryDate.ToString("dd/MM/yyyy")
+                                                        @if (order.DeliverySlot != null)
+                                                        {
+                                                            <span class="ms-2"><i class="bi bi-clock"></i> @order.DeliverySlot.Name</span>
+                                                        }
+                                                    </p>
+                                                    <p class="mb-0">
+                                                        <span class="badge bg-info">Đã Lên Lịch</span>
+                                                        <span class="ms-2 text-muted">@order.Items.Count món • @order.TotalAmount.ToString("N0")₫</span>
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 }
-                                @if(!Model.Orders.Any(o => o.Status == OrderStatus.Planned))
+                                @if(!Model.DeliveryOrders.Any(o => o.Status == OrderStatus.Planned))
                                 {
                                     <div class="text-center py-4 text-muted">
                                         <i class="bi bi-inbox" style="font-size: 3rem;"></i>
@@ -230,11 +285,30 @@
 
                             <!-- Delivering Orders -->
                             <div class="tab-pane fade" id="deliveringOrders">
-                                @foreach (var order in Model.Orders.Where(o => o.Status == OrderStatus.Delivering).OrderBy(o => o.DeliveryDate))
+                                @foreach (var order in Model.DeliveryOrders.Where(o => o.Status == OrderStatus.Delivering).OrderBy(o => o.DeliveryDate))
                                 {
-                                    <partial name="_OrderCard" model="order" />
+                                    <div class="card mb-3">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div>
+                                                    <h6 class="fw-bold mb-1">Đơn #@order.Id</h6>
+                                                    <p class="text-muted small mb-1">
+                                                        <i class="bi bi-calendar"></i> @order.DeliveryDate.ToString("dd/MM/yyyy")
+                                                        @if (order.DeliverySlot != null)
+                                                        {
+                                                            <span class="ms-2"><i class="bi bi-clock"></i> @order.DeliverySlot.Name</span>
+                                                        }
+                                                    </p>
+                                                    <p class="mb-0">
+                                                        <span class="badge bg-primary">Đang Giao</span>
+                                                        <span class="ms-2 text-muted">@order.Items.Count món • @order.TotalAmount.ToString("N0")₫</span>
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 }
-                                @if(!Model.Orders.Any(o => o.Status == OrderStatus.Delivering))
+                                @if(!Model.DeliveryOrders.Any(o => o.Status == OrderStatus.Delivering))
                                 {
                                     <div class="text-center py-4 text-muted">
                                         <i class="bi bi-inbox" style="font-size: 3rem;"></i>
@@ -245,11 +319,30 @@
 
                             <!-- Delivered Orders -->
                             <div class="tab-pane fade" id="deliveredOrders">
-                                @foreach (var order in Model.Orders.Where(o => o.Status == OrderStatus.Delivered).OrderByDescending(o => o.DeliveryDate))
+                                @foreach (var order in Model.DeliveryOrders.Where(o => o.Status == OrderStatus.Delivered).OrderByDescending(o => o.DeliveryDate))
                                 {
-                                    <partial name="_OrderCard" model="order" />
+                                    <div class="card mb-3">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div>
+                                                    <h6 class="fw-bold mb-1">Đơn #@order.Id</h6>
+                                                    <p class="text-muted small mb-1">
+                                                        <i class="bi bi-calendar"></i> @order.DeliveryDate.ToString("dd/MM/yyyy")
+                                                        @if (order.DeliverySlot != null)
+                                                        {
+                                                            <span class="ms-2"><i class="bi bi-clock"></i> @order.DeliverySlot.Name</span>
+                                                        }
+                                                    </p>
+                                                    <p class="mb-0">
+                                                        <span class="badge bg-success">Đã Giao</span>
+                                                        <span class="ms-2 text-muted">@order.Items.Count món • @order.TotalAmount.ToString("N0")₫</span>
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 }
-                                @if(!Model.Orders.Any(o => o.Status == OrderStatus.Delivered))
+                                @if(!Model.DeliveryOrders.Any(o => o.Status == OrderStatus.Delivered))
                                 {
                                     <div class="text-center py-4 text-muted">
                                         <i class="bi bi-inbox" style="font-size: 3rem;"></i>

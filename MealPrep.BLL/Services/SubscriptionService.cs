@@ -1,7 +1,9 @@
-﻿using MealPrep.DAL.Entities;
+﻿using MealPrep.DAL.Data;
+using MealPrep.DAL.Entities;
 using MealPrep.DAL.Enums;
 using MealPrep.DAL.Repositories;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,6 +20,11 @@ public class SubscriptionService : ISubscriptionService
     private readonly IRepository<DeliverySlot> _slotRepo;
     private readonly IRepository<Plan> _planRepo;
     private readonly IRepository<PlanMealTier> _tierRepo;
+    private readonly IRepository<Payment> _paymentRepo;
+    private readonly IRepository<PaymentTransaction> _transactionRepo;
+    private readonly IRepository<AppUser> _userRepo;
+    private readonly AppDbContext _dbContext;
+    private readonly ILogger<SubscriptionService> _logger;
 
     public SubscriptionService(
         IRepository<Subscription> subRepo,
@@ -25,7 +32,12 @@ public class SubscriptionService : ISubscriptionService
         IRepository<Meal> mealRepo,
         IRepository<DeliverySlot> slotRepo,
         IRepository<Plan> planRepo,
-        IRepository<PlanMealTier> tierRepo)
+        IRepository<PlanMealTier> tierRepo,
+        IRepository<Payment> paymentRepo,
+        IRepository<PaymentTransaction> transactionRepo,
+        IRepository<AppUser> userRepo,
+        AppDbContext dbContext,
+        ILogger<SubscriptionService> logger)
     {
         _subRepo = subRepo;
         _orderRepo = orderRepo;
@@ -33,6 +45,11 @@ public class SubscriptionService : ISubscriptionService
         _slotRepo = slotRepo;
         _planRepo = planRepo;
         _tierRepo = tierRepo;
+        _paymentRepo = paymentRepo;
+        _transactionRepo = transactionRepo;
+        _userRepo = userRepo;
+        _dbContext = dbContext;
+        _logger = logger;
     }
 
     public async Task<int> CreateAsync(Guid userId, Subscription sub, int deliverySlotId)
@@ -104,11 +121,13 @@ public class SubscriptionService : ISubscriptionService
     public Task<Subscription?> GetDetailsAsync(int id, Guid userId)
     {
         return _subRepo.Query()
-            .Include(s => s.Orders)
+            .Include(s => s.DeliveryOrders)
                 .ThenInclude(o => o.DeliverySlot)
-            .Include(s => s.Orders)
+            .Include(s => s.DeliveryOrders)
                 .ThenInclude(o => o.Items)
                     .ThenInclude(i => i.Meal)
+            .Include(s => s.Plan)
+            .Include(s => s.Payments)
             .FirstOrDefaultAsync(s => s.Id == id && s.AppUserId == userId);
     }
 
@@ -144,6 +163,167 @@ public class SubscriptionService : ISubscriptionService
             throw new InvalidOperationException("Tier not found or does not belong to plan");
 
         return plan.BasePrice + tier.ExtraPrice;
+    }
+
+    public async Task<(Subscription subscription, Payment payment)> CreateSubscriptionWithPaymentAsync(
+        Guid userId, int planId, int tierId, DateOnly startDate)
+    {
+        var user = await _userRepo.Query().FirstOrDefaultAsync(u => u.Id == userId);
+        if (user == null) throw new InvalidOperationException("User not found");
+
+        var plan = await GetPlanByIdAsync(planId);
+        var tier = await GetTierByIdAsync(tierId);
+
+        if (plan == null || tier == null || tier.PlanId != planId)
+        {
+            throw new InvalidOperationException("Invalid plan or tier selected.");
+        }
+
+        var totalAmount = await CalculateTotalPriceAsync(planId, tierId);
+
+        // Create Subscription
+        var subscription = new Subscription
+        {
+            AppUserId = userId,
+            PlanId = planId,
+            CustomerName = user.FullName,
+            CustomerEmail = user.Email,
+            MealsPerDay = tier.MealsPerDay,
+            StartDate = startDate,
+            Status = SubscriptionStatus.PendingPayment,
+            TotalAmount = totalAmount,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        await _subRepo.AddAsync(subscription);
+        await _subRepo.SaveChangesAsync();
+
+        // Create Payment
+        var payment = new Payment
+        {
+            AppUserId = userId,
+            SubscriptionId = subscription.Id,
+            Amount = totalAmount,
+            Currency = "VND",
+            Method = "MoMo",
+            Status = "Pending",
+            PaymentCode = Guid.NewGuid().ToString(),
+            Description = $"Thanh toan subscription {plan.Name} - {tier.MealsPerDay} meals/day",
+            CreatedAt = DateTime.UtcNow,
+            ExpiredAt = DateTime.UtcNow.AddHours(24)
+        };
+
+        await _paymentRepo.AddAsync(payment);
+        await _paymentRepo.SaveChangesAsync();
+
+        return (subscription, payment);
+    }
+
+    public async Task<Subscription?> ConfirmPaymentAsync(string paymentCode, string? momoOrderId = null, string? rawResponse = null)
+    {
+        if (string.IsNullOrWhiteSpace(paymentCode))
+        {
+            _logger.LogError("ConfirmPaymentAsync called with empty paymentCode");
+            throw new InvalidOperationException("Payment code cannot be empty");
+        }
+
+        _logger.LogInformation("Confirming payment with code: {PaymentCode}, MoMoOrderId: {MoMoOrderId}", paymentCode, momoOrderId);
+
+        var payment = await _paymentRepo.Query()
+            .Include(p => p.Subscription)
+            .FirstOrDefaultAsync(p => p.PaymentCode == paymentCode);
+
+        if (payment == null)
+        {
+            _logger.LogWarning("Payment not found with code: {PaymentCode}. Searching all payments...", paymentCode);
+            
+            // Debug: Log all payment codes to help troubleshoot
+            var allPaymentCodes = await _paymentRepo.Query()
+                .Select(p => p.PaymentCode)
+                .Take(10)
+                .ToListAsync();
+            _logger.LogWarning("Sample payment codes in database: {Codes}", string.Join(", ", allPaymentCodes));
+            
+            throw new InvalidOperationException($"Payment not found with code: {paymentCode}");
+        }
+
+        _logger.LogInformation("Payment found: Id={PaymentId}, Status={Status}, Amount={Amount}, SubscriptionId={SubscriptionId}", 
+            payment.Id, payment.Status, payment.Amount, payment.SubscriptionId);
+
+        // Prevent duplicate processing
+        if (payment.Status == "Paid")
+        {
+            _logger.LogWarning("Payment {PaymentCode} already processed at {PaidAt}", paymentCode, payment.PaidAt);
+            throw new InvalidOperationException("Payment already processed");
+        }
+
+        // Only process if status is Pending
+        if (payment.Status != "Pending")
+        {
+            _logger.LogWarning("Payment {PaymentCode} has invalid status: {Status}", paymentCode, payment.Status);
+            throw new InvalidOperationException($"Payment has invalid status: {payment.Status}");
+        }
+
+        using var transaction = await _dbContext.Database.BeginTransactionAsync();
+        try
+        {
+            // Log transaction for tracking
+            if (!string.IsNullOrEmpty(momoOrderId) || !string.IsNullOrEmpty(rawResponse))
+            {
+                var paymentTransaction = new PaymentTransaction
+                {
+                    PaymentId = payment.Id,
+                    Gateway = "MoMo",
+                    OrderId = momoOrderId ?? paymentCode,
+                    ResponseCode = "0",
+                    ResponseMessage = "Payment confirmed",
+                    RawResponseJson = rawResponse
+                };
+                await _transactionRepo.AddAsync(paymentTransaction);
+            }
+
+            // Update Payment
+            payment.Status = "Paid";
+            payment.PaidAt = DateTime.UtcNow;
+
+            // Update Subscription
+            var subscription = payment.Subscription;
+            if (subscription != null)
+            {
+                subscription.Status = SubscriptionStatus.Active;
+                subscription.StartDate = DateOnly.FromDateTime(DateTime.UtcNow);
+                subscription.UpdatedAt = DateTime.UtcNow;
+
+                var plan = await _planRepo.GetByIdAsync(subscription.PlanId);
+                if (plan != null)
+                {
+                    subscription.EndDate = subscription.StartDate.AddDays(plan.DurationDays);
+                }
+                else
+                {
+                    _logger.LogWarning("Plan {PlanId} not found for subscription {SubscriptionId}", 
+                        subscription.PlanId, subscription.Id);
+                }
+            }
+            else
+            {
+                _logger.LogWarning("Subscription not found for payment {PaymentCode}", paymentCode);
+            }
+
+            await _dbContext.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            _logger.LogInformation("Payment {PaymentCode} confirmed successfully. Subscription {SubscriptionId} activated.", 
+                paymentCode, subscription?.Id);
+            
+            return subscription;
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            _logger.LogError(ex, "Failed to update payment status for {PaymentCode}", paymentCode);
+            throw;
+        }
     }
 }
 }
