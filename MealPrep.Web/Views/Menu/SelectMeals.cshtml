@@ -214,7 +214,63 @@
     </div>
 </div>
 
+<!-- Meal Selection Modal -->
+<div class="modal fade" id="mealSelectionModal" tabindex="-1" aria-labelledby="mealSelectionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="mealSelectionModalLabel">
+                    <i class="bi bi-search"></i> Chọn Món Ăn
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Search Bar -->
+                <div class="mb-4">
+                    <div class="input-group input-group-lg">
+                        <span class="input-group-text bg-light border-end-0">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text" 
+                               class="form-control border-start-0 ps-0" 
+                               id="mealSearchInput" 
+                               placeholder="Tìm kiếm món ăn theo tên..." 
+                               oninput="handleMealSearch(event)">
+                    </div>
+                </div>
+
+                <!-- Meals Grid -->
+                <div class="row g-3" id="mealsListContainer">
+                    <!-- Meals will be loaded here via JavaScript -->
+                </div>
+
+                <!-- Pagination -->
+                <div class="d-flex justify-content-between align-items-center mt-4" id="mealsPagination" style="display: none;">
+                    <button type="button" class="btn btn-outline-primary" id="prevPageBtn" onclick="changeMealPage(-1)">
+                        <i class="bi bi-chevron-left"></i> Trước
+                    </button>
+                    <span class="text-muted" id="pageInfo">Trang 1 / 1</span>
+                    <button type="button" class="btn btn-outline-primary" id="nextPageBtn" onclick="changeMealPage(1)">
+                        Sau <i class="bi bi-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
+    .meal-option-card {
+        transition: all 0.3s ease;
+        border: 2px solid #E5E7EB;
+    }
+    
+    .meal-option-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.15) !important;
+        border-color: var(--primary);
+    }
+
     .day-card {
         transition: all 0.3s ease;
     }
