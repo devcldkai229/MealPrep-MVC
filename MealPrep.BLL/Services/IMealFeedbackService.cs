@@ -59,5 +59,10 @@ namespace MealPrep.BLL.Services
         /// 📊 Lấy average rating của một món
         /// </summary>
         Task<decimal> GetMealAverageRatingAsync(int mealId);
+
+        /// <summary>
+        /// 📊 Lấy số lượng đánh giá của một món
+        /// </summary>
+        Task<int> GetMealRatingCountAsync(int mealId);
     }
 }

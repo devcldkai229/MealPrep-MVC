@@ -367,6 +367,15 @@ namespace MealPrep.BLL.Services
             return ratings.Any() ? (decimal)ratings.Average() : 0;
         }
 
+        /// <summary>
+        /// 📊 Lấy số lượng đánh giá của một món
+        /// </summary>
+        public async Task<int> GetMealRatingCountAsync(int mealId)
+        {
+            return await _ratingRepo.Query()
+                .CountAsync(r => r.MealId == mealId);
+        }
+
         // === HELPER METHODS ===
 
         private string? GetFirstMealImage(string? imagesJson)

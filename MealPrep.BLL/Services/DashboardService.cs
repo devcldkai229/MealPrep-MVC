@@ -75,15 +75,17 @@ namespace MealPrep.BLL.Services
                 .Take(6)
                 .ToListAsync();
 
-            // Get average ratings for featured meals
+            // Get average ratings and rating counts for featured meals
             var featuredMealsWithRatings = new List<MealWithRating>();
             foreach (var meal in featured)
             {
                 var avgRating = await _feedbackService.GetMealAverageRatingAsync(meal.Id);
+                var ratingCount = await _feedbackService.GetMealRatingCountAsync(meal.Id);
                 featuredMealsWithRatings.Add(new MealWithRating
                 {
                     Meal = meal,
-                    AverageRating = avgRating
+                    AverageRating = avgRating,
+                    RatingCount = ratingCount
                 });
             }
 
@@ -151,5 +153,6 @@ namespace MealPrep.BLL.Services
     {
         public Meal Meal { get; set; } = null!;
         public decimal AverageRating { get; set; }
+        public int RatingCount { get; set; } = 0; // Total number of ratings
     }
 }

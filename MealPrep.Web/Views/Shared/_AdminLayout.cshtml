@@ -237,6 +237,13 @@
                 
                 <div class="admin-nav-section mt-4">Vận Hành</div>
                 <div class="admin-nav-item">
+                    <a class="admin-nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "AdminInventory" ? "active" : "")" 
+                       asp-controller="AdminInventory" asp-action="Index">
+                        <i class="bi bi-box-seam"></i>
+                        <span>Kho Nguyên Liệu</span>
+                    </a>
+                </div>
+                <div class="admin-nav-item">
                     <a class="admin-nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "DeliveryProcessing" ? "active" : "")" 
                        asp-controller="DeliveryProcessing" asp-action="Index">
                         <i class="bi bi-boxes"></i>

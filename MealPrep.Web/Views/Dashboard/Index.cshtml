@@ -85,12 +85,23 @@
                                     {
                                         <span class="d-block mt-1">
                                             <i class="bi bi-star-fill text-warning"></i>
-                                            <small class="text-muted">@mealWithRating.AverageRating.ToString("N1") / 5.0</small>
+                                            <small class="text-muted">
+                                                <strong>@mealWithRating.AverageRating.ToString("N1")</strong> / 5.0
+                                                @if (mealWithRating.RatingCount > 0)
+                                                {
+                                                    <span class="text-muted">(@mealWithRating.RatingCount đánh giá)</span>
+                                                }
+                                            </small>
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="d-block mt-1">
+                                            <small class="text-muted">Chưa có đánh giá</small>
                                         </span>
                                     }
                                 </div>
                                 <div class="d-flex justify-content-between align-items-center mt-2">
-                                    <div class="fw-semibold">@m.BasePrice.ToString("C", new System.Globalization.CultureInfo("vi-VN"))</div>
                                     <a class="btn btn-sm btn-outline-secondary" asp-controller="Meal" asp-action="Details" asp-route-id="@m.Id">Xem</a>
                                 </div>
                             </div>

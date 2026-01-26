@@ -22,6 +22,7 @@ namespace MealPrep.BLL.Services
         private readonly IRepository<DeliveryOrderItem> _deliveryOrderItemRepo;
         private readonly IRepository<UserAllergy> _allergyRepo;
         private readonly IRepository<DeliverySlot> _slotRepo;
+        private readonly IRepository<KitchenInventory> _inventoryRepo;
         private readonly AppDbContext _dbContext;
         private readonly ILogger<MenuService> _logger;
 
@@ -33,6 +34,7 @@ namespace MealPrep.BLL.Services
             IRepository<DeliveryOrderItem> deliveryOrderItemRepo,
             IRepository<UserAllergy> allergyRepo,
             IRepository<DeliverySlot> slotRepo,
+            IRepository<KitchenInventory> inventoryRepo,
             AppDbContext dbContext,
             ILogger<MenuService> logger)
         {
@@ -43,6 +45,7 @@ namespace MealPrep.BLL.Services
             _deliveryOrderItemRepo = deliveryOrderItemRepo;
             _allergyRepo = allergyRepo;
             _slotRepo = slotRepo;
+            _inventoryRepo = inventoryRepo;
             _dbContext = dbContext;
             _logger = logger;
         }
@@ -116,6 +119,39 @@ namespace MealPrep.BLL.Services
                 .Where(m => m.IsActive)
                 .ToListAsync();
 
+            // Load existing DeliveryOrders for this subscription in the date range
+            var existingOrders = await _deliveryOrderRepo.Query()
+                .Include(o => o.Items)
+                    .ThenInclude(i => i.Meal)
+                .Where(o => o.SubscriptionId == activeSubscription.Id &&
+                           o.DeliveryDate >= weekStart &&
+                           o.DeliveryDate <= weekEnd)
+                .ToListAsync();
+
+            var ordersByDate = existingOrders
+                .Where(o => o.Items.Any()) // Only orders with items are considered "confirmed"
+                .ToDictionary(o => o.DeliveryDate);
+
+            var today = DateOnly.FromDateTime(DateTime.Today);
+
+            // Load inventory data for all dates in the week (for performance)
+            var weekDates = Enumerable.Range(0, 7)
+                .Select(i => weekStart.AddDays(i))
+                .Where(d => !activeSubscription.EndDate.HasValue || d <= activeSubscription.EndDate.Value)
+                .ToList();
+            
+            var inventoryByDateAndMeal = await _inventoryRepo.Query()
+                .Where(inv => weekDates.Contains(inv.Date))
+                .ToListAsync();
+            
+            // Load used quantities (from DeliveryOrderItems) for all dates
+            var usedQuantities = await _dbContext.Set<DeliveryOrderItem>()
+                .Include(i => i.DeliveryOrder)
+                .Where(i => weekDates.Contains(i.DeliveryOrder!.DeliveryDate) && i.MealId != null)
+                .GroupBy(i => new { i.DeliveryOrder!.DeliveryDate, i.MealId })
+                .Select(g => new { g.Key.DeliveryDate, g.Key.MealId, Used = g.Sum(x => x.Quantity) })
+                .ToListAsync();
+
             // Build daily slots - exactly 7 days from weekStart
             var dailySlots = new List<DailySlotDto>();
             var dayNames = new[] { "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy", "Chủ Nhật" };
@@ -163,37 +199,87 @@ namespace MealPrep.BLL.Services
                     dayMenuItems = allMeals;
                 }
 
-                var mealOptions = dayMenuItems.Select(meal => 
-                {
-                    // Parse Images JSON to get first image URL
-                    string? imageUrl = null;
-                    if (!string.IsNullOrEmpty(meal!.Images))
+                // Filter out meals with allergens (Hard Constraint: Zero Tolerance)
+                var mealOptions = dayMenuItems
+                    .Where(meal => !CheckAllergen(meal.Ingredients ?? "", userAllergies)) // Exclude meals with allergens
+                    .Select(meal => 
                     {
-                        try
+                        // Parse Images JSON to get first image URL
+                        string? imageUrl = null;
+                        if (!string.IsNullOrEmpty(meal!.Images))
                         {
-                            var images = JsonSerializer.Deserialize<List<string>>(meal.Images);
-                            imageUrl = images?.FirstOrDefault();
+                            try
+                            {
+                                var images = JsonSerializer.Deserialize<List<string>>(meal.Images);
+                                imageUrl = images?.FirstOrDefault();
+                            }
+                            catch
+                            {
+                                // If parse fails, ignore
+                            }
                         }
-                        catch
-                        {
-                            // If parse fails, ignore
-                        }
-                    }
 
-                    return new MealOptionDto
+                        // Check inventory availability for this meal and date
+                        var inventory = inventoryByDateAndMeal.FirstOrDefault(inv => inv.Date == date && inv.MealId == meal.Id);
+                        var usedQty = usedQuantities
+                            .Where(u => u.DeliveryDate == date && u.MealId == meal.Id)
+                            .Sum(u => u.Used);
+                        
+                        int? availableQty = null;
+                        bool isSoldOut = false;
+                        
+                        if (inventory != null)
+                        {
+                            availableQty = Math.Max(0, inventory.QuantityLimit - usedQty);
+                            isSoldOut = availableQty <= 0;
+                        }
+
+                        return new MealOptionDto
+                        {
+                            MealId = meal.Id,
+                            Name = meal.Name,
+                            Description = meal.Description ?? "",
+                            ImageUrl = imageUrl,
+                            Calories = meal.Calories,
+                            Protein = meal.Protein,
+                            Carbs = meal.Carbs,
+                            Fat = meal.Fat,
+                            HasAllergen = false, // Already filtered, so always false
+                            AllergenWarning = "", // No warning needed since filtered
+                            IsSoldOut = isSoldOut,
+                            AvailableQuantity = availableQty
+                        };
+                    }).ToList();
+
+                // Check if this date is locked (past date or has confirmed order)
+                var hasOrder = ordersByDate.ContainsKey(date);
+                var isPastDate = date < today;
+                
+                // Check cut-off time: Cannot edit tomorrow's meals after 20:00 today
+                var tomorrow = today.AddDays(1);
+                var now = DateTime.Now;
+                var cutoffTime = new TimeOnly(20, 0); // 20:00
+                var currentTime = TimeOnly.FromDateTime(now);
+                var isPastCutoff = date == tomorrow && currentTime > cutoffTime;
+                
+                var isLocked = isPastDate || hasOrder || isPastCutoff;
+
+                // Get locked meals info if order exists
+                var lockedMeals = new List<LockedMealInfo>();
+                if (hasOrder && ordersByDate[date].Items.Any())
+                {
+                    var orderItems = ordersByDate[date].Items.OrderBy(i => i.Id).ToList();
+                    for (int slotIdx = 0; slotIdx < orderItems.Count && slotIdx < activeSubscription.MealsPerDay; slotIdx++)
                     {
-                        MealId = meal.Id,
-                        Name = meal.Name,
-                        Description = meal.Description ?? "",
-                        ImageUrl = imageUrl,
-                        Calories = meal.Calories,
-                        Protein = meal.Protein,
-                        Carbs = meal.Carbs,
-                        Fat = meal.Fat,
-                        HasAllergen = CheckAllergen(meal.Ingredients ?? "", userAllergies),
-                        AllergenWarning = GetAllergenWarning(meal.Ingredients ?? "", userAllergies)
-                    };
-                }).ToList();
+                        var item = orderItems[slotIdx];
+                        lockedMeals.Add(new LockedMealInfo
+                        {
+                            MealId = item.MealId ?? 0,
+                            MealName = item.MealNameSnapshot,
+                            SlotIndex = slotIdx
+                        });
+                    }
+                }
 
                 dailySlots.Add(new DailySlotDto
                 {
@@ -201,7 +287,11 @@ namespace MealPrep.BLL.Services
                     DayName = date.ToString("dd/MM/yyyy"), // Use actual date format instead of day name
                     DayOfWeek = dayOfWeek,
                     AvailableMeals = mealOptions,
-                    SlotsCount = activeSubscription.MealsPerDay
+                    SlotsCount = activeSubscription.MealsPerDay,
+                    IsLocked = isLocked,
+                    HasOrder = hasOrder,
+                    IsPastCutoff = isPastCutoff,
+                    LockedMeals = lockedMeals
                 });
             }
 
@@ -214,7 +304,7 @@ namespace MealPrep.BLL.Services
             };
         }
 
-        public async Task<(List<MealOptionDto> Meals, int TotalCount)> GetMealsForSelectionAsync(string? search, int page, int pageSize, Guid userId)
+        public async Task<(List<MealOptionDto> Meals, int TotalCount)> GetMealsForSelectionAsync(string? search, int page, int pageSize, Guid userId, DateOnly? date = null)
         {
             // Load user allergies
             var userAllergies = await _allergyRepo.Query()
@@ -232,14 +322,36 @@ namespace MealPrep.BLL.Services
                 query = query.Where(m => m.Name.Contains(search) || (m.Description ?? "").Contains(search));
             }
 
-            // Get total count
-            var totalCount = await query.CountAsync();
+            // Get all meals first (we need to filter allergens in memory)
+            var allMeals = await query
+                .OrderBy(m => m.Name)
+                .ToListAsync();
+
+            // Filter out meals with allergens (Hard Constraint: Zero Tolerance)
+            var filteredMeals = allMeals
+                .Where(meal => !CheckAllergen(meal.Ingredients ?? "", userAllergies))
+                .ToList();
+
+            // Get total count after filtering
+            var totalCount = filteredMeals.Count;
 
             // Apply pagination
-            var meals = await query
-                .OrderBy(m => m.Name)
+            var meals = filteredMeals
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
+                .ToList();
+
+            // Check inventory if date is provided
+            DateOnly checkDate = date ?? DateOnly.FromDateTime(DateTime.Today.AddDays(1)); // Default to tomorrow
+            var inventoryForDate = await _inventoryRepo.Query()
+                .Where(inv => inv.Date == checkDate)
+                .ToListAsync();
+            
+            var usedQuantities = await _dbContext.Set<DeliveryOrderItem>()
+                .Include(i => i.DeliveryOrder)
+                .Where(i => i.DeliveryOrder!.DeliveryDate == checkDate && i.MealId != null)
+                .GroupBy(i => i.MealId)
+                .Select(g => new { MealId = g.Key, Used = g.Sum(x => x.Quantity) })
                 .ToListAsync();
 
             // Map to MealOptionDto
@@ -256,7 +368,22 @@ namespace MealPrep.BLL.Services
                     }
                     catch { }
                 }
-
+                
+                // Check inventory availability
+                var inventory = inventoryForDate.FirstOrDefault(inv => inv.MealId == meal.Id);
+                var usedQty = usedQuantities
+                    .Where(u => u.MealId == meal.Id)
+                    .Sum(u => u.Used);
+                
+                int? availableQty = null;
+                bool isSoldOut = false;
+                
+                if (inventory != null)
+                {
+                    availableQty = Math.Max(0, inventory.QuantityLimit - usedQty);
+                    isSoldOut = availableQty <= 0;
+                }
+                
                 return new MealOptionDto
                 {
                     MealId = meal.Id,
@@ -267,8 +394,10 @@ namespace MealPrep.BLL.Services
                     Protein = meal.Protein,
                     Carbs = meal.Carbs,
                     Fat = meal.Fat,
-                    HasAllergen = CheckAllergen(meal.Ingredients ?? "", userAllergies),
-                    AllergenWarning = GetAllergenWarning(meal.Ingredients ?? "", userAllergies)
+                    HasAllergen = false, // Already filtered, so always false
+                    AllergenWarning = "", // No warning needed since filtered
+                    IsSoldOut = isSoldOut,
+                    AvailableQuantity = availableQty
                 };
             }).ToList();
 
@@ -287,12 +416,84 @@ namespace MealPrep.BLL.Services
                 throw new InvalidOperationException("Không tìm thấy đăng ký đang hoạt động.");
             }
 
-            // Validate selections
+            // Validate selections and check for locked orders
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            var tomorrow = today.AddDays(1);
+            var now = DateTime.Now;
+            var cutoffTime = new TimeOnly(20, 0); // 20:00
+            var currentTime = TimeOnly.FromDateTime(now);
+            
             foreach (var selection in selections)
             {
+                // Check if date is in the past
+                if (selection.Date < today)
+                {
+                    throw new InvalidOperationException($"Không thể thay đổi món ăn cho ngày {selection.Date:dd/MM/yyyy} (ngày đã qua).");
+                }
+
+                // Check cut-off time: Cannot edit tomorrow's meals after 20:00 today
+                if (selection.Date == tomorrow && currentTime > cutoffTime)
+                {
+                    throw new InvalidOperationException($"Không thể thay đổi món ăn cho ngày mai sau 20:00. Vui lòng liên hệ bếp để được hỗ trợ.");
+                }
+
+                // Check if date has a confirmed order (DeliveryOrder with items)
+                var existingOrder = await _deliveryOrderRepo.Query()
+                    .Include(o => o.Items)
+                    .FirstOrDefaultAsync(o => o.SubscriptionId == activeSubscription.Id && 
+                                             o.DeliveryDate == selection.Date);
+
+                if (existingOrder != null && existingOrder.Items.Any())
+                {
+                    throw new InvalidOperationException($"Ngày {selection.Date:dd/MM/yyyy} đã có đơn hàng được xác nhận. Không thể thay đổi món ăn.");
+                }
+
                 if (selection.SelectedMealIds.Count > activeSubscription.MealsPerDay)
                 {
                     throw new InvalidOperationException($"Ngày {selection.Date:dd/MM/yyyy}: Bạn chỉ được chọn tối đa {activeSubscription.MealsPerDay} món.");
+                }
+                
+                // Validate slot concurrency: No duplicate meals in the same date
+                var duplicateMeals = selection.SelectedMealIds
+                    .GroupBy(id => id)
+                    .Where(g => g.Count() > 1)
+                    .Select(g => g.Key)
+                    .ToList();
+                    
+                if (duplicateMeals.Any())
+                {
+                    throw new InvalidOperationException($"Ngày {selection.Date:dd/MM/yyyy}: Không thể chọn cùng một món nhiều lần trong cùng một ngày.");
+                }
+                
+                // Validate inventory availability for each meal
+                foreach (var mealId in selection.SelectedMealIds)
+                {
+                    var inventory = await _inventoryRepo.Query()
+                        .FirstOrDefaultAsync(inv => inv.Date == selection.Date && inv.MealId == mealId);
+                    
+                    if (inventory != null)
+                    {
+                        // Count how many are already ordered for this date and meal
+                        var usedQty = await _dbContext.Set<DeliveryOrderItem>()
+                            .Include(i => i.DeliveryOrder)
+                            .Where(i => i.DeliveryOrder!.DeliveryDate == selection.Date && 
+                                       i.MealId == mealId &&
+                                       i.DeliveryOrderId != 0) // Exclude items from orders being updated
+                            .SumAsync(i => i.Quantity);
+                        
+                        // Count how many this user is trying to order (including current selection)
+                        var requestedQty = selection.SelectedMealIds.Count(id => id == mealId);
+                        var availableQty = inventory.QuantityLimit - usedQty;
+                        
+                        if (requestedQty > availableQty)
+                        {
+                            var meal = await _mealRepo.GetByIdAsync(mealId);
+                            var mealName = meal?.Name ?? $"Món #{mealId}";
+                            throw new InvalidOperationException(
+                                $"Ngày {selection.Date:dd/MM/yyyy}: Món '{mealName}' đã hết hàng. " +
+                                $"Chỉ còn {availableQty} suất, nhưng bạn yêu cầu {requestedQty} suất.");
+                        }
+                    }
                 }
             }
 
@@ -353,6 +554,8 @@ namespace MealPrep.BLL.Services
                 if (weekEnd > subscriptionEnd) weekEnd = subscriptionEnd;
 
                 // Delete existing delivery orders for this subscription in the date range
+                // BUT only delete orders that don't have items (not confirmed yet)
+                // Orders with items are locked and cannot be modified
                 var existingOrders = await _deliveryOrderRepo.Query()
                     .Include(o => o.Items)
                     .Where(o => o.SubscriptionId == activeSubscription.Id &&
@@ -362,68 +565,91 @@ namespace MealPrep.BLL.Services
 
                 foreach (var order in existingOrders)
                 {
-                    foreach (var item in order.Items)
+                    // Only delete if order has no items (not confirmed)
+                    // Orders with items are locked and should not be deleted
+                    if (!order.Items.Any())
                     {
-                        _deliveryOrderItemRepo.Remove(item);
+                        _deliveryOrderRepo.Remove(order);
                     }
-                    _deliveryOrderRepo.Remove(order);
+                    else
+                    {
+                        // Order has items (confirmed), skip deletion
+                        _logger.LogInformation("Skipping deletion of confirmed order {OrderId} for date {Date}", 
+                            order.Id, order.DeliveryDate);
+                    }
                 }
 
-                // Create a dictionary of selections by date for quick lookup
-                var selectionsByDate = selections.ToDictionary(s => s.Date, s => s.SelectedMealIds);
-
-                // Create delivery orders for ALL days in the subscription period (or selected week)
-                for (int i = 0; i <= (weekEnd.DayNumber - weekStart.DayNumber); i++)
+                // Create/update delivery orders only for dates with selections
+                // Skip dates that already have confirmed orders (with items)
+                foreach (var selection in selections)
                 {
-                    var currentDate = weekStart.AddDays(i);
+                    var currentDate = selection.Date;
                     
-                    // Check if user has selected meals for this date
-                    var hasSelections = selectionsByDate.TryGetValue(currentDate, out var selectedMealIds) && selectedMealIds.Any();
+                    // Check if this date already has a confirmed order (with items)
+                    var existingOrder = existingOrders.FirstOrDefault(o => o.DeliveryDate == currentDate && o.Items.Any());
+                    if (existingOrder != null)
+                    {
+                        _logger.LogWarning("Date {Date} already has confirmed order {OrderId}, skipping", 
+                            currentDate, existingOrder.Id);
+                        continue; // Skip dates with confirmed orders
+                    }
 
+                    // Check if there's an empty order (no items) - we'll update it
+                    var emptyOrder = existingOrders.FirstOrDefault(o => o.DeliveryDate == currentDate && !o.Items.Any());
+                    
                     decimal totalAmount = 0;
                     var orderItems = new List<DeliveryOrderItem>();
 
-                    if (hasSelections && selectedMealIds != null)
+                    // Calculate total amount and create items for selected meals
+                    foreach (var mealId in selection.SelectedMealIds)
                     {
-                        // Calculate total amount and create items for selected meals
-                        foreach (var mealId in selectedMealIds)
+                        if (!mealDict.TryGetValue(mealId, out var meal))
                         {
-                            if (!mealDict.TryGetValue(mealId, out var meal))
-                            {
-                                throw new InvalidOperationException($"Meal {mealId} not found or inactive");
-                            }
-
-                            var quantity = 1;
-                            var unitPrice = meal.BasePrice;
-                            totalAmount += unitPrice * quantity;
-
-                            var orderItem = new DeliveryOrderItem
-                            {
-                                DeliveryOrderId = 0, // Will be set after order is created
-                                MealId = mealId,
-                                MealNameSnapshot = meal.Name,
-                                Quantity = quantity,
-                                UnitPrice = unitPrice
-                            };
-                            orderItems.Add(orderItem);
+                            throw new InvalidOperationException($"Meal {mealId} not found or inactive");
                         }
+
+                        var quantity = 1;
+                        var unitPrice = meal.BasePrice;
+                        totalAmount += unitPrice * quantity;
+
+                        var orderItem = new DeliveryOrderItem
+                        {
+                            DeliveryOrderId = 0, // Will be set after order is created/updated
+                            MealId = mealId,
+                            MealNameSnapshot = meal.Name,
+                            Quantity = quantity,
+                            UnitPrice = unitPrice
+                        };
+                        orderItems.Add(orderItem);
                     }
 
-                    // Create DeliveryOrder for this date (even if no meals selected)
-                    var deliveryOrder = new DeliveryOrder
+                    DeliveryOrder deliveryOrder;
+                    if (emptyOrder != null)
                     {
-                        SubscriptionId = activeSubscription.Id,
-                        DeliveryDate = currentDate,
-                        DeliverySlotId = defaultSlot.Id,
-                        Status = OrderStatus.Planned,
-                        TotalAmount = totalAmount, // 0 if no meals selected
-                        CreatedAt = DateTime.UtcNow
-                    };
+                        // Update existing empty order
+                        deliveryOrder = emptyOrder;
+                        deliveryOrder.TotalAmount = totalAmount;
+                        deliveryOrder.UpdatedAt = DateTime.UtcNow;
+                        _deliveryOrderRepo.Update(deliveryOrder);
+                    }
+                    else
+                    {
+                        // Create new DeliveryOrder for this date
+                        deliveryOrder = new DeliveryOrder
+                        {
+                            SubscriptionId = activeSubscription.Id,
+                            DeliveryDate = currentDate,
+                            DeliverySlotId = defaultSlot.Id,
+                            Status = OrderStatus.Planned,
+                            TotalAmount = totalAmount,
+                            CreatedAt = DateTime.UtcNow
+                        };
+                        await _deliveryOrderRepo.AddAsync(deliveryOrder);
+                    }
 
-                    await _deliveryOrderRepo.AddAsync(deliveryOrder);
                     await _dbContext.SaveChangesAsync(); // Save to get order ID
 
-                    // Add items if any
+                    // Add items
                     if (orderItems.Any())
                     {
                         foreach (var item in orderItems)

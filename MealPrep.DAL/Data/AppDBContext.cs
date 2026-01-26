@@ -39,6 +39,9 @@ namespace MealPrep.DAL.Data
         
         // New feedback entity
         public DbSet<MealRating> MealRatings => Set<MealRating>();
+        
+        // Kitchen inventory management
+        public DbSet<KitchenInventory> KitchenInventories => Set<KitchenInventory>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -210,6 +213,18 @@ namespace MealPrep.DAL.Data
                     .WithMany()
                     .HasForeignKey(i => i.MealId)
                     .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            // KitchenInventory - Unique constraint: Date + MealId
+            modelBuilder.Entity<KitchenInventory>(entity =>
+            {
+                // Unique: Mỗi món chỉ có 1 record inventory cho 1 ngày
+                entity.HasIndex(k => new { k.Date, k.MealId }).IsUnique();
+
+                entity.HasOne(k => k.Meal)
+                    .WithMany()
+                    .HasForeignKey(k => k.MealId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             // Order N-1 với AppUser

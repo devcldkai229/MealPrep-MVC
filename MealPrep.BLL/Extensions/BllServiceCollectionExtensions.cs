@@ -26,6 +26,7 @@ namespace MealPrep.BLL.Extensions
             services.AddScoped<IAdminSubscriptionService, AdminSubscriptionService>();
             services.AddScoped<IAdminDeliveryOrderService, AdminDeliveryOrderService>();
             services.AddScoped<IAdminDashboardService, AdminDashboardService>();
+            services.AddScoped<IAdminInventoryService, AdminInventoryService>();
             
             // User Services
             services.AddScoped<IUserSubscriptionService, UserSubscriptionService>();

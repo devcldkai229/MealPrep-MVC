@@ -70,7 +70,13 @@
                                         ? recommendedMeal.ImageUrl 
                                         : "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%23e5e7eb' width='400' height='300'/%3E%3Ctext fill='%239ca3af' font-family='Arial' font-size='16' x='50%25' y='50%25' text-anchor='middle' dominant-baseline='middle'%3ENo Image%3C/text%3E%3C/svg%3E";
                                     
-                                    <div class="card meal-recommendation-card mb-3" style="border: 2px solid #22C55E; border-radius: 12px;">
+                                    <div class="card meal-recommendation-card mb-3" 
+                                         id="meal-card-@day.Day-@i"
+                                         data-meal-id="@recommendedMeal.MealId"
+                                         data-day="@day.Day"
+                                         data-slot="@i"
+                                         data-date="@day.Date.ToString("yyyy-MM-dd")"
+                                         style="border: 2px solid #E5E7EB; border-radius: 12px; transition: all 0.3s;">
                                         <div class="position-relative" style="height: 150px; overflow: hidden; border-radius: 12px 12px 0 0;">
                                             <img src="@mealImage" 
                                                  alt="@recommendedMeal.Name" 
@@ -86,6 +92,12 @@
                                             <div class="position-absolute top-0 start-0 m-2">
                                                 <span class="badge bg-success">
                                                     <i class="bi bi-robot"></i> AI Đề Xuất
+                                                </span>
+                                            </div>
+                                            <!-- Selection Checkmark (hidden by default) -->
+                                            <div class="position-absolute bottom-0 end-0 m-2" id="checkmark-@day.Day-@i" style="display: none;">
+                                                <span class="badge bg-success" style="font-size: 1.2rem; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                                    <i class="bi bi-check-circle-fill"></i>
                                                 </span>
                                             </div>
                                         </div>
@@ -116,19 +128,21 @@
                                                 </a>
                                                 <button type="button" 
                                                         class="btn btn-sm btn-success"
-                                                        onclick="confirmMealSelection(@day.Day, @i, @recommendedMeal.MealId, '@day.Date.ToString("yyyy-MM-dd")')">
+                                                        id="select-btn-@day.Day-@i"
+                                                        onclick="toggleMealSelection(@day.Day, @i, @recommendedMeal.MealId, '@day.Date.ToString("yyyy-MM-dd")')">
                                                     <i class="bi bi-check-circle"></i> Chọn
                                                 </button>
                                             </div>
                                         </div>
                                     </div>
                                     
-                                    <!-- Hidden input for form submission -->
+                                    <!-- Hidden input for form submission (empty by default, only set when selected) -->
                                     <input type="hidden" 
                                            name="aiSelections[@day.Day].MealIds[@i]"
                                            id="ai-meal-input-@day.Day-@i"
-                                           value="@recommendedMeal.MealId"
-                                           data-date="@day.Date.ToString("yyyy-MM-dd")" />
+                                           value=""
+                                           data-date="@day.Date.ToString("yyyy-MM-dd")"
+                                           data-selected="false" />
                                 }
                                 else
                                 {
@@ -254,6 +268,12 @@
     .meal-recommendation-card:hover img {
         transform: scale(1.05);
     }
+    
+    .meal-recommendation-card.selected {
+        border-color: #22C55E !important;
+        background-color: #F0FDF4 !important;
+        box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2) !important;
+    }
 </style>
 
 <script>
@@ -306,47 +326,86 @@
         });
     });
 
-    // Confirm meal selection from AI recommendation card
-    function confirmMealSelection(day, slot, mealId, dateStr) {
-        // Update hidden input if exists, or create select option
+    // Toggle meal selection from AI recommendation card
+    function toggleMealSelection(day, slot, mealId, dateStr) {
         const hiddenInput = document.getElementById(`ai-meal-input-${day}-${slot}`);
+        const mealCard = document.getElementById(`meal-card-${day}-${slot}`);
+        const selectBtn = document.getElementById(`select-btn-${day}-${slot}`);
+        const checkmark = document.getElementById(`checkmark-${day}-${slot}`);
         const select = document.getElementById(`ai-meal-select-${day}-${slot}`);
         
-        if (hiddenInput) {
+        if (!hiddenInput) return;
+        
+        const isSelected = hiddenInput.dataset.selected === 'true';
+        
+        if (isSelected) {
+            // Deselect: Clear value and update UI
+            hiddenInput.value = '';
+            hiddenInput.dataset.selected = 'false';
+            
+            // Update card styling
+            if (mealCard) {
+                mealCard.style.borderColor = '#E5E7EB';
+                mealCard.style.backgroundColor = '';
+            }
+            
+            // Hide checkmark
+            if (checkmark) checkmark.style.display = 'none';
+            
+            // Update button
+            if (selectBtn) {
+                selectBtn.innerHTML = '<i class="bi bi-check-circle"></i> Chọn';
+                selectBtn.classList.remove('btn-outline-success');
+                selectBtn.classList.add('btn-success');
+            }
+        } else {
+            // Select: Set value and update UI
             hiddenInput.value = mealId;
-        } else if (select) {
-            select.value = mealId;
-            select.dispatchEvent(new Event('change'));
+            hiddenInput.dataset.selected = 'true';
+            
+            // Update card styling
+            if (mealCard) {
+                mealCard.style.borderColor = '#22C55E';
+                mealCard.style.backgroundColor = '#F0FDF4';
+            }
+            
+            // Show checkmark
+            if (checkmark) checkmark.style.display = 'block';
+            
+            // Update button
+            if (selectBtn) {
+                selectBtn.innerHTML = '<i class="bi bi-x-circle"></i> Bỏ Chọn';
+                selectBtn.classList.remove('btn-success');
+                selectBtn.classList.add('btn-outline-danger');
+            }
         }
         
-        // Show success feedback
-        const btn = event.target;
-        const originalHtml = btn.innerHTML;
-        btn.disabled = true;
-        btn.innerHTML = '<i class="bi bi-check-circle-fill"></i> Đã Chọn';
-        btn.classList.remove('btn-success');
-        btn.classList.add('btn-outline-success');
-        
-        setTimeout(() => {
-            btn.disabled = false;
-            btn.innerHTML = originalHtml;
-            btn.classList.remove('btn-outline-success');
-            btn.classList.add('btn-success');
-        }, 2000);
+        // If there's a select dropdown, also update it
+        if (select && !isSelected) {
+            select.value = mealId;
+            select.dispatchEvent(new Event('change'));
+        } else if (select && isSelected) {
+            select.value = '';
+            select.dispatchEvent(new Event('change'));
+        }
     }
 
     function acceptAiMenu() {
         const selections = [];
         const dateMap = new Map();
         
-        // Collect from hidden inputs (AI recommendations)
+        // Collect from hidden inputs (AI recommendations) - only if selected
         document.querySelectorAll('input[id^="ai-meal-input-"]').forEach(input => {
-            if (input.value) {
+            // Only collect if the input has a value AND is marked as selected
+            if (input.value && input.dataset.selected === 'true') {
                 const date = input.dataset.date;
                 if (!dateMap.has(date)) {
                     dateMap.set(date, []);
                 }
-                dateMap.get(date).push(parseInt(input.value));
+                const mealId = parseInt(input.value);
+                if (mealId && !dateMap.get(date).includes(mealId)) {
+                    dateMap.get(date).push(mealId);
+                }
             }
         });
         
@@ -357,15 +416,21 @@
                 if (!dateMap.has(date)) {
                     dateMap.set(date, []);
                 }
-                dateMap.get(date).push(parseInt(select.value));
+                const mealId = parseInt(select.value);
+                if (mealId && !dateMap.get(date).includes(mealId)) {
+                    dateMap.get(date).push(mealId);
+                }
             }
         });
         
+        // Convert map to array
         dateMap.forEach((mealIds, dateStr) => {
-            selections.push({
-                Date: dateStr, // ISO format: "yyyy-MM-dd"
-                MealIds: mealIds
-            });
+            if (mealIds.length > 0) {
+                selections.push({
+                    Date: dateStr, // ISO format: "yyyy-MM-dd"
+                    MealIds: mealIds
+                });
+            }
         });
         
         if (selections.length === 0) {
@@ -379,17 +444,52 @@
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang lưu...';
         
+        // Get anti-forgery token from parent page (SelectMeals.cshtml)
+        let token = '';
+        const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+        if (!tokenInput) {
+            // Try to get from parent window if this is in an iframe/partial
+            try {
+                if (window.parent && window.parent.document) {
+                    const parentToken = window.parent.document.querySelector('input[name="__RequestVerificationToken"]');
+                    if (parentToken) token = parentToken.value;
+                }
+            } catch (e) {
+                console.warn('Cannot access parent window token:', e);
+            }
+        } else {
+            token = tokenInput.value;
+        }
+        
+        if (!token) {
+            console.warn('Anti-forgery token not found. Request may fail.');
+        }
+        
         fetch('@Url.Action("AcceptAiMenu", "Menu")', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                'RequestVerificationToken': token,
+                'X-Requested-With': 'XMLHttpRequest'
             },
             body: JSON.stringify({ DaySelections: selections })
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                return response.text().then(text => {
+                    try {
+                        return JSON.parse(text);
+                    } catch {
+                        throw new Error(`HTTP ${response.status}: ${text}`);
+                    }
+                });
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
+                // Show success message and redirect
+                alert('Đã lưu menu thành công!');
                 window.location.href = '@Url.Action("Index", "Dashboard")';
             } else {
                 alert(data.message || 'Có lỗi xảy ra!');
@@ -399,7 +499,7 @@
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Có lỗi xảy ra khi lưu menu!');
+            alert('Có lỗi xảy ra khi lưu menu: ' + error.message);
             btn.disabled = false;
             btn.innerHTML = originalHtml;
         });
@@ -410,11 +510,31 @@
             // Reset hidden inputs (AI recommendations)
             document.querySelectorAll('input[id^="ai-meal-input-"]').forEach(input => {
                 input.value = '';
+                input.dataset.selected = 'false';
+            });
+            
+            // Reset meal cards styling
+            document.querySelectorAll('[id^="meal-card-"]').forEach(card => {
+                card.style.borderColor = '#E5E7EB';
+                card.style.backgroundColor = '';
+            });
+            
+            // Hide checkmarks
+            document.querySelectorAll('[id^="checkmark-"]').forEach(checkmark => {
+                checkmark.style.display = 'none';
+            });
+            
+            // Reset select buttons
+            document.querySelectorAll('[id^="select-btn-"]').forEach(btn => {
+                btn.innerHTML = '<i class="bi bi-check-circle"></i> Chọn';
+                btn.classList.remove('btn-outline-danger');
+                btn.classList.add('btn-success');
             });
             
             // Reset selects (manual selections)
             document.querySelectorAll('.ai-meal-select').forEach(select => {
                 select.value = '';
+                select.style.borderColor = '#E5E7EB';
                 select.dispatchEvent(new Event('change'));
             });
         }

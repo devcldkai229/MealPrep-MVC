@@ -107,7 +107,8 @@
                 var isWeekend = daySlot.DayOfWeek >= 6;
                 <div class="col-12">
                     <div class="app-card p-4 day-card @(isWeekend ? "weekend-card" : "")" 
-                         style="border-left: 4px solid @(isWeekend ? "var(--accent)" : "var(--primary)");">
+                         style="border-left: 4px solid @(isWeekend ? "var(--accent)" : "var(--primary)");"
+                         data-day-number="@daySlot.Date.DayNumber">
                         <!-- Day Header -->
                         <div class="d-flex justify-content-between align-items-center mb-4">
                             <div class="d-flex align-items-center gap-3">
@@ -121,9 +122,23 @@
                                     </small>
                                 </div>
                             </div>
-                            <span class="badge bg-primary px-3 py-2">
-                                <i class="bi bi-utensils"></i> @daySlot.SlotsCount bữa
-                            </span>
+                            <div class="d-flex align-items-center gap-2">
+                                @if (daySlot.IsPastCutoff)
+                                {
+                                    <span class="badge bg-danger px-3 py-2">
+                                        <i class="bi bi-clock-history me-1"></i>Đã Quá Giờ Chốt (20:00)
+                                    </span>
+                                }
+                                else if (daySlot.IsLocked)
+                                {
+                                    <span class="badge bg-secondary px-3 py-2">
+                                        <i class="bi bi-lock-fill me-1"></i>Đã Khóa
+                                    </span>
+                                }
+                                <span class="badge bg-primary px-3 py-2">
+                                    <i class="bi bi-utensils"></i> @daySlot.SlotsCount bữa
+                                </span>
+                            </div>
                         </div>
 
                         <!-- Meal Selection Buttons -->
@@ -132,55 +147,104 @@
                             var mealType = i == 0 ? "Sáng" : i == 1 ? "Trưa" : "Tối";
                             var mealIcon = i == 0 ? "sunrise" : i == 1 ? "sun" : "moon";
                             
+                            // Check if this slot is locked (has order, is past date, or past cut-off time)
+                            var lockedMeal = daySlot.LockedMeals.FirstOrDefault(m => m.SlotIndex == i);
+                            var isSlotLocked = (daySlot.IsLocked || daySlot.IsPastCutoff) && lockedMeal != null;
+                            var isDisabled = daySlot.IsLocked || daySlot.IsPastCutoff;
+                            
                             <div class="mb-3">
                                 <label class="form-label fw-bold mb-2 d-block">
                                     <i class="bi bi-@mealIcon text-warning"></i> 
                                     Bữa @mealType <span class="text-danger">*</span>
                                 </label>
                                 
-                                <div class="d-flex align-items-center gap-2">
-                                    <button type="button" 
-                                            class="btn btn-outline-primary btn-select-meal" 
-                                            data-date="@daySlot.Date.DayNumber" 
-                                            data-slot="@i"
-                                            data-bs-toggle="modal" 
-                                            data-bs-target="#mealSelectionModal"
-                                            onclick="openMealSelectionModal(@daySlot.Date.DayNumber, @i)">
-                                        <i class="bi bi-plus-circle me-2"></i>Chọn Món
-                                    </button>
-                                    
-                                    <!-- Selected Meal Display -->
-                                    <div id="selected-meal-@daySlot.Date.DayNumber-@i" class="flex-grow-1" style="display:none;">
-                                        <div class="d-flex align-items-center gap-2 p-2 border rounded bg-light">
-                                            <img id="selected-meal-image-@daySlot.Date.DayNumber-@i" 
-                                                 src="" 
-                                                 alt="Selected meal" 
-                                                 style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px;"
-                                                 onerror="if(this.src.indexOf('placeholder') === -1 && this.src.indexOf('data:image') === -1) { this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'300\'%3E%3Crect fill=\'%23e5e7eb\' width=\'400\' height=\'300\'/%3E%3Ctext fill=\'%239ca3af\' font-family=\'Arial\' font-size=\'16\' x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dominant-baseline=\'middle\'%3ENo Image%3C/text%3E%3C/svg%3E'; }" />
-                                            <div class="flex-grow-1">
-                                                <div class="fw-semibold" id="selected-meal-name-@daySlot.Date.DayNumber-@i"></div>
-                                                <small class="text-muted" id="selected-meal-info-@daySlot.Date.DayNumber-@i"></small>
+                                @if (isSlotLocked)
+                                {
+                                    <!-- Locked Order Display -->
+                                    <div class="d-flex align-items-center gap-2 p-3 border rounded bg-light" style="border-color: #6B7280 !important; background-color: #F9FAFB !important;">
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex align-items-center gap-2 mb-1">
+                                                <span class="badge bg-secondary">
+                                                    <i class="bi bi-lock-fill me-1"></i>Đã Đặt
+                                                </span>
+                                                <span class="fw-semibold">@lockedMeal.MealName</span>
                                             </div>
-                                            <button type="button" 
-                                                    class="btn btn-sm btn-outline-danger" 
-                                                    onclick="clearMealSelection(@daySlot.Date.DayNumber, @i)">
-                                                <i class="bi bi-x"></i>
-                                            </button>
+                                            <small class="text-muted">
+                                                <i class="bi bi-info-circle"></i> Đơn hàng đã được xác nhận, không thể thay đổi
+                                            </small>
                                         </div>
                                     </div>
                                     
-                                    <!-- Hidden radio input for form submission -->
+                                    <!-- Hidden input with locked meal ID (for form consistency, but won't be processed) -->
                                     <input type="hidden" 
                                            name="selections[@daySlot.Date.DayNumber].SelectedMealIds[@i]" 
                                            id="meal-input-@daySlot.Date.DayNumber-@i" 
-                                           value="" />
-                                </div>
-                                
-                                <!-- Allergen Warning for this slot -->
-                                <div id="warning-@daySlot.Date.DayNumber-@i" class="alert alert-warning mt-2" style="display:none;">
-                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                                    <span class="warning-text"></span>
-                                </div>
+                                           value="@lockedMeal.MealId"
+                                           data-locked="true" />
+                                }
+                                else if (isDisabled)
+                                {
+                                    <!-- Disabled due to cut-off time -->
+                                    <div class="d-flex align-items-center gap-2 p-3 border rounded bg-light" style="border-color: #DC2626 !important; background-color: #FEF2F2 !important;">
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex align-items-center gap-2 mb-1">
+                                                <span class="badge bg-danger">
+                                                    <i class="bi bi-clock-history me-1"></i>Đã Quá Giờ Chốt
+                                                </span>
+                                            </div>
+                                            <small class="text-muted">
+                                                <i class="bi bi-info-circle"></i> Không thể thay đổi món ăn cho ngày mai sau 20:00. Vui lòng liên hệ bếp để được hỗ trợ.
+                                            </small>
+                                        </div>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <!-- Normal Selection UI (only for future dates without orders) -->
+                                    <div class="d-flex align-items-center gap-2">
+                                        <button type="button" 
+                                                class="btn btn-outline-primary btn-select-meal" 
+                                                data-date="@daySlot.Date.DayNumber" 
+                                                data-slot="@i"
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#mealSelectionModal"
+                                                onclick="openMealSelectionModal(@daySlot.Date.DayNumber, @i)">
+                                            <i class="bi bi-plus-circle me-2"></i>Chọn Món
+                                        </button>
+                                        
+                                        <!-- Selected Meal Display -->
+                                        <div id="selected-meal-@daySlot.Date.DayNumber-@i" class="flex-grow-1" style="display:none;">
+                                            <div class="d-flex align-items-center gap-2 p-2 border rounded bg-light">
+                                                <img id="selected-meal-image-@daySlot.Date.DayNumber-@i" 
+                                                     src="" 
+                                                     alt="Selected meal" 
+                                                     style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px;"
+                                                     onerror="if(this.src.indexOf('placeholder') === -1 && this.src.indexOf('data:image') === -1) { this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'300\'%3E%3Crect fill=\'%23e5e7eb\' width=\'400\' height=\'300\'/%3E%3Ctext fill=\'%239ca3af\' font-family=\'Arial\' font-size=\'16\' x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dominant-baseline=\'middle\'%3ENo Image%3C/text%3E%3C/svg%3E'; }" />
+                                                <div class="flex-grow-1">
+                                                    <div class="fw-semibold" id="selected-meal-name-@daySlot.Date.DayNumber-@i"></div>
+                                                    <small class="text-muted" id="selected-meal-info-@daySlot.Date.DayNumber-@i"></small>
+                                                </div>
+                                                <button type="button" 
+                                                        class="btn btn-sm btn-outline-danger" 
+                                                        onclick="clearMealSelection(@daySlot.Date.DayNumber, @i)">
+                                                    <i class="bi bi-x"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Hidden radio input for form submission -->
+                                        <input type="hidden" 
+                                               name="selections[@daySlot.Date.DayNumber].SelectedMealIds[@i]" 
+                                               id="meal-input-@daySlot.Date.DayNumber-@i" 
+                                               value="" />
+                                    </div>
+                                    
+                                    <!-- Allergen Warning for this slot -->
+                                    <div id="warning-@daySlot.Date.DayNumber-@i" class="alert alert-warning mt-2" style="display:none;">
+                                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                        <span class="warning-text"></span>
+                                    </div>
+                                }
                             </div>
                         }
 
@@ -435,6 +499,9 @@
         let currentSearch = '';
         let totalPages = 1;
 
+        // Store current date string for API call
+        let currentDateString = '';
+        
         // Open meal selection modal
         function openMealSelectionModal(date, slot) {
             currentDate = date;
@@ -442,6 +509,16 @@
             currentPage = 1;
             currentSearch = '';
             document.getElementById('mealSearchInput').value = '';
+            
+            // Get actual date string from the day slot
+            const daySlotElement = document.querySelector(`[data-day-number="${date}"]`);
+            if (daySlotElement) {
+                const dateInput = daySlotElement.querySelector('input[name*="Date"]');
+                if (dateInput) {
+                    currentDateString = dateInput.value; // Format: yyyy-MM-dd
+                }
+            }
+            
             loadMeals();
         }
 
@@ -451,7 +528,8 @@
             container.innerHTML = '<div class="col-12 text-center py-4"><div class="spinner-border text-primary" role="status"></div></div>';
 
             try {
-                const response = await fetch(`@Url.Action("GetMealsForSelection", "Menu")?search=${encodeURIComponent(currentSearch)}&page=${currentPage}&pageSize=4`);
+                const url = `@Url.Action("GetMealsForSelection", "Menu")?search=${encodeURIComponent(currentSearch)}&page=${currentPage}&pageSize=4${currentDateString ? '&date=' + encodeURIComponent(currentDateString) : ''}`;
+                const response = await fetch(url);
                 const data = await response.json();
 
                 totalPages = data.totalPages;
@@ -459,30 +537,43 @@
 
                 // Render meals
                 if (data.meals && data.meals.length > 0) {
-                    container.innerHTML = data.meals.map(meal => `
+                    container.innerHTML = data.meals.map(meal => {
+                        const isSoldOut = meal.isSoldOut === true;
+                        const availableQty = meal.availableQuantity !== null && meal.availableQuantity !== undefined ? meal.availableQuantity : null;
+                        const cardStyle = isSoldOut ? 'opacity: 0.6; cursor: not-allowed;' : 'cursor: pointer;';
+                        const onClick = isSoldOut ? '' : `onclick="selectMealFromModal(${meal.mealId}, '${meal.name.replace(/'/g, "\\'")}', '${meal.imageUrl || ''}', ${meal.calories}, ${meal.protein}, ${meal.carbs}, ${meal.fat}, ${meal.hasAllergen}, '${(meal.allergenWarning || '').replace(/'/g, "\\'")}')"`;
+                        
+                        return `
                         <div class="col-md-6">
-                            <div class="card h-100 meal-option-card" style="cursor: pointer;" onclick="selectMealFromModal(${meal.mealId}, '${meal.name.replace(/'/g, "\\'")}', '${meal.imageUrl || ''}', ${meal.calories}, ${meal.protein}, ${meal.carbs}, ${meal.fat}, ${meal.hasAllergen}, '${meal.allergenWarning.replace(/'/g, "\\'")}')">
+                            <div class="card h-100 meal-option-card ${isSoldOut ? 'border-danger' : ''}" style="${cardStyle}" ${onClick}>
                                 <div class="position-relative" style="height: 150px; overflow: hidden;">
                                     <img src="${meal.imageUrl || 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'300\'%3E%3Crect fill=\'%23e5e7eb\' width=\'400\' height=\'300\'/%3E%3Ctext fill=\'%239ca3af\' font-family=\'Arial\' font-size=\'16\' x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dominant-baseline=\'middle\'%3ENo Image%3C/text%3E%3C/svg%3E'}" 
                                          alt="${meal.name}" 
                                          class="w-100 h-100" 
                                          style="object-fit: cover;"
                                          onerror="if(this.src.indexOf('data:image') === -1) { this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'300\'%3E%3Crect fill=\'%23e5e7eb\' width=\'400\' height=\'300\'/%3E%3Ctext fill=\'%239ca3af\' font-family=\'Arial\' font-size=\'16\' x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dominant-baseline=\'middle\'%3ENo Image%3C/text%3E%3C/svg%3E'; }" />
+                                    ${isSoldOut ? '<span class="badge bg-danger position-absolute top-0 start-0 m-2"><i class="bi bi-x-circle"></i> Hết Hàng</span>' : ''}
                                     ${meal.hasAllergen ? '<span class="badge bg-warning position-absolute top-0 end-0 m-2"><i class="bi bi-exclamation-triangle"></i></span>' : ''}
                                 </div>
                                 <div class="card-body p-3">
-                                    <h6 class="fw-bold mb-2">${meal.name}</h6>
+                                    <h6 class="fw-bold mb-2">${meal.name} ${isSoldOut ? '<span class="badge bg-danger ms-2">Hết Hàng</span>' : ''}</h6>
                                     <p class="text-muted small mb-2">${meal.description.length > 60 ? meal.description.substring(0, 60) + '...' : meal.description}</p>
-                                    <div class="d-flex gap-1 flex-wrap">
+                                    <div class="d-flex gap-1 flex-wrap mb-2">
                                         <span class="badge bg-info" style="font-size: 0.7rem;"><i class="bi bi-fire"></i> ${meal.calories} cal</span>
                                         <span class="badge bg-primary" style="font-size: 0.7rem;">P:${meal.protein}</span>
                                         <span class="badge bg-success" style="font-size: 0.7rem;">C:${meal.carbs}</span>
                                         <span class="badge bg-warning text-dark" style="font-size: 0.7rem;">F:${meal.fat}</span>
                                     </div>
+                                    ${availableQty !== null ? `<div class="d-flex align-items-center gap-1 mb-2">
+                                        <i class="bi bi-box-seam text-primary"></i>
+                                        <small class="text-muted">Còn lại: <strong class="${availableQty <= 5 ? 'text-danger' : availableQty <= 10 ? 'text-warning' : 'text-success'}">${availableQty} suất</strong></small>
+                                    </div>` : ''}
+                                    ${isSoldOut ? '<div class="alert alert-danger mt-2 mb-0 py-1 px-2" style="font-size: 0.75rem;"><i class="bi bi-exclamation-circle"></i> Món này đã hết hàng cho ngày đã chọn.</div>' : ''}
                                 </div>
                             </div>
                         </div>
-                    `).join('');
+                        `;
+                    }).join('');
                 } else {
                     container.innerHTML = '<div class="col-12 text-center py-4 text-muted">Không tìm thấy món ăn nào.</div>';
                 }
