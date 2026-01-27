@@ -1,111 +1,226 @@
 ﻿@{
     ViewData["Title"] = "MealPrep - Dịch Vụ Giao Món Ăn Lành Mạnh";
+    Layout = "_LandingLayout";
 }
 
 <!-- Hero Section -->
-<div class="hero-section text-white text-center py-5" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 20px; margin-bottom: 3rem;">
+<div class="hero-section">
     <div class="container py-5">
-        <h1 class="display-3 fw-bold mb-3">🍽️ Bữa Ăn Lành Mảnh, Giao Tận Nơi</h1>
-        <p class="lead mb-4">Bữa ăn tươi ngon, bổ dưỡng, phù hợp với mục tiêu thể hình của bạn. Giao tận cửa nhà.</p>
-        <div class="d-flex gap-3 justify-content-center">
-            @if (User.Identity?.IsAuthenticated == true)
-            {
-                <a asp-controller="Dashboard" asp-action="Index" class="btn btn-light btn-lg px-5">Vào Bảng Điều Khiển</a>
-                <a asp-controller="Meals" asp-action="Index" class="btn btn-outline-light btn-lg px-5">Xem Món Ăn</a>
-            }
-            else
-            {
-                <a asp-controller="Auth" asp-action="Register" class="btn btn-light btn-lg px-5">Bắt Đầu</a>
-                <a asp-controller="Auth" asp-action="Login" class="btn btn-outline-light btn-lg px-5">Đăng Nhập</a>
-            }
+        <div class="row align-items-center min-vh-70">
+            <div class="col-lg-6">
+                <h1 class="display-4 fw-bold mb-4" style="line-height: 1.2;">
+                    Bữa Ăn Lành Mạnh,<br/>
+                    <span class="text-muted">Giao Tận Nơi</span>
+                </h1>
+                <p class="lead mb-4 text-secondary" style="font-size: 1.1rem;">
+                    Bữa ăn tươi ngon, bổ dưỡng, phù hợp với mục tiêu thể hình của bạn. Giao tận cửa nhà.
+                </p>
+                <div class="d-flex gap-3">
+                    <a asp-controller="Auth" asp-action="Register" class="btn btn-dark btn-lg px-5">Bắt Đầu Ngay</a>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <img src="~/images/hero-meal.jpg" alt="Healthy Meal Prep" class="hero-image" />
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Section -->
+<div class="stats-section py-5 bg-dark text-white">
+    <div class="container">
+        <div class="row text-center g-4">
+            <div class="col-md-4">
+                <h2 class="display-5 fw-bold mb-2">1000+</h2>
+                <p class="text-white-50 mb-0">Khách Hàng Tin Dùng</p>
+            </div>
+            <div class="col-md-4">
+                <h2 class="display-5 fw-bold mb-2">50+</h2>
+                <p class="text-white-50 mb-0">Món Ăn Đa Dạng</p>
+            </div>
+            <div class="col-md-4">
+                <h2 class="display-5 fw-bold mb-2">98%</h2>
+                <p class="text-white-50 mb-0">Hài Lòng</p>
+            </div>
         </div>
     </div>
 </div>
 
 <!-- Features Section -->
-<div class="row g-4 mb-5">
-    <div class="col-md-4">
-        <div class="app-card p-4 text-center h-100">
-            <div class="feature-icon mb-3">🥗</div>
-            <h4 class="fw-semibold mb-2">Tươi & Lành Mạnh</h4>
-            <p class="text-secondary mb-0">Bữa ăn được chuyên gia dinh dưỡng duyệt với dinh dưỡng cân bằng cho mục tiêu thể hình của bạn</p>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="app-card p-4 text-center h-100">
-            <div class="feature-icon mb-3">🚚</div>
-            <h4 class="fw-semibold mb-2">Giao Hàng Nhanh</h4>
-            <p class="text-secondary mb-0">Chọn khung giờ giao hàng và nhận bữa ăn tươi ngon tận cửa nhà</p>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="app-card p-4 text-center h-100">
-            <div class="feature-icon mb-3">📊</div>
-            <h4 class="fw-semibold mb-2">Theo Dõi Dinh Dưỡng</h4>
-            <p class="text-secondary mb-0">Giám sát lượng calo, đạm, carbs, và chất béo hàng ngày một cách dễ dàng</p>
+<div class="features-section py-5">
+    <div class="container py-5">
+        <div class="row g-5">
+            <div class="col-md-4">
+                <div class="feature-item">
+                    <div class="feature-icon-minimal mb-3">
+                        <i class="bi bi-check-circle" style="font-size: 2rem;"></i>
+                    </div>
+                    <h4 class="fw-bold mb-3">Tươi & Lành Mạnh</h4>
+                    <p class="text-secondary mb-0">Bữa ăn được chuyên gia dinh dưỡng duyệt với dinh dưỡng cân bằng cho mục tiêu thể hình của bạn.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-item">
+                    <div class="feature-icon-minimal mb-3">
+                        <i class="bi bi-truck" style="font-size: 2rem;"></i>
+                    </div>
+                    <h4 class="fw-bold mb-3">Giao Hàng Nhanh</h4>
+                    <p class="text-secondary mb-0">Chọn khung giờ giao hàng và nhận bữa ăn tươi ngon tận cửa nhà trong thời gian ngắn nhất.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-item">
+                    <div class="feature-icon-minimal mb-3">
+                        <i class="bi bi-graph-up" style="font-size: 2rem;"></i>
+                    </div>
+                    <h4 class="fw-bold mb-3">Theo Dõi Dinh Dưỡng</h4>
+                    <p class="text-secondary mb-0">Giám sát lượng calo, đạm, carbs, và chất béo hàng ngày một cách dễ dàng và chính xác.</p>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
 <!-- How It Works -->
-<div class="app-card p-5 mb-5">
-    <h2 class="fw-bold text-center mb-4">Cách Hoạt Động</h2>
-    <div class="row g-4">
-        <div class="col-md-3 text-center">
-            <div class="step-number mb-3">1</div>
-            <h5 class="fw-semibold">Chọn Gói</h5>
-            <p class="text-secondary small">Chọn gói tuần hoặc tháng phù hợp với lối sống của bạn</p>
+<div class="how-it-works-section py-5 bg-light">
+    <div class="container py-5">
+        <div class="text-center mb-5">
+            <h2 class="display-6 fw-bold mb-3">Cách Hoạt Động</h2>
+            <p class="text-secondary">Đơn giản chỉ với 4 bước</p>
         </div>
-        <div class="col-md-3 text-center">
-            <div class="step-number mb-3">2</div>
-            <h5 class="fw-semibold">Chọn Món Ăn</h5>
-            <p class="text-secondary small">Xem thực đơn và tùy chỉnh món ăn tuần của bạn</p>
-        </div>
-        <div class="col-md-3 text-center">
-            <div class="step-number mb-3">3</div>
-            <h5 class="fw-semibold">Đặt Lịch Giao</h5>
-            <p class="text-secondary small">Chọn thời gian và địa điểm giao hàng uu tiên</p>
-        </div>
-        <div class="col-md-3 text-center">
-            <div class="step-number mb-3">4</div>
-            <h5 class="fw-semibold">Thưởng Thức & Theo Dõi</h5>
-            <p class="text-secondary small">Tận hưởng bữa ăn ngon và theo dõi tiến trình dinh dưỡng</p>
+        <div class="row g-4">
+            <div class="col-md-3">
+                <div class="step-card text-center p-4">
+                    <div class="step-number-minimal mb-4">01</div>
+                    <h5 class="fw-bold mb-3">Chọn Gói</h5>
+                    <p class="text-secondary small mb-0">Chọn gói tuần hoặc tháng phù hợp với lối sống của bạn</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="step-card text-center p-4">
+                    <div class="step-number-minimal mb-4">02</div>
+                    <h5 class="fw-bold mb-3">Chọn Món Ăn</h5>
+                    <p class="text-secondary small mb-0">Xem thực đơn và tùy chỉnh món ăn tuần của bạn</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="step-card text-center p-4">
+                    <div class="step-number-minimal mb-4">03</div>
+                    <h5 class="fw-bold mb-3">Đặt Lịch Giao</h5>
+                    <p class="text-secondary small mb-0">Chọn thời gian và địa điểm giao hàng ưu tiên</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="step-card text-center p-4">
+                    <div class="step-number-minimal mb-4">04</div>
+                    <h5 class="fw-bold mb-3">Thưởng Thức</h5>
+                    <p class="text-secondary small mb-0">Tận hưởng bữa ăn ngon và theo dõi tiến trình dinh dưỡng</p>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
-<!-- Pricing Teaser -->
-<div class="text-center py-5">
-    <h2 class="fw-bold mb-3">Sẵn Sàng Bắt Đầu Hành Trình Lành Mạnh?</h2>
-    <p class="lead text-secondary mb-4">Tham gia cùng hàng nghìn khách hàng hài lòng đã đạt được mục tiêu thể hình</p>
-    @if (User.Identity?.IsAuthenticated == true)
-    {
-        <a asp-controller="Subscription" asp-action="Create" class="btn btn-primary btn-lg px-5">Xem Gói</a>
-    }
-    else
-    {
-        <a asp-controller="Auth" asp-action="Register" class="btn btn-primary btn-lg px-5">Đăng Ký Ngay</a>
-    }
+<!-- CTA Section -->
+<div class="cta-section py-5">
+    <div class="container text-center py-5">
+        <h2 class="display-6 fw-bold mb-3">Sẵn Sàng Bắt Đầu?</h2>
+        <p class="lead text-secondary mb-4">Tham gia cùng hàng nghìn khách hàng đã đạt được mục tiêu thể hình</p>
+        <a asp-controller="Auth" asp-action="Register" class="btn btn-dark btn-lg px-5">Đăng Ký Ngay</a>
+    </div>
 </div>
 
 <style>
+    /* Hero Section */
     .hero-section {
-        box-shadow: 0 20px 60px rgba(102, 126, 234, 0.3);
+        background: #ffffff;
+        padding: 60px 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
     }
-    .feature-icon {
-        font-size: 3.5rem;
+    
+    .min-vh-70 {
+        min-height: 70vh;
+    }
+    
+    .hero-image {
+        width: 100%;
+        height: auto;
+        border-radius: 12px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+        object-fit: cover;
+    }
+    
+    /* Stats Section */
+    .stats-section {
+        background: #111827 !important;
+    }
+    
+    /* Features */
+    .feature-item {
+        transition: transform 0.3s ease;
+    }
+    
+    .feature-item:hover {
+        transform: translateY(-5px);
+    }
+    
+    .feature-icon-minimal {
+        color: #111827;
+    }
+    
+    /* Steps */
+    .step-card {
+        background: white;
+        border-radius: 12px;
+        height: 100%;
+        transition: all 0.3s ease;
+        border: 1px solid #e5e7eb;
+    }
+    
+    .step-card:hover {
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        border-color: #111827;
+    }
+    
+    .step-number-minimal {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #e5e7eb;
         line-height: 1;
     }
-    .step-number {
-        width: 60px;
-        height: 60px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border-radius: 50%;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.5rem;
-        font-weight: bold;
+    
+    /* Buttons */
+    .btn-dark {
+        background: #111827;
+        border-color: #111827;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-dark:hover {
+        background: #000000;
+        border-color: #000000;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+    
+    .btn-outline-dark {
+        border-width: 2px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-outline-dark:hover {
+        background: #111827;
+        border-color: #111827;
+        transform: translateY(-2px);
+    }
+    
+    @@media (max-width: 991px) {
+        .hero-image {
+            margin-top: 2rem;
+        }
     }
 </style>

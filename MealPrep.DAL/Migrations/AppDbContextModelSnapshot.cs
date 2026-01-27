@@ -35,7 +35,7 @@ namespace MealPrep.DAL.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Roles");
+                    b.ToTable("Roles", (string)null);
 
                     b.HasData(
                         new
@@ -111,7 +111,7 @@ namespace MealPrep.DAL.Migrations
 
                     b.HasIndex("RoleId");
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
 
                     b.HasData(
                         new
@@ -184,7 +184,7 @@ namespace MealPrep.DAL.Migrations
 
                     b.HasIndex("SubscriptionId");
 
-                    b.ToTable("DeliveryOrders");
+                    b.ToTable("DeliveryOrders", (string)null);
                 });
 
             modelBuilder.Entity("MealPrep.DAL.Entities.DeliveryOrderItem", b =>
@@ -237,7 +237,7 @@ namespace MealPrep.DAL.Migrations
 
                     b.HasIndex("MealId");
 
-                    b.ToTable("DeliveryOrderItems");
+                    b.ToTable("DeliveryOrderItems", (string)null);
                 });
 
             modelBuilder.Entity("MealPrep.DAL.Entities.DeliverySlot", b =>
@@ -261,7 +261,7 @@ namespace MealPrep.DAL.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("DeliverySlots");
+                    b.ToTable("DeliverySlots", (string)null);
 
                     b.HasData(
                         new
@@ -324,7 +324,7 @@ namespace MealPrep.DAL.Migrations
                     b.HasIndex("Date", "MealId")
                         .IsUnique();
 
-                    b.ToTable("KitchenInventories");
+                    b.ToTable("KitchenInventories", (string)null);
                 });
 
             modelBuilder.Entity("MealPrep.DAL.Entities.Meal", b =>
@@ -385,7 +385,7 @@ namespace MealPrep.DAL.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Meals");
+                    b.ToTable("Meals", (string)null);
 
                     b.HasData(
                         new
@@ -1942,7 +1942,7 @@ namespace MealPrep.DAL.Migrations
                     b.HasIndex("AppUserId", "DeliveryOrderItemId")
                         .IsUnique();
 
-                    b.ToTable("MealRatings");
+                    b.ToTable("MealRatings", (string)null);
                 });
 
             modelBuilder.Entity("MealPrep.DAL.Entities.NutritionLog", b =>
@@ -1976,7 +1976,7 @@ namespace MealPrep.DAL.Migrations
 
                     b.HasIndex("MealId");
 
-                    b.ToTable("NutritionLogs");
+                    b.ToTable("NutritionLogs", (string)null);
                 });
 
             modelBuilder.Entity("MealPrep.DAL.Entities.Order", b =>
@@ -2010,7 +2010,7 @@ namespace MealPrep.DAL.Migrations
 
                     b.HasIndex("SubscriptionId");
 
-                    b.ToTable("Orders");
+                    b.ToTable("Orders", (string)null);
                 });
 
             modelBuilder.Entity("MealPrep.DAL.Entities.OrderItem", b =>
@@ -2036,7 +2036,7 @@ namespace MealPrep.DAL.Migrations
 
                     b.HasIndex("OrderId");
 
-                    b.ToTable("OrderItems");
+                    b.ToTable("OrderItems", (string)null);
                 });
 
             modelBuilder.Entity("MealPrep.DAL.Entities.OtpCode", b =>
@@ -2064,7 +2064,7 @@ namespace MealPrep.DAL.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("OtpCodes");
+                    b.ToTable("OtpCodes", (string)null);
                 });
 
             modelBuilder.Entity("MealPrep.DAL.Entities.Payment", b =>
@@ -2127,7 +2127,7 @@ namespace MealPrep.DAL.Migrations
 
                     b.HasIndex("SubscriptionId");
 
-                    b.ToTable("Payments");
+                    b.ToTable("Payments", (string)null);
                 });
 
             modelBuilder.Entity("MealPrep.DAL.Entities.PaymentTransaction", b =>
@@ -2172,7 +2172,7 @@ namespace MealPrep.DAL.Migrations
 
                     b.HasIndex("PaymentId");
 
-                    b.ToTable("PaymentTransactions");
+                    b.ToTable("PaymentTransactions", (string)null);
                 });
 
             modelBuilder.Entity("MealPrep.DAL.Entities.Plan", b =>
@@ -2210,7 +2210,7 @@ namespace MealPrep.DAL.Migrations
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("Plans");
+                    b.ToTable("Plans", (string)null);
 
                     b.HasData(
                         new
@@ -2264,7 +2264,7 @@ namespace MealPrep.DAL.Migrations
                     b.HasIndex("PlanId", "MealsPerDay")
                         .IsUnique();
 
-                    b.ToTable("PlanMealTiers");
+                    b.ToTable("PlanMealTiers", (string)null);
 
                     b.HasData(
                         new
@@ -2375,7 +2375,7 @@ namespace MealPrep.DAL.Migrations
 
                     b.HasIndex("PlanId");
 
-                    b.ToTable("Subscriptions");
+                    b.ToTable("Subscriptions", (string)null);
                 });
 
             modelBuilder.Entity("MealPrep.DAL.Entities.UserAllergy", b =>
@@ -2398,7 +2398,7 @@ namespace MealPrep.DAL.Migrations
 
                     b.HasIndex("UserNutritionProfileId");
 
-                    b.ToTable("UserAllergies");
+                    b.ToTable("UserAllergies", (string)null);
 
                     b.HasData(
                         new
@@ -2436,7 +2436,7 @@ namespace MealPrep.DAL.Migrations
                     b.HasIndex("AppUserId", "MealId")
                         .IsUnique();
 
-                    b.ToTable("UserDislikedMeals");
+                    b.ToTable("UserDislikedMeals", (string)null);
                 });
 
             modelBuilder.Entity("MealPrep.DAL.Entities.UserNutritionProfile", b =>
@@ -2481,7 +2481,7 @@ namespace MealPrep.DAL.Migrations
                     b.HasIndex("AppUserId")
                         .IsUnique();
 
-                    b.ToTable("UserNutritionProfiles");
+                    b.ToTable("UserNutritionProfiles", (string)null);
 
                     b.HasData(
                         new
@@ -2519,7 +2519,7 @@ namespace MealPrep.DAL.Migrations
 
                     b.HasIndex("CreatedByUserId");
 
-                    b.ToTable("WeeklyMenus");
+                    b.ToTable("WeeklyMenus", (string)null);
                 });
 
             modelBuilder.Entity("MealPrep.DAL.Entities.WeeklyMenuItem", b =>
@@ -2545,7 +2545,7 @@ namespace MealPrep.DAL.Migrations
 
                     b.HasIndex("WeeklyMenuId");
 
-                    b.ToTable("WeeklyMenuItems");
+                    b.ToTable("WeeklyMenuItems", (string)null);
                 });
 
             modelBuilder.Entity("MealPrep.DAL.Entities.AppUser", b =>
