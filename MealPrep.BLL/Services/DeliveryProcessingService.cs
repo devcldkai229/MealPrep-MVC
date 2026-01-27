@@ -287,6 +287,17 @@ namespace MealPrep.BLL.Services
                 return false;
             }
 
+            // Validation: Cannot mark as "Delivered" if delivery date is in the future
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            if (newStatus == OrderStatus.Delivered && deliveryOrder.DeliveryDate > today)
+            {
+                _logger.LogWarning("⚠️ Cannot mark DeliveryOrder #{Id} as Delivered: DeliveryDate {DeliveryDate} is in the future (Today: {Today})", 
+                    deliveryOrderId, deliveryOrder.DeliveryDate, today);
+                throw new InvalidOperationException(
+                    $"Không thể đánh dấu đơn hàng là 'Đã giao' vì ngày giao hàng ({deliveryOrder.DeliveryDate:dd/MM/yyyy}) chưa đến. " +
+                    $"Chỉ có thể đánh dấu 'Đã giao' cho các đơn hàng có ngày giao hàng <= {today:dd/MM/yyyy}.");
+            }
+
             deliveryOrder.Status = newStatus;
             deliveryOrder.UpdatedAt = DateTime.UtcNow;
 
@@ -304,6 +315,22 @@ namespace MealPrep.BLL.Services
             var deliveryOrders = await _deliveryOrderRepo.Query()
                 .Where(d => deliveryOrderIds.Contains(d.Id))
                 .ToListAsync();
+
+            // Validation: Cannot mark as "Delivered" if delivery date is in the future
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            if (newStatus == OrderStatus.Delivered)
+            {
+                var futureOrders = deliveryOrders.Where(d => d.DeliveryDate > today).ToList();
+                if (futureOrders.Any())
+                {
+                    var futureDates = string.Join(", ", futureOrders.Select(d => d.DeliveryDate.ToString("dd/MM/yyyy")));
+                    _logger.LogWarning("⚠️ Cannot bulk mark {Count} delivery orders as Delivered: DeliveryDates {Dates} are in the future (Today: {Today})", 
+                        futureOrders.Count, futureDates, today);
+                    throw new InvalidOperationException(
+                        $"Không thể đánh dấu {futureOrders.Count} đơn hàng là 'Đã giao' vì ngày giao hàng chưa đến: {futureDates}. " +
+                        $"Chỉ có thể đánh dấu 'Đã giao' cho các đơn hàng có ngày giao hàng <= {today:dd/MM/yyyy}.");
+                }
+            }
 
             foreach (var order in deliveryOrders)
             {

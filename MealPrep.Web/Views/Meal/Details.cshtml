@@ -5,7 +5,6 @@
 @{
     ViewData["Title"] = Model.Name;
     
-    // Parse ingredients and images from JSON
     var ingredients = new List<string>();
     var images = new List<string>();
     
@@ -17,7 +16,6 @@
         }
         catch
         {
-            // Fallback: treat as comma-separated string
             ingredients = Model.Ingredients.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
         }
     }
@@ -30,274 +28,345 @@
         }
         catch
         {
-            // Fallback: treat as comma-separated string
             images = Model.Images.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
         }
     }
 }
 
-<div class="container py-4">
-    <!-- Breadcrumb -->
-    <nav aria-label="breadcrumb" class="mb-4">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Trang Chủ</a></li>
-            <li class="breadcrumb-item"><a asp-action="Index">Món Ăn</a></li>
-            <li class="breadcrumb-item active">@Model.Name</li>
-        </ol>
-    </nav>
+<div class="meal-details-page">
+    <div class="container py-5">
+        <!-- Breadcrumb -->
+        <nav aria-label="breadcrumb" class="mb-4">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Trang Chủ</a></li>
+                <li class="breadcrumb-item"><a asp-action="Index">Món Ăn</a></li>
+                <li class="breadcrumb-item active">@Model.Name</li>
+            </ol>
+        </nav>
 
-    <div class="row g-4">
-        <!-- Left Column - Image & Description -->
-        <div class="col-lg-7">
-            <!-- Meal Image Card -->
-            <div class="card app-card mb-4">
-                @if (images.Any())
-                {
-                    <div id="mealImageCarousel" class="carousel slide" data-bs-ride="carousel">
-                        <div class="carousel-inner">
-                            @for (int i = 0; i < images.Count; i++)
-                            {
-                                <div class="carousel-item @(i == 0 ? "active" : "")">
-                                    <img src="@images[i]" class="d-block w-100 meal-detail-image" 
-                                         alt="@Model.Name" 
-                                         style="object-fit: cover; height: 400px; border-radius: 0.5rem 0.5rem 0 0;" 
-                                         onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'800\' height=\'400\'%3E%3Crect fill=\'%23667eea\' width=\'800\' height=\'400\'/%3E%3Ctext fill=\'white\' font-family=\'Arial\' font-size=\'24\' x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dominant-baseline=\'middle\'%3E@Model.Name%3C/text%3E%3C/svg%3E';">
-                                </div>
-                            }
-                        </div>
-                        @if (images.Count > 1)
+        <div class="row g-4">
+            <!-- Left Column - Image & Description -->
+            <div class="col-lg-7">
+                <!-- Meal Image -->
+                <div class="meal-image-card mb-4">
+                    <div class="card border-0 shadow-sm">
+                        @if (images.Any())
                         {
-                            <button class="carousel-control-prev" type="button" data-bs-target="#mealImageCarousel" data-bs-slide="prev">
-                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                                <span class="visually-hidden">Previous</span>
-                            </button>
-                            <button class="carousel-control-next" type="button" data-bs-target="#mealImageCarousel" data-bs-slide="next">
-                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                                <span class="visually-hidden">Next</span>
-                            </button>
-                            <div class="carousel-indicators">
-                                @for (int i = 0; i < images.Count; i++)
+                            <div id="mealImageCarousel" class="carousel slide" data-bs-ride="carousel">
+                                <div class="carousel-inner">
+                                    @for (int i = 0; i < images.Count; i++)
+                                    {
+                                        <div class="carousel-item @(i == 0 ? "active" : "")">
+                                            <img src="@images[i]" class="d-block w-100 meal-detail-image" 
+                                                 alt="@Model.Name" 
+                                                 onerror="if(this.src.indexOf('data:image') === -1) { this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'800\' height=\'400\'%3E%3Crect fill=\'%23e5e7eb\' width=\'800\' height=\'400\'/%3E%3Ctext fill=\'%239ca3af\' font-family=\'Arial\' font-size=\'24\' x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dominant-baseline=\'middle\'%3ENo Image%3C/text%3E%3C/svg%3E'; }">
+                                        </div>
+                                    }
+                                </div>
+                                @if (images.Count > 1)
                                 {
-                                    <button type="button" data-bs-target="#mealImageCarousel" data-bs-slide-to="@i" 
-                                            class="@(i == 0 ? "active" : "")" aria-current="@(i == 0 ? "true" : "false")" aria-label="Slide @(i + 1)"></button>
+                                    <button class="carousel-control-prev" type="button" data-bs-target="#mealImageCarousel" data-bs-slide="prev">
+                                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                    </button>
+                                    <button class="carousel-control-next" type="button" data-bs-target="#mealImageCarousel" data-bs-slide="next">
+                                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                    </button>
                                 }
                             </div>
                         }
+                        else
+                        {
+                            <div class="meal-detail-image-placeholder">
+                                <i class="bi bi-image"></i>
+                                <span>Hình Ảnh Món Ăn</span>
+                            </div>
+                        }
                     </div>
-                }
-                else
-                {
-                    <div class="meal-detail-image">
-                        <div class="placeholder-content">
-                            <i class="bi bi-image"></i>
-                            <span>Hình Ảnh Món Ăn</span>
-                        </div>
-                    </div>
-                }
-            </div>
-
-            <!-- Description Card -->
-            <div class="card app-card">
-                <div class="card-body">
-                    <h5 class="card-title mb-3">
-                        <i class="bi bi-info-circle text-primary"></i> Mô Tả
-                    </h5>
-                    @if(!string.IsNullOrEmpty(Model.Description))
-                    {
-                        <p class="text-muted mb-0">@Model.Description</p>
-                    }
-                    else
-                    {
-                        <p class="text-muted mb-0 fst-italic">
-                            Một món ăn ngon và bổ dưỡng, chuẩn bị từ nguyên liệu tươi ngon. 
-                            Hoàn hảo cho lối sống healthy của bạn.
-                        </p>
-                    }
                 </div>
-            </div>
 
-            <!-- Ingredients Card -->
-            <div class="card app-card mt-4">
-                <div class="card-body">
-                    <h5 class="card-title mb-3">
-                        <i class="bi bi-list-check text-success"></i> Nguyên Liệu
-                    </h5>
-                    @if (ingredients.Any())
-                    {
-                        <ul class="list-unstyled mb-0">
-                            @foreach(var ingredient in ingredients)
+                <!-- Description -->
+                <div class="content-card mb-4">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header-custom">
+                            <h5 class="card-title-custom mb-0">Mô Tả</h5>
+                        </div>
+                        <div class="card-body-custom">
+                            @if(!string.IsNullOrEmpty(Model.Description))
                             {
-                                <li class="mb-2">
-                                    <i class="bi bi-check2 text-success"></i> @ingredient
-                                </li>
+                                <p class="text-muted mb-0">@Model.Description</p>
                             }
-                        </ul>
-                    }
-                    else
-                    {
-                        <p class="text-muted mb-0 fst-italic">
-                            Rau củ tươi, protein nạc, ngũ cốc nguyên hạt, và chất béo lành mạnh
-                        </p>
-                    }
-                </div>
-            </div>
-        </div>
-
-        <!-- Right Column - Details & Actions -->
-        <div class="col-lg-5">
-            <!-- Title & Price Card -->
-            <div class="card app-card mb-4">
-                <div class="card-body">
-                    <h1 class="h3 mb-3">@Model.Name</h1>
-
-                    @if(Model.IsActive)
-                    {
-                        <span class="badge bg-success-subtle text-success">
-                            <i class="bi bi-check-circle"></i> Còn Hàng
-                        </span>
-                    }
-                    else
-                    {
-                        <span class="badge bg-danger-subtle text-danger">
-                            <i class="bi bi-x-circle"></i> Hết Hàng
-                        </span>
-                    }
-                </div>
-            </div>
-
-            <!-- Nutrition Facts Card -->
-            <div class="card app-card mb-4">
-                <div class="card-header bg-white border-bottom">
-                    <h5 class="mb-0">
-                        <i class="bi bi-heart-pulse text-danger"></i> Thông Tin Dinh Dưỡng
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="nutrition-item">
-                        <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
-                            <div>
-                                <strong>Calo</strong>
-                                <div class="text-muted small">Năng lượng</div>
-                            </div>
-                            <div class="text-end">
-                                <div class="h4 mb-0 text-danger">@Model.Calories</div>
-                                <div class="small text-muted">kcal</div>
-                            </div>
+                            else
+                            {
+                                <p class="text-muted mb-0 fst-italic">
+                                    Một món ăn ngon và bổ dưỡng, chuẩn bị từ nguyên liệu tươi ngon.
+                                </p>
+                            }
                         </div>
+                    </div>
+                </div>
 
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between mb-2">
-                                <span><i class="bi bi-egg text-primary"></i> Đạm</span>
-                                <strong>@Model.Protein g</strong>
-                            </div>
-                            <div class="progress" style="height: 8px;">
-                                <div class="progress-bar bg-primary" style="width: @(Model.Protein * 2)%"></div>
-                            </div>
+                <!-- Ingredients -->
+                <div class="content-card">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header-custom">
+                            <h5 class="card-title-custom mb-0">Nguyên Liệu</h5>
                         </div>
-
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between mb-2">
-                                <span><i class="bi bi-grain text-warning"></i> Carbohydrate</span>
-                                <strong>@Model.Carbs g</strong>
-                            </div>
-                            <div class="progress" style="height: 8px;">
-                                <div class="progress-bar bg-warning" style="width: @(Model.Carbs)%"></div>
-                            </div>
-                        </div>
-
-                        <div class="mb-0">
-                            <div class="d-flex justify-content-between mb-2">
-                                <span><i class="bi bi-droplet text-info"></i> Chất Béo</span>
-                                <strong>@Model.Fat g</strong>
-                            </div>
-                            <div class="progress" style="height: 8px;">
-                                <div class="progress-bar bg-info" style="width: @(Model.Fat * 3)%"></div>
-                            </div>
+                        <div class="card-body-custom">
+                            @if (ingredients.Any())
+                            {
+                                <ul class="ingredients-list">
+                                    @foreach(var ingredient in ingredients)
+                                    {
+                                        <li>@ingredient</li>
+                                    }
+                                </ul>
+                            }
+                            else
+                            {
+                                <p class="text-muted mb-0 fst-italic">
+                                    Rau củ tươi, protein nạc, ngũ cốc nguyên hạt, và chất béo lành mạnh
+                                </p>
+                            }
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Action Buttons -->
-            <div class="d-grid gap-2">
-                <a asp-controller="Subscription" asp-action="Index" class="btn btn-primary btn-lg">
-                    <i class="bi bi-calendar-check"></i> Đăng Ký Để Nhận Món Này
-                </a>
-                @if (User.Identity?.IsAuthenticated == true)
-                {
-                    <form method="post" asp-controller="Auth" asp-action="ToggleDislikedMeal" class="d-inline">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="mealId" value="@Model.Id" />
-                        <button type="submit" class="btn btn-outline-warning w-100">
-                            <i class="bi bi-hand-thumbs-down"></i> 
-                            @(ViewBag.IsDisliked == true ? "Bỏ Không Thích" : "Không Thích Món Này")
-                        </button>
-                    </form>
-                }
-                <a asp-action="Index" class="btn btn-outline-secondary">
-                    <i class="bi bi-arrow-left"></i> Quay Lại Danh Sách
-                </a>
-            </div>
+            <!-- Right Column - Details & Actions -->
+            <div class="col-lg-5">
+                <!-- Title Card -->
+                <div class="content-card mb-4">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body-custom">
+                            <h1 class="meal-title mb-3">@Model.Name</h1>
+                            @if(Model.IsActive)
+                            {
+                                <span class="badge bg-success">
+                                    <i class="bi bi-check-circle me-1"></i>Còn Hàng
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger">
+                                    <i class="bi bi-x-circle me-1"></i>Hết Hàng
+                                </span>
+                            }
+                        </div>
+                    </div>
+                </div>
 
-            <!-- Info Alert -->
-            <div class="alert alert-info mt-4" role="alert">
-                <i class="bi bi-info-circle"></i>
-                <strong>Đăng ký để đặt món:</strong> Thêm món này vào gói đăng ký hàng tuần để thưởng thức ăn uống healthy.
+                <!-- Nutrition Facts -->
+                <div class="content-card mb-4">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header-custom">
+                            <h5 class="card-title-custom mb-0">Thông Tin Dinh Dưỡng</h5>
+                        </div>
+                        <div class="card-body-custom">
+                            <div class="nutrition-item mb-3 pb-3 border-bottom">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>Calo</strong>
+                                        <div class="text-muted small">Năng lượng</div>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="h4 mb-0 text-danger">@Model.Calories</div>
+                                        <div class="small text-muted">kcal</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="nutrition-macro mb-3">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted">Đạm</span>
+                                    <strong>@Model.Protein g</strong>
+                                </div>
+                                <div class="progress" style="height: 6px;">
+                                    <div class="progress-bar bg-primary" style="width: @(Math.Min(Model.Protein * 2, 100))%"></div>
+                                </div>
+                            </div>
+
+                            <div class="nutrition-macro mb-3">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted">Carbohydrate</span>
+                                    <strong>@Model.Carbs g</strong>
+                                </div>
+                                <div class="progress" style="height: 6px;">
+                                    <div class="progress-bar bg-warning" style="width: @(Math.Min(Model.Carbs, 100))%"></div>
+                                </div>
+                            </div>
+
+                            <div class="nutrition-macro">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted">Chất Béo</span>
+                                    <strong>@Model.Fat g</strong>
+                                </div>
+                                <div class="progress" style="height: 6px;">
+                                    <div class="progress-bar bg-info" style="width: @(Math.Min(Model.Fat * 3, 100))%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="action-buttons">
+                    <a asp-controller="Subscription" asp-action="Index" class="btn btn-primary btn-lg w-100 mb-2">
+                        <i class="bi bi-calendar-check me-2"></i>Đăng Ký Để Nhận Món Này
+                    </a>
+                    @if (User.Identity?.IsAuthenticated == true)
+                    {
+                        <form method="post" asp-controller="Auth" asp-action="ToggleDislikedMeal" class="d-inline w-100">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="mealId" value="@Model.Id" />
+                            <button type="submit" class="btn btn-outline-secondary w-100 mb-2">
+                                <i class="bi bi-hand-thumbs-down me-2"></i>
+                                @(ViewBag.IsDisliked == true ? "Bỏ Không Thích" : "Không Thích Món Này")
+                            </button>
+                        </form>
+                    }
+                    <a asp-action="Index" class="btn btn-outline-secondary w-100">
+                        <i class="bi bi-arrow-left me-2"></i>Quay Lại Danh Sách
+                    </a>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 <style>
+    .meal-details-page {
+        background: #f8f9fa;
+        min-height: 100vh;
+    }
+
+    .breadcrumb {
+        background: transparent;
+        padding: 0;
+    }
+
+    .breadcrumb-item a {
+        color: #6b7280;
+        text-decoration: none;
+    }
+
+    .breadcrumb-item.active {
+        color: #1f2937;
+    }
+
     .meal-detail-image {
         height: 400px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        position: relative;
-        overflow: hidden;
-        border-radius: 0.5rem;
+        object-fit: cover;
+        border-radius: 0.75rem 0.75rem 0 0;
     }
 
-    .meal-detail-image::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: repeating-linear-gradient(
-            45deg,
-            rgba(255, 255, 255, 0.05),
-            rgba(255, 255, 255, 0.05) 15px,
-            transparent 15px,
-            transparent 30px
-        );
-    }
-
-    .placeholder-content {
+    .meal-detail-image-placeholder {
+        height: 400px;
+        background: #e5e7eb;
         display: flex;
         flex-direction: column;
         align-items: center;
-        color: white;
-        font-size: 3rem;
-        z-index: 1;
+        justify-content: center;
+        color: #9ca3af;
+        font-size: 1.5rem;
     }
 
-    .placeholder-content span {
+    .meal-detail-image-placeholder span {
+        font-size: 0.875rem;
+        margin-top: 0.5rem;
+    }
+
+    .content-card .card {
+        border-radius: 0.75rem;
+    }
+
+    .card-header-custom {
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid #e5e7eb;
+        background: #f9fafb;
+    }
+
+    .card-title-custom {
         font-size: 1rem;
-        margin-top: 1rem;
-        font-weight: 500;
+        font-weight: 600;
+        color: #1f2937;
+        margin: 0;
+    }
+
+    .card-body-custom {
+        padding: 1.25rem;
+    }
+
+    .meal-title {
+        font-size: 1.75rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin: 0;
+    }
+
+    .ingredients-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .ingredients-list li {
+        padding: 0.5rem 0;
+        color: #374151;
+        border-bottom: 1px solid #f3f4f6;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .ingredients-list li:last-child {
+        border-bottom: none;
+    }
+
+    .ingredients-list li::before {
+        content: "•";
+        color: #16a34a;
+        font-weight: bold;
+        font-size: 1.25rem;
+    }
+
+    .nutrition-item {
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .nutrition-macro {
+        margin-bottom: 1rem;
     }
 
     .progress {
-        background-color: #e9ecef;
+        background-color: #f3f4f6;
         border-radius: 0.25rem;
-        overflow: hidden;
     }
 
-    .nutrition-item strong {
-        font-weight: 600;
+    .btn-primary {
+        background: #1f2937;
+        border-color: #1f2937;
+        font-weight: 500;
+    }
+
+    .btn-primary:hover {
+        background: #111827;
+        border-color: #111827;
+    }
+
+    .btn-outline-secondary {
+        border-color: #d1d5db;
+        color: #374151;
+        font-weight: 500;
+    }
+
+    .btn-outline-secondary:hover {
+        background: #f3f4f6;
+        border-color: #9ca3af;
+        color: #1f2937;
+    }
+
+    .badge {
+        font-weight: 500;
+        padding: 0.375rem 0.75rem;
     }
 </style>

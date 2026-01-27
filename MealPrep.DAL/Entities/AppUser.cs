@@ -33,6 +33,13 @@ public class AppUser
     [StringLength(20)]
     public string? PhoneNumber { get; set; }
 
+    /// <summary>
+    /// Địa chỉ giao hàng của khách hàng
+    /// Ví dụ: "Số 10, Đường Nguyễn Huệ, Quận 1, TP.HCM"
+    /// </summary>
+    [StringLength(500)]
+    public string? DeliveryAddress { get; set; }
+
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
 
     public DateTime? LastLoginAtUtc { get; set; }

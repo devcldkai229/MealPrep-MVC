@@ -31,7 +31,8 @@ public class DashboardController : Controller
             FeaturedMeals = dto.FeaturedMeals,
             FeaturedMealsWithRatings = dto.FeaturedMealsWithRatings,
             WeekCalories = dto.WeekCalories,
-            RecentOrders = dto.RecentOrders
+            RecentOrders = dto.RecentOrders,
+            MaxCalories = dto.MaxCalories
         };
         
         return View(vm);

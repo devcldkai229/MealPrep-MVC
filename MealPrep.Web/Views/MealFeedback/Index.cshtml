@@ -1,16 +1,17 @@
 @model List<MealPrep.BLL.DTOs.PendingFeedbackDto>
 
 @{
-    ViewData["Title"] = "Meal Feedback";
+    ViewData["Title"] = "Đánh Giá Món Ăn";
     var targetDate = ViewBag.TargetDate as DateOnly? ?? DateOnly.FromDateTime(DateTime.Today.AddDays(-1));
     var isYesterday = ViewBag.IsYesterday as bool? ?? true;
 }
 
-<div class="container py-4">
-    <div class="row mb-4">
-        <div class="col-12">
-            <h2 class="fw-bold">⭐ Đánh giá món ăn</h2>
-            <p class="text-muted">
+<div class="feedback-page">
+    <div class="container py-5">
+        <!-- Header -->
+        <div class="page-header mb-4">
+            <h1 class="page-title mb-2">Đánh Giá Món Ăn</h1>
+            <p class="page-subtitle mb-0">
                 @if (isYesterday)
                 {
                     <span>Hôm qua bạn ăn có ngon không? Chia sẻ trải nghiệm của bạn!</span>
@@ -21,143 +22,347 @@
                 }
             </p>
         </div>
-    </div>
 
-    @if (TempData["SuccessMessage"] != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show">
-            @TempData["SuccessMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
+        <!-- Alerts -->
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+                <i class="bi bi-check-circle me-2"></i>
+                @TempData["SuccessMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+        @if (TempData["InfoMessage"] != null)
+        {
+            <div class="alert alert-info alert-dismissible fade show mb-4" role="alert">
+                <i class="bi bi-info-circle me-2"></i>
+                @TempData["InfoMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                <i class="bi bi-exclamation-circle me-2"></i>
+                @TempData["ErrorMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
 
-    @if (TempData["InfoMessage"] != null)
-    {
-        <div class="alert alert-info alert-dismissible fade show">
-            @TempData["InfoMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
-
-    @if (TempData["ErrorMessage"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show">
-            @TempData["ErrorMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
-
-    @if (Model.Any())
-    {
-        <div class="row g-4">
-            @foreach (var meal in Model)
-            {
-                <div class="col-md-6">
-                    <div class="card h-100">
-                        @if (!string.IsNullOrEmpty(meal.MealImageUrl))
-                        {
-                            <img src="@meal.MealImageUrl" class="card-img-top" alt="@meal.MealName" 
-                                 style="height: 200px; object-fit: cover;">
-                        }
-                        <div class="card-body">
-                            <h5 class="card-title">@meal.MealName</h5>
-                            <div class="mb-3">
-                                <small class="text-muted">
-                                    <i class="bi bi-fire"></i> @meal.Calories kcal |
-                                    <i class="bi bi-egg"></i> P: @meal.Protein.ToString("N1")g |
-                                    <i class="bi bi-bread-slice"></i> C: @meal.Carbs.ToString("N1")g |
-                                    <i class="bi bi-droplet"></i> F: @meal.Fat.ToString("N1")g
-                                </small>
+        <!-- Feedback Cards -->
+        @if (Model.Any())
+        {
+            <div class="feedback-grid">
+                @foreach (var meal in Model)
+                {
+                    <div class="feedback-card">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="meal-image-section">
+                                @if (!string.IsNullOrEmpty(meal.MealImageUrl))
+                                {
+                                    <img src="@meal.MealImageUrl" alt="@meal.MealName" class="meal-image"
+                                         onerror="if(this.src.indexOf('data:image') === -1) { this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'300\'%3E%3Crect fill=\'%23e5e7eb\' width=\'400\' height=\'300\'/%3E%3Ctext fill=\'%239ca3af\' font-family=\'Arial\' font-size=\'16\' x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dominant-baseline=\'middle\'%3ENo Image%3C/text%3E%3C/svg%3E'; }" />
+                                }
+                                else
+                                {
+                                    <div class="meal-image-placeholder">
+                                        <i class="bi bi-image"></i>
+                                    </div>
+                                }
                             </div>
-
-                            <form asp-action="SubmitRating" method="post">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="deliveryOrderItemId" value="@meal.DeliveryOrderItemId" />
-                                <input type="hidden" name="mealId" value="@meal.MealId" />
-                                <input type="hidden" name="deliveryDate" value="@meal.DeliveryDate" />
-
-                                <!-- Star Rating -->
-                                <div class="mb-3">
-                                    <label class="form-label fw-bold">Đánh giá của bạn:</label>
-                                    <div class="btn-group w-100" role="group">
-                                        @for (int i = 1; i <= 5; i++)
-                                        {
-                                            <input type="radio" class="btn-check" name="stars" 
-                                                   id="star_@(meal.DeliveryOrderItemId)_@i" value="@i" required>
-                                            <label class="btn btn-outline-warning" for="star_@(meal.DeliveryOrderItemId)_@i">
-                                                @i ⭐
-                                            </label>
-                                        }
+                            <div class="card-body p-4">
+                                <h5 class="meal-name mb-3">@meal.MealName</h5>
+                                <div class="meal-nutrition mb-4">
+                                    <div class="nutrition-info">
+                                        <span>@meal.Calories kcal</span>
+                                        <span>P:@meal.Protein.ToString("N1")g</span>
+                                        <span>C:@meal.Carbs.ToString("N1")g</span>
+                                        <span>F:@meal.Fat.ToString("N1")g</span>
                                     </div>
                                 </div>
 
-                                <!-- Tags -->
-                                <div class="mb-3">
-                                    <label class="form-label">Tags (tùy chọn):</label>
-                                    <div class="d-flex flex-wrap gap-2">
-                                        <button type="button" class="btn btn-sm btn-outline-secondary tag-btn" 
-                                                data-tag="Ngon">Ngon</button>
-                                        <button type="button" class="btn btn-sm btn-outline-secondary tag-btn" 
-                                                data-tag="Hơi mặn">Hơi mặn</button>
-                                        <button type="button" class="btn btn-sm btn-outline-secondary tag-btn" 
-                                                data-tag="Khô">Khô</button>
-                                        <button type="button" class="btn btn-sm btn-outline-secondary tag-btn" 
-                                                data-tag="Ít đạm">Ít đạm</button>
-                                        <button type="button" class="btn btn-sm btn-outline-secondary tag-btn" 
-                                                data-tag="Quá nhiều dầu">Quá nhiều dầu</button>
+                                <form asp-action="SubmitRating" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="deliveryOrderItemId" value="@meal.DeliveryOrderItemId" />
+                                    <input type="hidden" name="mealId" value="@meal.MealId" />
+                                    <input type="hidden" name="deliveryDate" value="@meal.DeliveryDate" />
+
+                                    <!-- Star Rating -->
+                                    <div class="rating-section mb-4">
+                                        <label class="rating-label mb-2">Đánh giá của bạn</label>
+                                        <div class="star-rating">
+                                            @for (int i = 1; i <= 5; i++)
+                                            {
+                                                <input type="radio" class="star-input" name="stars" 
+                                                       id="star_@(meal.DeliveryOrderItemId)_@i" value="@i" required>
+                                                <label class="star-label" for="star_@(meal.DeliveryOrderItemId)_@i">
+                                                    <i class="bi bi-star"></i>
+                                                </label>
+                                            }
+                                        </div>
                                     </div>
-                                    <input type="hidden" name="tags" id="tags_@meal.DeliveryOrderItemId" />
-                                </div>
 
-                                <!-- Comments -->
-                                <div class="mb-3">
-                                    <label class="form-label">Ghi chú (tùy chọn):</label>
-                                    <textarea name="comments" class="form-control" rows="2" 
-                                              placeholder="Chia sẻ thêm về trải nghiệm của bạn..."></textarea>
-                                </div>
+                                    <!-- Tags -->
+                                    <div class="tags-section mb-4">
+                                        <label class="tags-label mb-2">Tags (tùy chọn)</label>
+                                        <div class="tags-container">
+                                            <button type="button" class="tag-btn" data-tag="Ngon">Ngon</button>
+                                            <button type="button" class="tag-btn" data-tag="Hơi mặn">Hơi mặn</button>
+                                            <button type="button" class="tag-btn" data-tag="Khô">Khô</button>
+                                            <button type="button" class="tag-btn" data-tag="Ít đạm">Ít đạm</button>
+                                            <button type="button" class="tag-btn" data-tag="Quá nhiều dầu">Quá nhiều dầu</button>
+                                        </div>
+                                        <input type="hidden" name="tags" id="tags_@meal.DeliveryOrderItemId" />
+                                    </div>
 
-                                <button type="submit" class="btn btn-primary w-100">
-                                    Gửi đánh giá
-                                </button>
-                            </form>
+                                    <!-- Comments -->
+                                    <div class="comments-section mb-4">
+                                        <label class="comments-label mb-2">Ghi chú (tùy chọn)</label>
+                                        <textarea name="comments" class="form-control" rows="3" 
+                                                  placeholder="Chia sẻ thêm về trải nghiệm của bạn..."></textarea>
+                                    </div>
+
+                                    <button type="submit" class="btn btn-primary w-100">
+                                        <i class="bi bi-send me-2"></i>Gửi Đánh Giá
+                                    </button>
+                                </form>
+                            </div>
                         </div>
                     </div>
-                </div>
-            }
-        </div>
-    }
-    else
-    {
-        <div class="card">
-            <div class="card-body text-center py-5">
-                <h4>🎉 Tuyệt vời!</h4>
-                <p class="text-muted">Bạn đã đánh giá tất cả các món ăn ngày @targetDate.ToString("dd/MM/yyyy")</p>
-                <a asp-action="MySummary" class="btn btn-primary">Xem thống kê của tôi</a>
+                }
             </div>
-        </div>
-    }
+        }
+        else
+        {
+            <div class="empty-state">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body text-center py-5">
+                        <i class="bi bi-check-circle-fill" style="font-size: 3rem; color: #16a34a;"></i>
+                        <h5 class="mt-3 mb-2">Tuyệt vời!</h5>
+                        <p class="text-muted mb-4">Bạn đã đánh giá tất cả các món ăn ngày @targetDate.ToString("dd/MM/yyyy")</p>
+                        <a asp-action="MySummary" class="btn btn-primary">
+                            <i class="bi bi-graph-up me-2"></i>Xem Thống Kê
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
 
-    <!-- Quick Links -->
-    <div class="mt-4 text-center">
-        <a asp-action="MySummary" class="btn btn-outline-primary me-2">
-            📊 Xem thống kê của tôi
-        </a>
-        <a asp-controller="Dashboard" asp-action="Index" class="btn btn-outline-secondary">
-            ← Về Dashboard
-        </a>
+        <!-- Quick Links -->
+        <div class="quick-links mt-5 text-center">
+            <a asp-action="MySummary" class="btn btn-outline-secondary me-2">
+                <i class="bi bi-graph-up me-2"></i>Xem Thống Kê
+            </a>
+            <a asp-controller="Dashboard" asp-action="Index" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-2"></i>Về Dashboard
+            </a>
+        </div>
     </div>
 </div>
 
+<style>
+    .feedback-page {
+        background: #f8f9fa;
+        min-height: 100vh;
+    }
+
+    .page-title {
+        font-size: 2rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin: 0;
+    }
+
+    .page-subtitle {
+        color: #6b7280;
+        font-size: 0.95rem;
+    }
+
+    .feedback-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 2rem;
+    }
+
+    .feedback-card .card {
+        border-radius: 0.75rem;
+    }
+
+    .meal-image-section {
+        width: 100%;
+        height: 220px;
+        overflow: hidden;
+        background: #f3f4f6;
+    }
+
+    .meal-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .meal-image-placeholder {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #9ca3af;
+        font-size: 3rem;
+    }
+
+    .meal-name {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #1f2937;
+    }
+
+    .nutrition-info {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .nutrition-info span {
+        font-size: 0.875rem;
+        color: #6b7280;
+    }
+
+    .rating-section {
+        padding-top: 1rem;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    .rating-label {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #374151;
+        display: block;
+    }
+
+    .star-rating {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: center;
+    }
+
+    .star-input {
+        display: none;
+    }
+
+    .star-label {
+        font-size: 2rem;
+        color: #d1d5db;
+        cursor: pointer;
+        transition: color 0.2s;
+    }
+
+    .star-input:checked ~ .star-label,
+    .star-label:hover,
+    .star-label:hover ~ .star-label {
+        color: #fbbf24;
+    }
+
+    .star-input:checked ~ .star-label {
+        color: #f59e0b;
+    }
+
+    .tags-section {
+        padding-top: 1rem;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    .tags-label {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #374151;
+        display: block;
+    }
+
+    .tags-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .tag-btn {
+        padding: 0.375rem 0.75rem;
+        border: 1px solid #d1d5db;
+        background: white;
+        color: #374151;
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .tag-btn:hover {
+        background: #f3f4f6;
+        border-color: #9ca3af;
+    }
+
+    .tag-btn.active {
+        background: #1f2937;
+        border-color: #1f2937;
+        color: white;
+    }
+
+    .comments-section {
+        padding-top: 1rem;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    .comments-label {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #374151;
+        display: block;
+    }
+
+    .form-control {
+        border-color: #d1d5db;
+    }
+
+    .form-control:focus {
+        border-color: #1f2937;
+        box-shadow: 0 0 0 0.2rem rgba(31, 41, 55, 0.1);
+    }
+
+    .btn-primary {
+        background: #1f2937;
+        border-color: #1f2937;
+        font-weight: 500;
+    }
+
+    .btn-primary:hover {
+        background: #111827;
+        border-color: #111827;
+    }
+
+    .btn-outline-secondary {
+        border-color: #d1d5db;
+        color: #374151;
+        font-weight: 500;
+    }
+
+    .btn-outline-secondary:hover {
+        background: #f3f4f6;
+        border-color: #9ca3af;
+        color: #1f2937;
+    }
+
+    @@media (max-width: 768px) {
+        .feedback-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
 @section Scripts {
     <script>
-        // Handle tag selection
         document.querySelectorAll('.tag-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 this.classList.toggle('active');
-                this.classList.toggle('btn-outline-secondary');
-                this.classList.toggle('btn-secondary');
-                
-                // Update hidden input
                 const card = this.closest('.card');
                 const hiddenInput = card.querySelector('input[name="tags"]');
                 const activeTags = Array.from(card.querySelectorAll('.tag-btn.active'))

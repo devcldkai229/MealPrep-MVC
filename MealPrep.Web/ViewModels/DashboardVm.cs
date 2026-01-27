@@ -14,5 +14,6 @@ namespace MealPrep.Web.ViewModels
         public List<MealWithRating> FeaturedMealsWithRatings { get; set; } = new();
         public List<(DateOnly Date, int Calories)> WeekCalories { get; set; } = new();
         public List<Order> RecentOrders { get; set; } = new();
+        public int MaxCalories { get; set; } = 2000; // Max calories for chart Y-axis
     }
 }

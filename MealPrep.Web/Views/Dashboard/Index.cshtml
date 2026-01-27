@@ -2,240 +2,713 @@
 @model MealPrep.Web.ViewModels.DashboardVm
 @{
     ViewData["Title"] = "Bảng Điều Khiển";
+    
+    // Prepare chart data
+    var chartData = Model.WeekCalories.Select(d => new { 
+        Date = d.Date.ToString("dd/MM"), 
+        Calories = d.Calories 
+    }).ToList();
+    var chartDataJson = JsonSerializer.Serialize(chartData);
 }
 
-<div class="d-flex align-items-end justify-content-between mb-3">
-    <div>
-        <h3 class="fw-bold mb-1">Chào mừng trở lại 👋</h3>
-        <div class="text-secondary">Quản lý món ăn, đăng ký và theo dõi dinh dưỡng mọi nơi.</div>
-    </div>
-    <div class="d-flex gap-2">
-        <a class="btn btn-primary" asp-controller="Subscription" asp-action="Index">Đăng Ký</a>
-        <a class="btn btn-outline-secondary" asp-controller="NutritionLog" asp-action="Create">Thêm Nhật Ký</a>
-    </div>
-</div>
-
-<div class="row g-3">
-    <div class="col-md-4">
-        <div class="app-card p-3">
-            <div class="kpi-title">Đăng Ký</div>
-            <div class="kpi-value mt-1">@Model.SubscriptionStatus</div>
-            <div class="mt-2"><span class="chip">Lối sống năng động</span></div>
-        </div>
-    </div>
-
-    <div class="col-md-4">
-        <div class="app-card p-3">
-            <div class="kpi-title">Giao Hàng Tiếp Theo</div>
-            <div class="kpi-value mt-1">@Model.NextDeliveryText</div>
-            <div class="mt-2"><a class="link-muted" asp-controller="Subscription" asp-action="Index">Quản lý đăng ký →</a></div>
-        </div>
-    </div>
-
-    <div class="col-md-4">
-        <div class="app-card p-3">
-            <div class="kpi-title">Calo Hôm Nay</div>
-            <div class="kpi-value mt-1">@Model.TodayCalories kcal</div>
-            <div class="mt-2"><a class="link-muted" asp-controller="NutritionLog" asp-action="Index">Xem dinh dưỡng →</a></div>
-        </div>
-    </div>
-</div>
-
-<div class="row g-3 mt-1">
-    <div class="col-lg-8">
-        <div class="app-card p-3">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <h5 class="fw-semibold mb-0">Món Ăn Nổi Bật</h5>
-                <a class="link-muted" asp-controller="Meal" asp-action="Index">Xem tất cả →</a>
+<div class="dashboard-page">
+    <!-- Welcome Header -->
+    <div class="dashboard-header mb-4">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+            <div>
+                <h1 class="dashboard-title mb-2">Chào mừng trở lại 👋</h1>
+                <p class="dashboard-subtitle mb-0">Theo dõi dinh dưỡng và quản lý bữa ăn của bạn</p>
             </div>
+            <div class="d-flex gap-2">
+                <a class="btn btn-primary" asp-controller="Subscription" asp-action="Index">
+                    <i class="bi bi-plus-circle me-2"></i>Đăng Ký Gói
+                </a>
+                <a class="btn btn-outline-secondary" asp-controller="NutritionLog" asp-action="Create">
+                    <i class="bi bi-journal-plus me-2"></i>Thêm Nhật Ký
+                </a>
+            </div>
+        </div>
+    </div>
 
-            <div class="row g-3">
-                @foreach (var mealWithRating in Model.FeaturedMealsWithRatings)
-                {
-                    var m = mealWithRating.Meal;
-                    var imageUrls = new List<string>();
-                    try
-                    {
-                        if (!string.IsNullOrEmpty(m.Images))
-                        {
-                            imageUrls = JsonSerializer.Deserialize<List<string>>(m.Images) ?? new List<string>();
-                        }
-                    }
-                    catch { }
+    <!-- Alerts -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+            <i class="bi bi-check-circle me-2"></i>
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+            <i class="bi bi-exclamation-circle me-2"></i>
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
 
-                    var firstImage = imageUrls.FirstOrDefault() ?? "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%23e5e7eb' width='400' height='300'/%3E%3Ctext fill='%239ca3af' font-family='Arial' font-size='16' x='50%25' y='50%25' text-anchor='middle' dominant-baseline='middle'%3ENo Image%3C/text%3E%3C/svg%3E";
+    <!-- Stats Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="stat-icon bg-primary">
+                    <i class="bi bi-calendar-check"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-label">Trạng Thái Đăng Ký</div>
+                    <div class="stat-value">@Model.SubscriptionStatus</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="stat-icon bg-success">
+                    <i class="bi bi-truck"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-label">Giao Hàng Tiếp Theo</div>
+                    <div class="stat-value">@Model.NextDeliveryText</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="stat-icon bg-warning">
+                    <i class="bi bi-fire"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-label">Calo Hôm Nay</div>
+                    <div class="stat-value">@Model.TodayCalories <span class="stat-unit">kcal</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-                    <div class="col-md-6 col-xl-4">
-                        <div class="app-card p-2">
-                            <div class="meal-thumb mb-2 position-relative" style="background-image: url('@firstImage'); background-size: cover; background-position: center; height: 150px; border-radius: 8px;">
-                                @if (mealWithRating.AverageRating > 0)
-                                {
-                                    <div class="position-absolute top-0 end-0 m-2">
-                                        <span class="badge bg-warning text-dark" style="font-size: 0.85rem;">
-                                            <i class="bi bi-star-fill"></i> @mealWithRating.AverageRating.ToString("N1")
-                                        </span>
-                                    </div>
-                                }
-                            </div>
-                            <div class="px-1 pb-1">
-                                <div class="fw-semibold">@m.Name</div>
-                                <div class="meal-meta">
-                                    @m.Calories kcal • P @m.Protein • C @m.Carbs • F @m.Fat
-                                    @if (mealWithRating.AverageRating > 0)
-                                    {
-                                        <span class="d-block mt-1">
-                                            <i class="bi bi-star-fill text-warning"></i>
-                                            <small class="text-muted">
-                                                <strong>@mealWithRating.AverageRating.ToString("N1")</strong> / 5.0
-                                                @if (mealWithRating.RatingCount > 0)
-                                                {
-                                                    <span class="text-muted">(@mealWithRating.RatingCount đánh giá)</span>
-                                                }
-                                            </small>
-                                        </span>
-                                    }
-                                    else
-                                    {
-                                        <span class="d-block mt-1">
-                                            <small class="text-muted">Chưa có đánh giá</small>
-                                        </span>
-                                    }
-                                </div>
-                                <div class="d-flex justify-content-between align-items-center mt-2">
-                                    <a class="btn btn-sm btn-outline-secondary" asp-controller="Meal" asp-action="Details" asp-route-id="@m.Id">Xem</a>
-                                </div>
-                            </div>
-                        </div>
+    <!-- Main Content Grid -->
+    <div class="row g-4">
+        <!-- Left Column - Featured Meals -->
+        <div class="col-lg-8">
+            <div class="content-card">
+                <div class="card-header-custom">
+                    <div>
+                        <h5 class="card-title-custom mb-1">Món Ăn Nổi Bật</h5>
+                        <p class="card-subtitle-custom mb-0">Những món ăn được đánh giá cao</p>
                     </div>
-                }
-            </div>
-        </div>
-    </div>
-
-    <div class="col-lg-4">
-        <div class="app-card p-3 mb-3">
-            <h5 class="fw-semibold">Thao Tác Nhanh</h5>
-            <div class="d-grid gap-2">
-                <a class="btn btn-outline-secondary" asp-controller="Meal" asp-action="Index">Xem món ăn</a>
-                <a class="btn btn-outline-secondary" asp-controller="Subscription" asp-action="Index">Tạo đăng ký</a>
-                <a class="btn btn-outline-secondary" asp-controller="NutritionLog" asp-action="Create">Thêm nhật ký</a>
-            </div>
-        </div>
-
-        <div class="app-card p-3">
-            <h5 class="fw-semibold mb-2">Calo 7 Ngày Qua</h5>
-            <div class="small text-secondary mb-2">Xu hướng tuần này (bảng).</div>
-
-            <table class="table table-sm mb-0">
-                <thead>
-                    <tr><th>Ngày</th><th class="text-end">kcal</th></tr>
-                </thead>
-                <tbody>
-                    @if (Model.WeekCalories.Count == 0)
+                    <a class="btn btn-sm btn-outline-secondary" asp-controller="Meal" asp-action="Index">
+                        Xem tất cả <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                </div>
+                <div class="card-body-custom">
+                    @if (Model.FeaturedMealsWithRatings.Count == 0)
                     {
-                        <tr><td colspan="2" class="text-secondary">Chưa có nhật ký.</td></tr>
+                        <div class="text-center py-5">
+                            <i class="bi bi-inbox" style="font-size: 3rem; color: #d1d5db;"></i>
+                            <p class="text-muted mt-3 mb-0">Chưa có món ăn nổi bật</p>
+                        </div>
                     }
                     else
                     {
-                        foreach (var d in Model.WeekCalories)
-                        {
-                            <tr>
-                                <td>@d.Date.ToString("dd/MM")</td>
-                                <td class="text-end">@d.Calories</td>
-                            </tr>
-                        }
+                        <div class="row g-3">
+                            @foreach (var mealWithRating in Model.FeaturedMealsWithRatings)
+                            {
+                                var m = mealWithRating.Meal;
+                                var imageUrls = new List<string>();
+                                try
+                                {
+                                    if (!string.IsNullOrEmpty(m.Images))
+                                    {
+                                        imageUrls = JsonSerializer.Deserialize<List<string>>(m.Images) ?? new List<string>();
+                                    }
+                                }
+                                catch { }
+
+                                var firstImage = imageUrls.FirstOrDefault() ?? "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%23e5e7eb' width='400' height='300'/%3E%3Ctext fill='%239ca3af' font-family='Arial' font-size='16' x='50%25' y='50%25' text-anchor='middle' dominant-baseline='middle'%3ENo Image%3C/text%3E%3C/svg%3E";
+
+                                <div class="col-md-6 col-xl-4">
+                                    <div class="meal-card">
+                                        <div class="meal-image-wrapper">
+                                            <img src="@firstImage" alt="@m.Name" class="meal-image"
+                                                 onerror="if(this.src.indexOf('data:image') === -1) { this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'300\'%3E%3Crect fill=\'%23e5e7eb\' width=\'400\' height=\'300\'/%3E%3Ctext fill=\'%239ca3af\' font-family=\'Arial\' font-size=\'16\' x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dominant-baseline=\'middle\'%3ENo Image%3C/text%3E%3C/svg%3E'; }" />
+                                            @if (mealWithRating.AverageRating > 0)
+                                            {
+                                                <div class="meal-rating-badge">
+                                                    <i class="bi bi-star-fill"></i> @mealWithRating.AverageRating.ToString("N1")
+                                                </div>
+                                            }
+                                        </div>
+                                        <div class="meal-info">
+                                            <h6 class="meal-name">@m.Name</h6>
+                                            <div class="meal-meta">
+                                                <span class="meal-calories">@m.Calories kcal</span>
+                                                <span class="meal-macros">P:@m.Protein C:@m.Carbs F:@m.Fat</span>
+                                            </div>
+                                            @if (mealWithRating.AverageRating > 0)
+                                            {
+                                                <div class="meal-rating">
+                                                    <i class="bi bi-star-fill text-warning"></i>
+                                                    <span class="rating-value">@mealWithRating.AverageRating.ToString("N1")</span>
+                                                    @if (mealWithRating.RatingCount > 0)
+                                                    {
+                                                        <span class="rating-count">(@mealWithRating.RatingCount)</span>
+                                                    }
+                                                </div>
+                                            }
+                                            <a class="btn btn-sm btn-outline-primary w-100 mt-2" asp-controller="Meal" asp-action="Details" asp-route-id="@m.Id">
+                                                Xem chi tiết
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
                     }
-                </tbody>
-            </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column - Quick Actions & Chart -->
+        <div class="col-lg-4">
+            <!-- Quick Actions -->
+            <div class="content-card mb-4">
+                <div class="card-header-custom">
+                    <h5 class="card-title-custom mb-0">Thao Tác Nhanh</h5>
+                </div>
+                <div class="card-body-custom">
+                    <div class="d-grid gap-2">
+                        <a class="btn btn-outline-secondary text-start" asp-controller="Meal" asp-action="Index">
+                            <i class="bi bi-utensils me-2"></i>Xem món ăn
+                        </a>
+                        <a class="btn btn-outline-secondary text-start" asp-controller="Subscription" asp-action="Index">
+                            <i class="bi bi-calendar-check me-2"></i>Tạo đăng ký
+                        </a>
+                        <a class="btn btn-outline-secondary text-start" asp-controller="NutritionLog" asp-action="Create">
+                            <i class="bi bi-journal-plus me-2"></i>Thêm nhật ký
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Weekly Calories Chart -->
+            <div class="content-card">
+                <div class="card-header-custom">
+                    <h5 class="card-title-custom mb-0">Calo 7 Ngày Qua</h5>
+                </div>
+                <div class="card-body-custom">
+                    @if (Model.WeekCalories.Count == 0)
+                    {
+                        <div class="text-center py-4">
+                            <i class="bi bi-graph-up" style="font-size: 2.5rem; color: #d1d5db;"></i>
+                            <p class="text-muted mt-3 mb-2">Chưa có dữ liệu</p>
+                            <small class="text-muted">Bắt đầu ghi nhật ký để xem biểu đồ</small>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="chart-container">
+                            <canvas id="weeklyCaloriesChart"></canvas>
+                        </div>
+                        <div class="chart-summary mt-3">
+                            <table class="table table-sm mb-0">
+                                <thead>
+                                    <tr>
+                                        <th class="text-muted small">Ngày</th>
+                                        <th class="text-muted small text-end">kcal</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var d in Model.WeekCalories)
+                                    {
+                                        <tr>
+                                            <td class="small">@d.Date.ToString("dd/MM")</td>
+                                            <td class="text-end small">@d.Calories</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
         </div>
     </div>
-</div>
 
-<div class="app-card p-3 mt-3">
-    <div class="d-flex justify-content-between align-items-center mb-2">
-        <h5 class="fw-semibold mb-0">Đơn Hàng Gần Đây</h5>
-        <div class="d-flex align-items-center gap-2">
-            <span class="text-secondary small">5 đơn gần nhất</span>
+    <!-- Recent Orders -->
+    <div class="content-card mt-4">
+        <div class="card-header-custom">
+            <div>
+                <h5 class="card-title-custom mb-1">Đơn Hàng Gần Đây</h5>
+                <p class="card-subtitle-custom mb-0">5 đơn hàng gần nhất của bạn</p>
+            </div>
             @if (Model.RecentOrders.Count > 0)
             {
-                <a asp-controller="UserSubscriptions" asp-action="Index" class="btn btn-sm btn-outline-primary">
+                <a asp-controller="UserSubscriptions" asp-action="Index" class="btn btn-sm btn-outline-secondary">
                     Xem tất cả <i class="bi bi-arrow-right ms-1"></i>
                 </a>
             }
         </div>
-    </div>
-
-    <table class="table mb-0">
-        <thead>
-            <tr>
-                <th>Ngày</th>
-                <th>Khung Giờ</th>
-                <th>Trạng Thái</th>
-                <th>Món Ăn</th>
-                <th>Thao Tác</th>
-            </tr>
-        </thead>
-        <tbody>
+        <div class="card-body-custom">
             @if (Model.RecentOrders.Count == 0)
             {
-                <tr><td colspan="5" class="text-secondary text-center py-4">Chưa có đơn hàng.</td></tr>
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox" style="font-size: 3rem; color: #d1d5db;"></i>
+                    <p class="text-muted mt-3 mb-0">Chưa có đơn hàng nào</p>
+                </div>
             }
             else
             {
-                foreach (var o in Model.RecentOrders)
-                {
-                    <tr>
-                        <td>@o.DeliveryDate.ToString("dd/MM/yyyy")</td>
-                        <td>@(o.DeliverySlot?.Name ?? "N/A")</td>
-                        <td>
-                            @switch (o.Status.ToString())
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Ngày</th>
+                                <th>Khung Giờ</th>
+                                <th>Trạng Thái</th>
+                                <th>Món Ăn</th>
+                                <th class="text-end">Thao Tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var o in Model.RecentOrders)
                             {
-                                case "Planned":
-                                    <span class="badge bg-info">Đã Lên Lịch</span>
-                                    break;
-                                case "Preparing":
-                                    <span class="badge bg-warning">Đang Chuẩn Bị</span>
-                                    break;
-                                case "Delivering":
-                                    <span class="badge bg-primary">Đang Giao</span>
-                                    break;
-                                case "Delivered":
-                                    <span class="badge bg-success">Đã Giao</span>
-                                    break;
-                                case "Cancelled":
-                                    <span class="badge bg-danger">Đã Hủy</span>
-                                    break;
-                                default:
-                                    <span class="badge bg-secondary">@o.Status</span>
-                                    break;
+                                <tr>
+                                    <td>@o.DeliveryDate.ToString("dd/MM/yyyy")</td>
+                                    <td>@(o.DeliverySlot?.Name ?? "N/A")</td>
+                                    <td>
+                                        @switch (o.Status.ToString())
+                                        {
+                                            case "Planned":
+                                                <span class="badge bg-info">Đã Lên Lịch</span>
+                                                break;
+                                            case "Preparing":
+                                                <span class="badge bg-warning">Đang Chuẩn Bị</span>
+                                                break;
+                                            case "Delivering":
+                                                <span class="badge bg-primary">Đang Giao</span>
+                                                break;
+                                            case "Delivered":
+                                                <span class="badge bg-success">Đã Giao</span>
+                                                break;
+                                            case "Cancelled":
+                                                <span class="badge bg-danger">Đã Hủy</span>
+                                                break;
+                                            default:
+                                                <span class="badge bg-secondary">@o.Status</span>
+                                                break;
+                                        }
+                                    </td>
+                                    <td class="text-muted">
+                                        @if (o.Items != null && o.Items.Any())
+                                        {
+                                            <span>@string.Join(", ", o.Items.Take(2).Select(i => $"{i.Meal?.Name ?? "N/A"} x{i.Quantity}"))</span>
+                                            @if (o.Items.Count > 2)
+                                            {
+                                                <span class="text-muted">+@(o.Items.Count - 2) món khác</span>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">Chưa có món</span>
+                                        }
+                                    </td>
+                                    <td class="text-end">
+                                        @if (o.SubscriptionId > 0)
+                                        {
+                                            <a asp-controller="UserSubscriptions" asp-action="Details" asp-route-id="@o.SubscriptionId" 
+                                               class="btn btn-sm btn-outline-primary" title="Xem chi tiết">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                        }
+                                    </td>
+                                </tr>
                             }
-                        </td>
-                        <td class="text-secondary">
-                            @if (o.Items != null && o.Items.Any())
-                            {
-                                <span>@string.Join(", ", o.Items.Take(2).Select(i => $"{i.Meal?.Name ?? "N/A"} x{i.Quantity}"))</span>
-                                @if (o.Items.Count > 2)
-                                {
-                                    <span class="text-muted">+@(o.Items.Count - 2) món khác</span>
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .dashboard-page {
+        padding-bottom: 2rem;
+    }
+
+    .dashboard-header {
+        padding: 1.5rem 0;
+    }
+
+    .dashboard-title {
+        font-size: 2rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin: 0;
+    }
+
+    .dashboard-subtitle {
+        color: #6b7280;
+        font-size: 1rem;
+    }
+
+    /* Stat Cards */
+    .stat-card {
+        background: white;
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        transition: all 0.2s ease;
+        border: 1px solid #e5e7eb;
+    }
+
+    .stat-card:hover {
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        transform: translateY(-2px);
+    }
+
+    .stat-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+
+    .stat-content {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .stat-label {
+        font-size: 0.875rem;
+        color: #6b7280;
+        margin-bottom: 0.25rem;
+    }
+
+    .stat-value {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #1f2937;
+        word-break: break-word;
+    }
+
+    .stat-unit {
+        font-size: 0.875rem;
+        font-weight: 400;
+        color: #6b7280;
+    }
+
+    /* Content Cards */
+    .content-card {
+        background: white;
+        border-radius: 0.75rem;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        border: 1px solid #e5e7eb;
+        overflow: hidden;
+    }
+
+    .card-header-custom {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: #f9fafb;
+    }
+
+    .card-title-custom {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin: 0;
+    }
+
+    .card-subtitle-custom {
+        font-size: 0.875rem;
+        color: #6b7280;
+        margin: 0;
+    }
+
+    .card-body-custom {
+        padding: 1.5rem;
+    }
+
+    /* Meal Cards */
+    .meal-card {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.75rem;
+        overflow: hidden;
+        transition: all 0.2s ease;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .meal-card:hover {
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        transform: translateY(-2px);
+    }
+
+    .meal-image-wrapper {
+        position: relative;
+        width: 100%;
+        height: 180px;
+        overflow: hidden;
+        background: #f3f4f6;
+    }
+
+    .meal-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .meal-rating-badge {
+        position: absolute;
+        top: 0.75rem;
+        right: 0.75rem;
+        background: rgba(255, 255, 255, 0.95);
+        padding: 0.375rem 0.625rem;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #f59e0b;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .meal-info {
+        padding: 1rem;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .meal-name {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin-bottom: 0.5rem;
+    }
+
+    .meal-meta {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .meal-calories {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #dc2626;
+    }
+
+    .meal-macros {
+        font-size: 0.75rem;
+        color: #6b7280;
+    }
+
+    .meal-rating {
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+        margin-top: auto;
+        font-size: 0.875rem;
+    }
+
+    .rating-value {
+        font-weight: 600;
+        color: #1f2937;
+    }
+
+    .rating-count {
+        color: #6b7280;
+        font-size: 0.75rem;
+    }
+
+    /* Chart Container */
+    .chart-container {
+        position: relative;
+        height: 220px;
+        margin-bottom: 1rem;
+    }
+
+    .chart-summary {
+        border-top: 1px solid #e5e7eb;
+        padding-top: 1rem;
+    }
+
+    /* Table */
+    .table {
+        margin: 0;
+    }
+
+    .table thead th {
+        font-weight: 600;
+        font-size: 0.875rem;
+        color: #6b7280;
+        border-bottom: 2px solid #e5e7eb;
+        padding: 0.75rem;
+    }
+
+    .table tbody td {
+        padding: 0.75rem;
+        vertical-align: middle;
+        border-bottom: 1px solid #f3f4f6;
+    }
+
+    .table tbody tr:hover {
+        background: #f9fafb;
+    }
+
+    /* Buttons */
+    .btn-primary {
+        background: #1f2937;
+        border-color: #1f2937;
+        font-weight: 500;
+    }
+
+    .btn-primary:hover {
+        background: #111827;
+        border-color: #111827;
+    }
+
+    .btn-outline-secondary {
+        border-color: #d1d5db;
+        color: #374151;
+        font-weight: 500;
+    }
+
+    .btn-outline-secondary:hover {
+        background: #f3f4f6;
+        border-color: #9ca3af;
+        color: #1f2937;
+    }
+
+    /* Badges */
+    .badge {
+        font-weight: 500;
+        padding: 0.375rem 0.75rem;
+        font-size: 0.75rem;
+    }
+
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .dashboard-title {
+            font-size: 1.5rem;
+        }
+
+        .stat-card {
+            padding: 1rem;
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            font-size: 1.25rem;
+        }
+
+        .card-body-custom {
+            padding: 1rem;
+        }
+    }
+</style>
+
+@section Scripts {
+    @if (Model.WeekCalories.Count > 0)
+    {
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const ctx = document.getElementById('weeklyCaloriesChart');
+                if (!ctx) return;
+
+                const weekData = @Html.Raw(chartDataJson);
+                const labels = weekData.map(d => d.Date);
+                const calories = weekData.map(d => d.Calories);
+
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Calo (kcal)',
+                            data: calories,
+                            borderColor: '#1f2937',
+                            backgroundColor: 'rgba(31, 41, 55, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            pointBackgroundColor: '#1f2937',
+                            pointBorderColor: '#ffffff',
+                            pointBorderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                padding: 12,
+                                titleFont: {
+                                    size: 14,
+                                    weight: 'bold'
+                                },
+                                bodyFont: {
+                                    size: 13
+                                },
+                                callbacks: {
+                                    label: function(context) {
+                                        return 'Calo: ' + context.parsed.y + ' kcal';
+                                    }
                                 }
                             }
-                            else
-                            {
-                                <span class="text-muted">Chưa có món</span>
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: @Model.MaxCalories,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value + ' kcal';
+                                    },
+                                    font: {
+                                        size: 11
+                                    }
+                                },
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.05)'
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    font: {
+                                        size: 11
+                                    }
+                                },
+                                grid: {
+                                    display: false
+                                }
                             }
-                        </td>
-                        <td>
-                            @if (o.SubscriptionId > 0)
-                            {
-                                <a asp-controller="UserSubscriptions" asp-action="Details" asp-route-id="@o.SubscriptionId" 
-                                   class="btn btn-sm btn-outline-primary" title="Xem chi tiết subscription">
-                                    <i class="bi bi-eye"></i>
-                                </a>
-                            }
-                        </td>
-                    </tr>
-                }
-            }
-        </tbody>
-    </table>
-</div>
+                        }
+                    }
+                });
+            });
+        </script>
+    }
+}

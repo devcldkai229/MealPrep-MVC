@@ -58,6 +58,7 @@ namespace MealPrep.BLL.Services
             ActivityLevel activityLevel,
             DietPreference dietPreference,
             int mealsPerDay,
+            int? caloriesInDay,
             string? notes,
             List<string>? allergies = null
         );

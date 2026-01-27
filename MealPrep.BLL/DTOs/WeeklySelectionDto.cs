@@ -54,5 +54,9 @@ namespace MealPrep.BLL.DTOs
     {
         public DateOnly Date { get; set; }
         public List<int> SelectedMealIds { get; set; } = new();
+        /// <summary>
+        /// Địa chỉ giao hàng (optional, sẽ lấy từ user nếu không có)
+        /// </summary>
+        public string? DeliveryAddress { get; set; }
     }
 }

@@ -15,6 +15,7 @@ namespace MealPrep.BLL.Services
         private readonly IRepository<DeliveryOrder> _deliveryOrders;
         private readonly IRepository<NutritionLog> _logs;
         private readonly IRepository<Meal> _meals;
+        private readonly IRepository<UserNutritionProfile> _nutritionProfiles;
         private readonly IMealFeedbackService _feedbackService;
 
         public DashboardService(
@@ -22,12 +23,14 @@ namespace MealPrep.BLL.Services
             IRepository<DeliveryOrder> deliveryOrders,
             IRepository<NutritionLog> logs,
             IRepository<Meal> meals,
+            IRepository<UserNutritionProfile> nutritionProfiles,
             IMealFeedbackService feedbackService)
         {
             _subs = subs;
             _deliveryOrders = deliveryOrders;
             _logs = logs;
             _meals = meals;
+            _nutritionProfiles = nutritionProfiles;
             _feedbackService = feedbackService;
         }
 
@@ -89,18 +92,24 @@ namespace MealPrep.BLL.Services
                 });
             }
 
-            // Week summary: last 7 days calories
+            // Week summary: last 7 days calories (including days with 0 calories)
             var from = today.AddDays(-6);
             var weekLogs = await _logs.Query()
                 .Include(l => l.Meal)
                 .Where(l => l.AppUserId == userId && l.Date >= from && l.Date <= today)
                 .ToListAsync();
 
-            var week = weekLogs
+            // Group by date and calculate total calories
+            var caloriesByDate = weekLogs
                 .GroupBy(x => x.Date)
-                .Select(g => (g.Key, g.Sum(x => x.Meal!.Calories * x.Quantity)))
-                .OrderBy(x => x.Key)
-                .ToList();
+                .ToDictionary(g => g.Key, g => g.Sum(x => x.Meal!.Calories * x.Quantity));
+
+            // Ensure all 7 days are included (fill missing days with 0)
+            var week = new List<(DateOnly Date, int Calories)>();
+            for (var date = from; date <= today; date = date.AddDays(1))
+            {
+                week.Add((date, caloriesByDate.GetValueOrDefault(date, 0)));
+            }
 
             // Get recent delivery orders through subscriptions
             var userSubscriptionIds = await _subs.Query()
@@ -135,6 +144,13 @@ namespace MealPrep.BLL.Services
                 }).ToList()
             }).ToList();
 
+            // Get user's nutrition profile to get CaloriesInDay for chart max value
+            var nutritionProfile = await _nutritionProfiles.Query()
+                .FirstOrDefaultAsync(np => np.AppUserId == userId);
+            
+            // Use CaloriesInDay from profile, fallback to 2000 if null
+            var maxCalories = nutritionProfile?.CaloriesInDay ?? 2000;
+
             return new DashboardDto
             {
                 SubscriptionStatus = activeSub?.Status.ToString() ?? "No subscription",
@@ -143,7 +159,8 @@ namespace MealPrep.BLL.Services
                 FeaturedMeals = featured,
                 FeaturedMealsWithRatings = featuredMealsWithRatings,
                 WeekCalories = week,
-                RecentOrders = recentOrders
+                RecentOrders = recentOrders,
+                MaxCalories = maxCalories
             };
         }
     }

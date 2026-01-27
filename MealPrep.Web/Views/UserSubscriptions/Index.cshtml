@@ -4,96 +4,222 @@
     ViewData["Title"] = "Gói Đăng Ký Của Tôi";
 }
 
-<div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h2 class="fw-bold mb-1">Gói Đăng Ký Của Tôi</h2>
-            <p class="text-muted mb-0">Danh sách các gói đăng ký bạn đã mua</p>
+<div class="subscriptions-page">
+    <div class="container py-5">
+        <!-- Header -->
+        <div class="page-header mb-4">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div>
+                    <h1 class="page-title mb-2">Gói Đăng Ký Của Tôi</h1>
+                    <p class="page-subtitle mb-0">Danh sách các gói đăng ký bạn đã mua</p>
+                </div>
+                <a asp-controller="Subscription" asp-action="Index" class="btn btn-primary">
+                    <i class="bi bi-plus-circle me-2"></i>Đăng Ký Gói Mới
+                </a>
+            </div>
         </div>
-        <a asp-controller="Subscription" asp-action="Index" class="btn btn-primary">
-            <i class="bi bi-plus-circle me-2"></i>Đăng Ký Gói Mới
-        </a>
-    </div>
 
-    @if (Model.Count == 0)
-    {
-        <div class="app-card p-5 text-center">
-            <i class="bi bi-inbox" style="font-size: 3rem; color: var(--muted);"></i>
-            <h5 class="mt-3">Chưa có gói đăng ký nào</h5>
-            <p class="text-muted">Hãy đăng ký gói dịch vụ để bắt đầu sử dụng</p>
-            <a asp-controller="Subscription" asp-action="Index" class="btn btn-primary mt-3">
-                <i class="bi bi-plus-circle me-2"></i>Đăng Ký Ngay
-            </a>
-        </div>
-    }
-    else
-    {
-        <div class="row g-4">
-            @foreach (var sub in Model)
-            {
-                <div class="col-md-6">
-                    <div class="app-card p-4 h-100">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <div>
-                                <h5 class="fw-bold mb-1">@(sub.Plan?.Name ?? "N/A")</h5>
-                                <p class="text-muted small mb-0">#@sub.Id</p>
-                            </div>
-                            @switch (sub.Status)
-                            {
-                                case SubscriptionStatus.PendingPayment:
-                                    <span class="badge bg-warning">Chờ Thanh Toán</span>
-                                    break;
-                                case SubscriptionStatus.Active:
-                                    <span class="badge bg-success">Đang Hoạt Động</span>
-                                    break;
-                                case SubscriptionStatus.Paused:
-                                    <span class="badge bg-info">Tạm Dừng</span>
-                                    break;
-                                case SubscriptionStatus.Cancelled:
-                                    <span class="badge bg-danger">Đã Hủy</span>
-                                    break;
-                                case SubscriptionStatus.Expired:
-                                    <span class="badge bg-secondary">Hết Hạn</span>
-                                    break;
-                            }
-                        </div>
-
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between mb-2">
-                                <span class="text-muted">Bữa/Ngày:</span>
-                                <strong>@sub.MealsPerDay</strong>
-                            </div>
-                            <div class="d-flex justify-content-between mb-2">
-                                <span class="text-muted">Ngày Bắt Đầu:</span>
-                                <strong>@sub.StartDate.ToString("dd/MM/yyyy")</strong>
-                            </div>
-                            @if (sub.EndDate.HasValue)
-                            {
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span class="text-muted">Ngày Kết Thúc:</span>
-                                    <strong>@sub.EndDate.Value.ToString("dd/MM/yyyy")</strong>
-                                </div>
-                            }
-                            <div class="d-flex justify-content-between">
-                                <span class="text-muted">Tổng Tiền:</span>
-                                <strong class="text-primary">@sub.TotalAmount.ToString("N0") đ</strong>
-                            </div>
-                        </div>
-
-                        @if (sub.DeliveryOrders.Any())
-                        {
-                            <div class="mb-3 p-2 bg-light rounded">
-                                <small class="text-muted d-block mb-1">Đơn giao hàng:</small>
-                                <strong>@sub.DeliveryOrders.Count đơn</strong>
-                            </div>
-                        }
-
-                        <a asp-action="Details" asp-route-id="@sub.Id" class="btn btn-outline-primary w-100">
-                            <i class="bi bi-eye me-2"></i>Xem Chi Tiết
+        <!-- Subscriptions List -->
+        @if (Model.Count == 0)
+        {
+            <div class="empty-state">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body text-center py-5">
+                        <i class="bi bi-inbox" style="font-size: 3rem; color: #d1d5db;"></i>
+                        <h5 class="mt-3 mb-2">Chưa có gói đăng ký nào</h5>
+                        <p class="text-muted mb-4">Hãy đăng ký gói dịch vụ để bắt đầu sử dụng</p>
+                        <a asp-controller="Subscription" asp-action="Index" class="btn btn-primary">
+                            <i class="bi bi-plus-circle me-2"></i>Đăng Ký Ngay
                         </a>
                     </div>
                 </div>
-            }
-        </div>
-    }
+            </div>
+        }
+        else
+        {
+            <div class="subscriptions-grid">
+                @foreach (var sub in Model)
+                {
+                    <div class="subscription-card">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-body p-4">
+                                <!-- Header -->
+                                <div class="subscription-header mb-3">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h5 class="subscription-name mb-1">@(sub.Plan?.Name ?? "N/A")</h5>
+                                            <small class="text-muted">#@sub.Id</small>
+                                        </div>
+                                        @switch (sub.Status)
+                                        {
+                                            case SubscriptionStatus.PendingPayment:
+                                                <span class="badge bg-warning">Chờ Thanh Toán</span>
+                                                break;
+                                            case SubscriptionStatus.Active:
+                                                <span class="badge bg-success">Đang Hoạt Động</span>
+                                                break;
+                                            case SubscriptionStatus.Paused:
+                                                <span class="badge bg-info">Tạm Dừng</span>
+                                                break;
+                                            case SubscriptionStatus.Cancelled:
+                                                <span class="badge bg-danger">Đã Hủy</span>
+                                                break;
+                                            case SubscriptionStatus.Expired:
+                                                <span class="badge bg-secondary">Hết Hạn</span>
+                                                break;
+                                        }
+                                    </div>
+                                </div>
+
+                                <!-- Details -->
+                                <div class="subscription-details mb-3">
+                                    <div class="detail-item">
+                                        <span class="detail-label">Bữa/Ngày</span>
+                                        <span class="detail-value">@sub.MealsPerDay</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="detail-label">Ngày Bắt Đầu</span>
+                                        <span class="detail-value">@sub.StartDate.ToString("dd/MM/yyyy")</span>
+                                    </div>
+                                    @if (sub.EndDate.HasValue)
+                                    {
+                                        <div class="detail-item">
+                                            <span class="detail-label">Ngày Kết Thúc</span>
+                                            <span class="detail-value">@sub.EndDate.Value.ToString("dd/MM/yyyy")</span>
+                                        </div>
+                                    }
+                                    <div class="detail-item">
+                                        <span class="detail-label">Tổng Tiền</span>
+                                        <span class="detail-value text-primary">@sub.TotalAmount.ToString("N0") đ</span>
+                                    </div>
+                                </div>
+
+                                @if (sub.DeliveryOrders.Any())
+                                {
+                                    <div class="delivery-info mb-3 p-3 bg-light rounded">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span class="text-muted small">Đơn giao hàng</span>
+                                            <strong>@sub.DeliveryOrders.Count đơn</strong>
+                                        </div>
+                                    </div>
+                                }
+
+                                <a asp-action="Details" asp-route-id="@sub.Id" class="btn btn-outline-primary w-100">
+                                    <i class="bi bi-eye me-2"></i>Xem Chi Tiết
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
 </div>
+
+<style>
+    .subscriptions-page {
+        background: #f8f9fa;
+        min-height: 100vh;
+    }
+
+    .page-title {
+        font-size: 2rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin: 0;
+    }
+
+    .page-subtitle {
+        color: #6b7280;
+        font-size: 0.95rem;
+    }
+
+    .subscriptions-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .subscription-card .card {
+        border-radius: 0.75rem;
+        transition: all 0.2s ease;
+    }
+
+    .subscription-card:hover .card {
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+        transform: translateY(-2px);
+    }
+
+    .subscription-name {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #1f2937;
+    }
+
+    .subscription-details {
+        padding-top: 1rem;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    .detail-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #f3f4f6;
+    }
+
+    .detail-item:last-child {
+        border-bottom: none;
+    }
+
+    .detail-label {
+        font-size: 0.875rem;
+        color: #6b7280;
+    }
+
+    .detail-value {
+        font-size: 0.9375rem;
+        font-weight: 500;
+        color: #1f2937;
+    }
+
+    .delivery-info {
+        border: 1px solid #e5e7eb;
+    }
+
+    .btn-primary {
+        background: #1f2937;
+        border-color: #1f2937;
+        font-weight: 500;
+    }
+
+    .btn-primary:hover {
+        background: #111827;
+        border-color: #111827;
+    }
+
+    .btn-outline-primary {
+        border-color: #d1d5db;
+        color: #374151;
+        font-weight: 500;
+    }
+
+    .btn-outline-primary:hover {
+        background: #f3f4f6;
+        border-color: #1f2937;
+        color: #1f2937;
+    }
+
+    .badge {
+        font-weight: 500;
+        padding: 0.375rem 0.75rem;
+        font-size: 0.75rem;
+    }
+
+    @@media (max-width: 768px) {
+        .subscriptions-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>

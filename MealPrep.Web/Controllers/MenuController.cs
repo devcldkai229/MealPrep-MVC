@@ -49,12 +49,19 @@ public class MenuController : Controller
             return RedirectToAction("Index", "Subscription");
         }
 
+        // Get user delivery address
+        var user = await _context.Set<AppUser>().FindAsync(userId);
+        var deliveryAddress = user?.DeliveryAddress;
+        var hasDeliveryAddress = !string.IsNullOrWhiteSpace(deliveryAddress);
+
         // Map DTO to ViewModel
         var vm = new WeeklySelectionVm
         {
             SubscriptionId = dto.SubscriptionId,
             MealsPerDay = dto.MealsPerDay,
             UserAllergies = dto.UserAllergies,
+            DeliveryAddress = deliveryAddress,
+            HasDeliveryAddress = hasDeliveryAddress,
             DailySlots = dto.DailySlots.Select(ds => new DailySlot
             {
                 Date = ds.Date,
@@ -139,11 +146,19 @@ public class MenuController : Controller
             return RedirectToAction("Index", "Subscription");
         }
 
+        // Get delivery address from form (if provided)
+        var deliveryAddress = Request.Form["DeliveryAddress"].ToString().Trim();
+        if (string.IsNullOrWhiteSpace(deliveryAddress))
+        {
+            deliveryAddress = null; // Will be taken from user profile if available
+        }
+
         // Map ViewModel selections to DTO
         var selectionDtos = selections.Select(s => new MealPrep.BLL.DTOs.MealSelectionRequestDto
         {
             Date = s.Date,
-            SelectedMealIds = s.SelectedMealIds
+            SelectedMealIds = s.SelectedMealIds,
+            DeliveryAddress = deliveryAddress // Pass address to DTO (only first selection needs it, but we pass it to all for consistency)
         }).ToList();
 
         try
@@ -503,7 +518,8 @@ public class MenuController : Controller
                     selections.Add(new MealPrep.BLL.DTOs.MealSelectionRequestDto
                     {
                         Date = date,
-                        SelectedMealIds = ds.MealIds
+                        SelectedMealIds = ds.MealIds,
+                        DeliveryAddress = request.DeliveryAddress // Pass address from request
                     });
                 }
             }
@@ -530,6 +546,10 @@ public class MenuController : Controller
 public class AcceptAiMenuRequest
 {
     public List<DaySelection> DaySelections { get; set; } = new();
+    /// <summary>
+    /// Địa chỉ giao hàng (optional, sẽ lấy từ user nếu không có)
+    /// </summary>
+    public string? DeliveryAddress { get; set; }
 }
 
 public class DaySelection

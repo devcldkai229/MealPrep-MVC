@@ -408,12 +408,45 @@ namespace MealPrep.BLL.Services
         {
             // Verify active subscription
             var activeSubscription = await _subRepo.Query()
+                .Include(s => s.AppUser)
                 .Where(s => s.AppUserId == userId && s.Status == SubscriptionStatus.Active && s.Id == subscriptionId)
                 .FirstOrDefaultAsync();
 
             if (activeSubscription == null)
             {
                 throw new InvalidOperationException("Không tìm thấy đăng ký đang hoạt động.");
+            }
+
+            // Get user delivery address
+            // Priority: 1. From DTO (if provided), 2. From User.DeliveryAddress, 3. Throw exception
+            string? deliveryAddress = null;
+            
+            // Check if address is provided in any selection
+            var addressFromDto = selections.FirstOrDefault(s => !string.IsNullOrWhiteSpace(s.DeliveryAddress))?.DeliveryAddress;
+            if (!string.IsNullOrWhiteSpace(addressFromDto))
+            {
+                deliveryAddress = addressFromDto.Trim();
+                
+                // If user doesn't have address yet, save it to user profile
+                if (activeSubscription.AppUser != null && string.IsNullOrWhiteSpace(activeSubscription.AppUser.DeliveryAddress))
+                {
+                    activeSubscription.AppUser.DeliveryAddress = deliveryAddress;
+                    // Update user in database
+                    _dbContext.Set<AppUser>().Update(activeSubscription.AppUser);
+                    _logger.LogInformation("Saving delivery address to user {UserId} profile: {Address}", userId, deliveryAddress);
+                }
+            }
+            else if (!string.IsNullOrWhiteSpace(activeSubscription.AppUser?.DeliveryAddress))
+            {
+                deliveryAddress = activeSubscription.AppUser.DeliveryAddress.Trim();
+            }
+            
+            // If still no address, throw exception to require user to provide it
+            if (string.IsNullOrWhiteSpace(deliveryAddress))
+            {
+                throw new InvalidOperationException(
+                    "Vui lòng cung cấp địa chỉ giao hàng. " +
+                    "Bạn có thể cập nhật địa chỉ trong hồ sơ cá nhân hoặc nhập địa chỉ khi chọn món ăn.");
             }
 
             // Validate selections and check for locked orders
@@ -618,7 +651,8 @@ namespace MealPrep.BLL.Services
                             MealId = mealId,
                             MealNameSnapshot = meal.Name,
                             Quantity = quantity,
-                            UnitPrice = unitPrice
+                            UnitPrice = unitPrice,
+                            DeliveryAddress = deliveryAddress // Save address snapshot for this delivery item
                         };
                         orderItems.Add(orderItem);
                     }

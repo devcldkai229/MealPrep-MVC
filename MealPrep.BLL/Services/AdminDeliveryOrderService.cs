@@ -118,6 +118,18 @@ namespace MealPrep.BLL.Services
                 throw new ArgumentException($"DeliveryOrder with ID {id} not found");
             }
 
+            // Validation: Cannot mark as "Delivered" if delivery date is in the future
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            if (status == OrderStatus.Delivered && order.DeliveryDate > today)
+            {
+                throw new InvalidOperationException(
+                    $"Không thể đánh dấu đơn hàng là 'Đã giao' vì ngày giao hàng ({order.DeliveryDate:dd/MM/yyyy}) chưa đến. " +
+                    $"Chỉ có thể đánh dấu 'Đã giao' cho các đơn hàng có ngày giao hàng <= {today:dd/MM/yyyy}.");
+            }
+
+            // Validation: Cannot mark as "Delivered" if delivery date is today but current time is before delivery slot time
+            // (Optional: If you want to check delivery slot time, you can add that logic here)
+
             order.Status = status;
             order.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();

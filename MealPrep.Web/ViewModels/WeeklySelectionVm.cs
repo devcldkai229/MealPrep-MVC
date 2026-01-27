@@ -8,6 +8,8 @@ public class WeeklySelectionVm
     public int MealsPerDay { get; set; }
     public List<DailySlot> DailySlots { get; set; } = new();
     public List<string> UserAllergies { get; set; } = new();
+    public string? DeliveryAddress { get; set; } // Địa chỉ giao hàng của user
+    public bool HasDeliveryAddress { get; set; } // True nếu user đã có địa chỉ
 }
 
 public class DailySlot
@@ -52,4 +54,5 @@ public class MealSelectionRequest
 {
     public DateOnly Date { get; set; }
     public List<int> SelectedMealIds { get; set; } = new();
+    public string? DeliveryAddress { get; set; } // Địa chỉ giao hàng (optional, sẽ lấy từ user nếu không có)
 }

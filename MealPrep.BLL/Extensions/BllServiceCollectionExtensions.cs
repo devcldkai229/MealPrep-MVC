@@ -2,6 +2,7 @@ using MealPrep.BLL.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Amazon.S3;
 
 namespace MealPrep.BLL.Extensions
 {
@@ -36,6 +37,9 @@ namespace MealPrep.BLL.Extensions
             
             // Meal Feedback Services (Flow 8)
             services.AddScoped<IMealFeedbackService, MealFeedbackService>();
+            
+            // AWS S3 Service
+            services.AddScoped<IS3Service, S3Service>();
             
             // Register Meal Embedding Service (Phase 1: Optional - requires AWS SDK)
             // TODO: Uncomment when AWS Bedrock SDK is installed:

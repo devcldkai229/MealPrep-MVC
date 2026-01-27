@@ -34,6 +34,10 @@ namespace MealPrep.Web.ViewModels
         [Display(Name = "Số bữa mỗi ngày")]
         public int MealsPerDay { get; set; } = 3;
 
+        [Range(1000, 5000, ErrorMessage = "Calories trong ngày phải từ 1000-5000 kcal")]
+        [Display(Name = "Calories trong một ngày (kcal)")]
+        public int? CaloriesInDay { get; set; }
+
         [StringLength(10000, ErrorMessage = "Ghi chú không được vượt quá 10000 ký tự")]
         [Display(Name = "Ghi chú")]
         public string? Notes { get; set; }

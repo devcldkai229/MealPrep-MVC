@@ -3,318 +3,322 @@
     ViewData["Title"] = "Chọn Món Ăn Cho Tuần";
 }
 
-<div class="container py-4">
-    <!-- Header Section -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="d-flex align-items-center gap-3 mb-3">
-                <div class="header-icon">
-                    <i class="bi bi-calendar3-range" style="font-size: 2.5rem; color: var(--accent);"></i>
-                </div>
-                <div>
-                    <h2 class="fw-bold mb-1">Chọn Món Ăn Cho Tuần</h2>
-                    <p class="text-muted mb-0">
-                        <i class="bi bi-utensils"></i> Bạn được chọn <strong class="text-primary">@Model.MealsPerDay bữa/ngày</strong>
-                        @if (Model.UserAllergies.Any())
-                        {
-                            <span class="badge bg-warning text-dark ms-2">
-                                <i class="bi bi-exclamation-triangle"></i> Dị ứng: @string.Join(", ", Model.UserAllergies)
-                            </span>
-                        }
-                    </p>
-                </div>
+<div class="meal-selection-page">
+    <div class="container py-5">
+        <!-- Header -->
+        <div class="page-header mb-5">
+            <h1 class="page-title">Chọn Món Ăn Cho Tuần</h1>
+            <p class="page-subtitle">
+                Chọn <strong>@Model.MealsPerDay bữa/ngày</strong> cho 7 ngày tiếp theo
+                @if (Model.UserAllergies.Any())
+                {
+                    <span class="allergy-badge">
+                        <i class="bi bi-exclamation-circle"></i> Dị ứng: @string.Join(", ", Model.UserAllergies)
+                    </span>
+                }
+            </p>
+        </div>
+
+        <!-- Alerts -->
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+                <i class="bi bi-check-circle me-2"></i>
+                @TempData["SuccessMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
-        </div>
-    </div>
+        }
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                <i class="bi bi-exclamation-circle me-2"></i>
+                @TempData["ErrorMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
 
-    <!-- Alerts -->
-    @if (TempData["SuccessMessage"] != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
-            <i class="bi bi-check-circle-fill me-2"></i>
-            @TempData["SuccessMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
-    @if (TempData["ErrorMessage"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i>
-            @TempData["ErrorMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
-
-    <!-- AI Menu Generation Section -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="app-card p-4">
-                <div class="mb-3">
-                    <h5 class="fw-bold mb-2">
-                        <i class="bi bi-robot text-primary"></i> Tạo Menu với AI
-                    </h5>
-                    <p class="text-muted mb-3 small">
-                        AI sẽ phân tích hồ sơ dinh dưỡng, sở thích và mục tiêu của bạn để đề xuất menu phù hợp cho 7 ngày.
-                    </p>
-                    
-                    <!-- Optional Notes Input -->
-                    <div class="mb-3">
-                        <label for="weeklyNotes" class="form-label fw-semibold">
-                            <i class="bi bi-chat-left-text text-primary"></i> Tuần này bạn muốn ăn như thế nào? <span class="text-muted small">(Tùy chọn)</span>
-                        </label>
-                        <textarea 
-                            id="weeklyNotes" 
-                            class="form-control" 
-                            rows="3" 
-                            placeholder="Ví dụ: Tuần này tôi muốn ăn cay nhiều hơn, ít ngọt, thích món nướng..."
-                            style="border-radius: 10px; border: 2px solid #E5E7EB; transition: all 0.2s;"></textarea>
-                        <small class="text-muted">
-                            <i class="bi bi-info-circle"></i> Nếu bạn không nhập gì, AI sẽ sử dụng sở thích từ hồ sơ dinh dưỡng của bạn.
-                        </small>
+        <!-- AI Menu Generation -->
+        <div class="ai-section mb-5">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-start justify-content-between mb-3">
+                        <div class="flex-grow-1">
+                            <h5 class="mb-2 fw-semibold">Tạo Menu với AI</h5>
+                            <p class="text-muted small mb-0">AI sẽ đề xuất menu phù hợp dựa trên hồ sơ dinh dưỡng của bạn</p>
+                        </div>
                     </div>
-                </div>
-                <div class="text-end">
-                    <button type="button" class="btn btn-primary btn-lg px-4" id="generateAiMenuBtn" onclick="generateAiMenu()">
-                        <i class="bi bi-magic"></i> Tạo Menu với AI
+                    <div class="mb-3">
+                        <label for="weeklyNotes" class="form-label small text-muted mb-2">Ghi chú (tùy chọn)</label>
+                        <textarea id="weeklyNotes" class="form-control" rows="2" 
+                                  placeholder="Ví dụ: Tuần này muốn ăn cay nhiều hơn, ít ngọt..."></textarea>
+                    </div>
+                    <button type="button" class="btn btn-primary" id="generateAiMenuBtn" onclick="generateAiMenu()">
+                        <i class="bi bi-magic me-2"></i>Tạo Menu với AI
                     </button>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- AI Recommendations Container -->
-    <div id="aiRecommendationsContainer" style="display: none;"></div>
+        <!-- AI Recommendations Container -->
+        <div id="aiRecommendationsContainer" style="display: none;"></div>
 
-    <!-- Loading State -->
-    <div id="aiLoadingContainer" style="display: none;">
-        <div class="app-card p-5 text-center">
-            <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
-                <span class="visually-hidden">Loading...</span>
+        <!-- Loading State -->
+        <div id="aiLoadingContainer" style="display: none;">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-5 text-center">
+                    <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <h6 class="fw-semibold mb-2">AI đang phân tích và tạo menu...</h6>
+                    <p class="text-muted small mb-0">Vui lòng đợi trong giây lát</p>
+                </div>
             </div>
-            <h5 class="fw-bold">AI đang phân tích và tạo menu...</h5>
-            <p class="text-muted">Vui lòng đợi trong giây lát. Quá trình này có thể mất 30-60 giây.</p>
         </div>
-    </div>
 
-    <!-- Weekly Selection Form (Default View) -->
-    <div id="manualSelectionForm">
-    <form id="mealSelectionForm" method="post" asp-action="SelectMeals">
-        @Html.AntiForgeryToken()
-        
-        <div class="row g-4">
-            @foreach (var daySlot in Model.DailySlots)
-            {
-                var isWeekend = daySlot.DayOfWeek >= 6;
-                <div class="col-12">
-                    <div class="app-card p-4 day-card @(isWeekend ? "weekend-card" : "")" 
-                         style="border-left: 4px solid @(isWeekend ? "var(--accent)" : "var(--primary)");"
-                         data-day-number="@daySlot.Date.DayNumber">
-                        <!-- Day Header -->
-                        <div class="d-flex justify-content-between align-items-center mb-4">
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="day-number-circle @(isWeekend ? "bg-accent" : "bg-primary")">
-                                    @daySlot.DayOfWeek
-                                </div>
-                                <div>
-                                    <h5 class="fw-bold mb-1">@daySlot.DayName</h5>
-                                    <small class="text-muted">
-                                        <i class="bi bi-calendar3"></i> @daySlot.Date.ToString("dd/MM/yyyy")
-                                    </small>
-                                </div>
-                            </div>
-                            <div class="d-flex align-items-center gap-2">
-                                @if (daySlot.IsPastCutoff)
-                                {
-                                    <span class="badge bg-danger px-3 py-2">
-                                        <i class="bi bi-clock-history me-1"></i>Đã Quá Giờ Chốt (20:00)
-                                    </span>
-                                }
-                                else if (daySlot.IsLocked)
-                                {
-                                    <span class="badge bg-secondary px-3 py-2">
-                                        <i class="bi bi-lock-fill me-1"></i>Đã Khóa
-                                    </span>
-                                }
-                                <span class="badge bg-primary px-3 py-2">
-                                    <i class="bi bi-utensils"></i> @daySlot.SlotsCount bữa
-                                </span>
-                            </div>
-                        </div>
-
-                        <!-- Meal Selection Buttons -->
-                        @for (int i = 0; i < daySlot.SlotsCount; i++)
-                        {
-                            var mealType = i == 0 ? "Sáng" : i == 1 ? "Trưa" : "Tối";
-                            var mealIcon = i == 0 ? "sunrise" : i == 1 ? "sun" : "moon";
-                            
-                            // Check if this slot is locked (has order, is past date, or past cut-off time)
-                            var lockedMeal = daySlot.LockedMeals.FirstOrDefault(m => m.SlotIndex == i);
-                            var isSlotLocked = (daySlot.IsLocked || daySlot.IsPastCutoff) && lockedMeal != null;
-                            var isDisabled = daySlot.IsLocked || daySlot.IsPastCutoff;
-                            
-                            <div class="mb-3">
-                                <label class="form-label fw-bold mb-2 d-block">
-                                    <i class="bi bi-@mealIcon text-warning"></i> 
-                                    Bữa @mealType <span class="text-danger">*</span>
-                                </label>
-                                
-                                @if (isSlotLocked)
-                                {
-                                    <!-- Locked Order Display -->
-                                    <div class="d-flex align-items-center gap-2 p-3 border rounded bg-light" style="border-color: #6B7280 !important; background-color: #F9FAFB !important;">
-                                        <div class="flex-grow-1">
-                                            <div class="d-flex align-items-center gap-2 mb-1">
-                                                <span class="badge bg-secondary">
-                                                    <i class="bi bi-lock-fill me-1"></i>Đã Đặt
-                                                </span>
-                                                <span class="fw-semibold">@lockedMeal.MealName</span>
-                                            </div>
-                                            <small class="text-muted">
-                                                <i class="bi bi-info-circle"></i> Đơn hàng đã được xác nhận, không thể thay đổi
-                                            </small>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Hidden input with locked meal ID (for form consistency, but won't be processed) -->
-                                    <input type="hidden" 
-                                           name="selections[@daySlot.Date.DayNumber].SelectedMealIds[@i]" 
-                                           id="meal-input-@daySlot.Date.DayNumber-@i" 
-                                           value="@lockedMeal.MealId"
-                                           data-locked="true" />
-                                }
-                                else if (isDisabled)
-                                {
-                                    <!-- Disabled due to cut-off time -->
-                                    <div class="d-flex align-items-center gap-2 p-3 border rounded bg-light" style="border-color: #DC2626 !important; background-color: #FEF2F2 !important;">
-                                        <div class="flex-grow-1">
-                                            <div class="d-flex align-items-center gap-2 mb-1">
-                                                <span class="badge bg-danger">
-                                                    <i class="bi bi-clock-history me-1"></i>Đã Quá Giờ Chốt
-                                                </span>
-                                            </div>
-                                            <small class="text-muted">
-                                                <i class="bi bi-info-circle"></i> Không thể thay đổi món ăn cho ngày mai sau 20:00. Vui lòng liên hệ bếp để được hỗ trợ.
-                                            </small>
-                                        </div>
-                                    </div>
-                                }
-                                else
-                                {
-                                    <!-- Normal Selection UI (only for future dates without orders) -->
-                                    <div class="d-flex align-items-center gap-2">
-                                        <button type="button" 
-                                                class="btn btn-outline-primary btn-select-meal" 
-                                                data-date="@daySlot.Date.DayNumber" 
-                                                data-slot="@i"
-                                                data-bs-toggle="modal" 
-                                                data-bs-target="#mealSelectionModal"
-                                                onclick="openMealSelectionModal(@daySlot.Date.DayNumber, @i)">
-                                            <i class="bi bi-plus-circle me-2"></i>Chọn Món
-                                        </button>
-                                        
-                                        <!-- Selected Meal Display -->
-                                        <div id="selected-meal-@daySlot.Date.DayNumber-@i" class="flex-grow-1" style="display:none;">
-                                            <div class="d-flex align-items-center gap-2 p-2 border rounded bg-light">
-                                                <img id="selected-meal-image-@daySlot.Date.DayNumber-@i" 
-                                                     src="" 
-                                                     alt="Selected meal" 
-                                                     style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px;"
-                                                     onerror="if(this.src.indexOf('placeholder') === -1 && this.src.indexOf('data:image') === -1) { this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'300\'%3E%3Crect fill=\'%23e5e7eb\' width=\'400\' height=\'300\'/%3E%3Ctext fill=\'%239ca3af\' font-family=\'Arial\' font-size=\'16\' x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dominant-baseline=\'middle\'%3ENo Image%3C/text%3E%3C/svg%3E'; }" />
-                                                <div class="flex-grow-1">
-                                                    <div class="fw-semibold" id="selected-meal-name-@daySlot.Date.DayNumber-@i"></div>
-                                                    <small class="text-muted" id="selected-meal-info-@daySlot.Date.DayNumber-@i"></small>
+        <!-- Weekly Selection Form -->
+        <div id="manualSelectionForm">
+            <form id="mealSelectionForm" method="post" asp-action="SelectMeals">
+                @Html.AntiForgeryToken()
+                
+                <div class="days-container">
+                    @{
+                        int dayIndex = 0;
+                    }
+                    @foreach (var daySlot in Model.DailySlots)
+                    {
+                        dayIndex++;
+                        var isWeekend = daySlot.DayOfWeek >= 6;
+                        
+                        <div class="day-card mb-4">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-body p-4">
+                                    <!-- Day Header -->
+                                    <div class="day-header mb-4">
+                                        <div class="d-flex align-items-center justify-content-between">
+                                            <div class="d-flex align-items-center gap-3">
+                                                <div class="day-number">@dayIndex</div>
+                                                <div>
+                                                    <h6 class="mb-0 fw-semibold">@daySlot.DayName</h6>
+                                                    <small class="text-muted">@daySlot.Date.ToString("dd/MM/yyyy")</small>
                                                 </div>
-                                                <button type="button" 
-                                                        class="btn btn-sm btn-outline-danger" 
-                                                        onclick="clearMealSelection(@daySlot.Date.DayNumber, @i)">
-                                                    <i class="bi bi-x"></i>
-                                                </button>
+                                            </div>
+                                            <div class="d-flex align-items-center gap-2">
+                                                @if (daySlot.IsPastCutoff)
+                                                {
+                                                    <span class="badge bg-danger">
+                                                        <i class="bi bi-clock me-1"></i>Đã Quá Giờ Chốt
+                                                    </span>
+                                                }
+                                                else if (daySlot.IsLocked)
+                                                {
+                                                    <span class="badge bg-secondary">
+                                                        <i class="bi bi-lock me-1"></i>Đã Khóa
+                                                    </span>
+                                                }
                                             </div>
                                         </div>
-                                        
-                                        <!-- Hidden radio input for form submission -->
-                                        <input type="hidden" 
-                                               name="selections[@daySlot.Date.DayNumber].SelectedMealIds[@i]" 
-                                               id="meal-input-@daySlot.Date.DayNumber-@i" 
-                                               value="" />
                                     </div>
-                                    
-                                    <!-- Allergen Warning for this slot -->
-                                    <div id="warning-@daySlot.Date.DayNumber-@i" class="alert alert-warning mt-2" style="display:none;">
-                                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                                        <span class="warning-text"></span>
-                                    </div>
-                                }
-                            </div>
-                        }
 
-                        <input type="hidden" name="selections[@daySlot.Date.DayNumber].Date" value="@daySlot.Date.ToString("yyyy-MM-dd")" />
-                    </div>
+                                    <!-- Meal Slots -->
+                                    <div class="meal-slots">
+                                        @for (int i = 0; i < daySlot.SlotsCount; i++)
+                                        {
+                                            var mealType = i == 0 ? "Sáng" : i == 1 ? "Chiều" : "Tối";
+                                            
+                                            var lockedMeal = daySlot.LockedMeals.FirstOrDefault(m => m.SlotIndex == i);
+                                            var isSlotLocked = (daySlot.IsLocked || daySlot.IsPastCutoff) && lockedMeal != null;
+                                            var isDisabled = daySlot.IsLocked || daySlot.IsPastCutoff;
+                                            
+                                            <div class="meal-slot mb-3">
+                                                <label class="meal-slot-label mb-2">
+                                                    Bữa @mealType <span class="text-danger">*</span>
+                                                </label>
+                                                
+                                                @if (isSlotLocked)
+                                                {
+                                                    <div class="locked-meal">
+                                                        <div class="d-flex align-items-center gap-2 p-3 bg-light rounded">
+                                                            <i class="bi bi-lock text-muted"></i>
+                                                            <div class="flex-grow-1">
+                                                                <div class="fw-semibold small">@lockedMeal.MealName</div>
+                                                                <small class="text-muted">Đã được xác nhận</small>
+                                                            </div>
+                                                        </div>
+                                                        <input type="hidden" 
+                                                               name="selections[@daySlot.Date.DayNumber].SelectedMealIds[@i]" 
+                                                               id="meal-input-@daySlot.Date.DayNumber-@i" 
+                                                               value="@lockedMeal.MealId"
+                                                               data-locked="true" />
+                                                    </div>
+                                                }
+                                                else if (isDisabled)
+                                                {
+                                                    <div class="disabled-meal">
+                                                        <div class="d-flex align-items-center gap-2 p-3 bg-light rounded border border-danger">
+                                                            <i class="bi bi-clock-history text-danger"></i>
+                                                            <div class="flex-grow-1">
+                                                                <small class="text-muted">Đã quá giờ chốt (20:00)</small>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <div class="meal-selection">
+                                                        <button type="button" 
+                                                                class="btn btn-outline-secondary w-100 d-flex align-items-center justify-content-between"
+                                                                data-date="@daySlot.Date.DayNumber" 
+                                                                data-slot="@i"
+                                                                data-date-string="@daySlot.Date.ToString("yyyy-MM-dd")"
+                                                                data-bs-toggle="modal" 
+                                                                data-bs-target="#mealSelectionModal"
+                                                                onclick="openMealSelectionModal(@daySlot.Date.DayNumber, @i, '@daySlot.Date.ToString("yyyy-MM-dd")')">
+                                                            <span>
+                                                                <i class="bi bi-plus-circle me-2"></i>Chọn món
+                                                            </span>
+                                                            <i class="bi bi-chevron-right text-muted"></i>
+                                                        </button>
+                                                        
+                                                        <div id="selected-meal-@daySlot.Date.DayNumber-@i" class="selected-meal mt-2" style="display:none;">
+                                                            <div class="d-flex align-items-center gap-3 p-3 bg-light rounded">
+                                                                <img id="selected-meal-image-@daySlot.Date.DayNumber-@i" 
+                                                                     src="" 
+                                                                     alt="Selected meal" 
+                                                                     class="selected-meal-image"
+                                                                     onerror="if(this.src.indexOf('data:image') === -1) { this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'60\' height=\'60\'%3E%3Crect fill=\'%23e5e7eb\' width=\'60\' height=\'60\'/%3E%3Ctext fill=\'%239ca3af\' font-family=\'Arial\' font-size=\'10\' x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dominant-baseline=\'middle\'%3ENo Image%3C/text%3E%3C/svg%3E'; }" />
+                                                                <div class="flex-grow-1">
+                                                                    <div class="fw-semibold small" id="selected-meal-name-@daySlot.Date.DayNumber-@i"></div>
+                                                                    <small class="text-muted" id="selected-meal-info-@daySlot.Date.DayNumber-@i"></small>
+                                                                </div>
+                                                                <button type="button" 
+                                                                        class="btn btn-sm btn-link text-danger p-0" 
+                                                                        onclick="clearMealSelection(@daySlot.Date.DayNumber, @i)">
+                                                                    <i class="bi bi-x-lg"></i>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <input type="hidden" 
+                                                               name="selections[@daySlot.Date.DayNumber].SelectedMealIds[@i]" 
+                                                               id="meal-input-@daySlot.Date.DayNumber-@i" 
+                                                               value="" />
+                                                        
+                                                        <div id="warning-@daySlot.Date.DayNumber-@i" class="alert alert-warning mt-2 py-2 px-3 small" style="display:none;">
+                                                            <i class="bi bi-exclamation-triangle me-1"></i>
+                                                            <span class="warning-text"></span>
+                                                        </div>
+                                                    </div>
+                                                }
+                                            </div>
+                                        }
+                                    </div>
+
+                                    <input type="hidden" name="selections[@daySlot.Date.DayNumber].Date" value="@daySlot.Date.ToString("yyyy-MM-dd")" />
+                                </div>
+                            </div>
+                        </div>
+                    }
                 </div>
-            }
-        </div>
 
-        <!-- Action Buttons -->
-        <div class="row mt-5">
-            <div class="col-12">
-                <div class="app-card p-4 bg-light">
-                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-                        <a asp-controller="Dashboard" asp-action="Index" class="btn btn-outline-secondary btn-lg">
-                            <i class="bi bi-arrow-left"></i> Quay lại Dashboard
-                        </a>
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="text-muted small d-none d-md-block">
-                                <i class="bi bi-info-circle"></i> Bạn có thể thay đổi lựa chọn bất cứ lúc nào
+                <!-- Delivery Address Section -->
+                @if (!Model.HasDeliveryAddress)
+                {
+                    <div class="delivery-address-section mt-5">
+                        <div class="card border-0 shadow-sm border-warning">
+                            <div class="card-body p-4">
+                                <div class="d-flex align-items-start mb-3">
+                                    <i class="bi bi-geo-alt-fill text-warning fs-4 me-3"></i>
+                                    <div class="flex-grow-1">
+                                        <h5 class="fw-semibold mb-2">Địa Chỉ Giao Hàng</h5>
+                                        <p class="text-muted small mb-0">
+                                            Vui lòng nhập địa chỉ giao hàng để chúng tôi có thể giao món ăn đến đúng địa chỉ của bạn.
+                                            Địa chỉ này sẽ được lưu vào hồ sơ của bạn cho các lần đặt hàng sau.
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="deliveryAddress" class="form-label fw-semibold">
+                                        Địa chỉ giao hàng <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="text" 
+                                           class="form-control @(ViewData.ModelState["DeliveryAddress"]?.Errors.Count > 0 ? "is-invalid" : "")" 
+                                           id="deliveryAddress" 
+                                           name="DeliveryAddress" 
+                                           placeholder="Ví dụ: Số 10, Đường Nguyễn Huệ, Quận 1, TP.HCM" 
+                                           value="@Model.DeliveryAddress"
+                                           required>
+                                    @if (ViewData.ModelState["DeliveryAddress"]?.Errors.Count > 0)
+                                    {
+                                        <div class="invalid-feedback">
+                                            @(ViewData.ModelState["DeliveryAddress"]?.Errors.First().ErrorMessage ?? "")
+                                        </div>
+                                    }
+                                    <small class="text-muted">Địa chỉ này sẽ được sử dụng cho tất cả các đơn hàng của bạn</small>
+                                </div>
                             </div>
-                            <button type="submit" class="btn btn-primary btn-lg px-5">
-                                <i class="bi bi-check-circle-fill"></i> Lưu Lựa Chọn
-                            </button>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <input type="hidden" name="DeliveryAddress" value="@Model.DeliveryAddress" />
+                }
+
+                <!-- Action Buttons -->
+                <div class="action-bar mt-5">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                                <a asp-controller="Dashboard" asp-action="Index" class="btn btn-outline-secondary">
+                                    <i class="bi bi-arrow-left me-2"></i>Quay lại
+                                </a>
+                                <button type="submit" class="btn btn-primary btn-lg px-5">
+                                    <i class="bi bi-check-lg me-2"></i>Lưu Lựa Chọn
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            </form>
         </div>
-    </form>
     </div>
 </div>
 
 <!-- Meal Selection Modal -->
 <div class="modal fade" id="mealSelectionModal" tabindex="-1" aria-labelledby="mealSelectionModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title" id="mealSelectionModalLabel">
-                    <i class="bi bi-search"></i> Chọn Món Ăn
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        <div class="modal-content border-0">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-semibold" id="mealSelectionModalLabel">Chọn Món Ăn</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body p-4">
                 <!-- Search Bar -->
                 <div class="mb-4">
-                    <div class="input-group input-group-lg">
-                        <span class="input-group-text bg-light border-end-0">
-                            <i class="bi bi-search"></i>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0">
+                            <i class="bi bi-search text-muted"></i>
                         </span>
                         <input type="text" 
                                class="form-control border-start-0 ps-0" 
                                id="mealSearchInput" 
-                               placeholder="Tìm kiếm món ăn theo tên..." 
+                               placeholder="Tìm kiếm món ăn..." 
                                oninput="handleMealSearch(event)">
                     </div>
                 </div>
 
                 <!-- Meals Grid -->
                 <div class="row g-3" id="mealsListContainer">
-                    <!-- Meals will be loaded here via JavaScript -->
+                    <!-- Meals will be loaded here -->
                 </div>
 
                 <!-- Pagination -->
                 <div class="d-flex justify-content-between align-items-center mt-4" id="mealsPagination" style="display: none;">
-                    <button type="button" class="btn btn-outline-primary" id="prevPageBtn" onclick="changeMealPage(-1)">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="prevPageBtn" onclick="changeMealPage(-1)">
                         <i class="bi bi-chevron-left"></i> Trước
                     </button>
-                    <span class="text-muted" id="pageInfo">Trang 1 / 1</span>
-                    <button type="button" class="btn btn-outline-primary" id="nextPageBtn" onclick="changeMealPage(1)">
+                    <span class="text-muted small" id="pageInfo">Trang 1 / 1</span>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="nextPageBtn" onclick="changeMealPage(1)">
                         Sau <i class="bi bi-chevron-right"></i>
                     </button>
                 </div>
@@ -324,86 +328,137 @@
 </div>
 
 <style>
-    .meal-option-card {
-        transition: all 0.3s ease;
-        border: 2px solid #E5E7EB;
-    }
-    
-    .meal-option-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 25px rgba(0,0,0,0.15) !important;
-        border-color: var(--primary);
+    .meal-selection-page {
+        background: #f8f9fa;
+        min-height: 100vh;
     }
 
-    .day-card {
-        transition: all 0.3s ease;
+    .page-header {
+        text-align: center;
     }
-    
-    .day-card:hover {
-        box-shadow: 0 12px 30px rgba(17,24,39,.08) !important;
-        transform: translateY(-2px);
+
+    .page-title {
+        font-size: 2rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin-bottom: 0.5rem;
     }
-    
-    .weekend-card {
-        background: linear-gradient(135deg, #FFFFFF 0%, #F9FAFB 100%);
+
+    .page-subtitle {
+        color: #6b7280;
+        font-size: 0.95rem;
+        margin-bottom: 0;
     }
-    
-    .day-number-circle {
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
+
+    .allergy-badge {
+        display: inline-block;
+        background: #fef3c7;
+        color: #92400e;
+        padding: 0.25rem 0.75rem;
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+        margin-left: 0.5rem;
+    }
+
+    .day-number {
+        width: 40px;
+        height: 40px;
+        border-radius: 0.5rem;
+        background: #1f2937;
+        color: white;
         display: flex;
         align-items: center;
         justify-content: center;
-        color: white;
-        font-weight: 700;
-        font-size: 1.25rem;
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+
+    .day-card .card {
+        transition: box-shadow 0.2s ease;
+    }
+
+    .day-card .card:hover {
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+    }
+
+    .meal-slot-label {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #374151;
+        display: block;
+    }
+
+    .selected-meal-image {
+        width: 50px;
+        height: 50px;
+        object-fit: cover;
+        border-radius: 0.375rem;
+    }
+
+    .meal-option-card {
+        transition: all 0.2s ease;
+        border: 1px solid #e5e7eb;
     }
     
-    .bg-accent {
-        background: var(--accent) !important;
+    .meal-option-card:hover {
+        border-color: #1f2937;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     }
-    
-    .meal-selection-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 8px 20px rgba(0,0,0,0.1) !important;
+
+    .btn-primary {
+        background: #1f2937;
+        border-color: #1f2937;
     }
-    
-    .meal-selection-card.selected {
-        border-color: #22C55E !important;
-        box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3) !important;
+
+    .btn-primary:hover {
+        background: #111827;
+        border-color: #111827;
     }
-    
-    .meal-selection-card.has-allergen {
-        border-color: #F59E0B !important;
+
+    .btn-outline-secondary {
+        border-color: #d1d5db;
+        color: #374151;
     }
-    
-    .nutrition-info {
-        animation: fadeInAnimation 0.3s ease;
+
+    .btn-outline-secondary:hover {
+        background: #f3f4f6;
+        border-color: #9ca3af;
+        color: #1f2937;
     }
-    
-    @@keyframes fadeInAnimation {
-        from { 
-            opacity: 0; 
-            transform: translateY(-5px); 
-        }
-        to { 
-            opacity: 1; 
-            transform: translateY(0); 
-        }
+
+    .badge {
+        font-weight: 500;
+        font-size: 0.75rem;
+        padding: 0.375rem 0.75rem;
     }
-    
-    .header-icon {
-        animation: pulseAnimation 2s infinite;
+
+    .card {
+        border-radius: 0.5rem;
     }
-    
-    @@keyframes pulseAnimation {
-        0%, 100% { 
-            transform: scale(1); 
-        }
-        50% { 
-            transform: scale(1.05); 
-        }
+
+    .modal-content {
+        border-radius: 0.75rem;
+    }
+
+    .modal-header {
+        padding: 1.25rem 1.5rem;
+    }
+
+    .modal-body {
+        padding: 1.5rem;
+    }
+
+    .input-group-text {
+        border-color: #d1d5db;
+    }
+
+    .form-control {
+        border-color: #d1d5db;
+    }
+
+    .form-control:focus {
+        border-color: #1f2937;
+        box-shadow: 0 0 0 0.2rem rgba(31, 41, 55, 0.1);
     }
 </style>
 
@@ -411,24 +466,10 @@
     <script>
         // Function to handle meal selection
         function selectMeal(cardElement, date, slot, mealId) {
-            // Find the radio button in this card
             const radio = cardElement.querySelector(`input[type="radio"][value="${mealId}"]`);
             if (radio) {
                 radio.checked = true;
-                
-                // Trigger change event to show warnings
                 radio.dispatchEvent(new Event('change', { bubbles: true }));
-                
-                // Visual feedback - highlight selected card
-                const slotContainer = document.getElementById(`day-${date}-slot-${slot}`);
-                if (slotContainer) {
-                    slotContainer.querySelectorAll('.meal-selection-card').forEach(card => {
-                        card.style.borderColor = '#E5E7EB';
-                        card.style.boxShadow = 'none';
-                    });
-                }
-                cardElement.style.borderColor = '#22C55E';
-                cardElement.style.boxShadow = '0 4px 12px rgba(34, 197, 94, 0.3)';
             }
         }
 
@@ -439,25 +480,20 @@
             const manualForm = document.getElementById('manualSelectionForm');
             const weeklyNotesInput = document.getElementById('weeklyNotes');
             
-            // Get optional notes
             const weeklyNotes = weeklyNotesInput?.value?.trim() || '';
             
-            // Show loading, hide other sections
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang tạo...';
             loadingContainer.style.display = 'block';
             recommendationsContainer.style.display = 'none';
             manualForm.style.display = 'none';
             
-            // Scroll to loading
             loadingContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
             
-            // Prepare form data
             const formData = new FormData();
             formData.append('weeklyNotes', weeklyNotes);
             formData.append('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]')?.value || '');
             
-            // Call API
             fetch('@Url.Action("GenerateAiMenu", "Menu")', {
                 method: 'POST',
                 body: formData
@@ -471,13 +507,22 @@
                 });
             })
             .then(html => {
-                // Hide loading, show recommendations
                 loadingContainer.style.display = 'none';
                 recommendationsContainer.innerHTML = html;
                 recommendationsContainer.style.display = 'block';
                 manualForm.style.display = 'none';
                 
-                // Scroll to recommendations
+                // Execute any scripts in the loaded HTML
+                const scripts = recommendationsContainer.querySelectorAll('script');
+                scripts.forEach(oldScript => {
+                    const newScript = document.createElement('script');
+                    Array.from(oldScript.attributes).forEach(attr => {
+                        newScript.setAttribute(attr.name, attr.value);
+                    });
+                    newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+                    oldScript.parentNode.replaceChild(newScript, oldScript);
+                });
+                
                 recommendationsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
             })
             .catch(error => {
@@ -488,7 +533,7 @@
             })
             .finally(() => {
                 btn.disabled = false;
-                btn.innerHTML = '<i class="bi bi-magic"></i> Tạo Menu với AI';
+                btn.innerHTML = '<i class="bi bi-magic me-2"></i>Tạo Menu với AI';
             });
         }
 
@@ -498,34 +543,21 @@
         let currentPage = 1;
         let currentSearch = '';
         let totalPages = 1;
-
-        // Store current date string for API call
         let currentDateString = '';
         
-        // Open meal selection modal
-        function openMealSelectionModal(date, slot) {
+        function openMealSelectionModal(date, slot, dateString) {
             currentDate = date;
             currentSlot = slot;
             currentPage = 1;
             currentSearch = '';
+            currentDateString = dateString || '';
             document.getElementById('mealSearchInput').value = '';
-            
-            // Get actual date string from the day slot
-            const daySlotElement = document.querySelector(`[data-day-number="${date}"]`);
-            if (daySlotElement) {
-                const dateInput = daySlotElement.querySelector('input[name*="Date"]');
-                if (dateInput) {
-                    currentDateString = dateInput.value; // Format: yyyy-MM-dd
-                }
-            }
-            
             loadMeals();
         }
 
-        // Load meals with search and pagination
         async function loadMeals() {
             const container = document.getElementById('mealsListContainer');
-            container.innerHTML = '<div class="col-12 text-center py-4"><div class="spinner-border text-primary" role="status"></div></div>';
+            container.innerHTML = '<div class="col-12 text-center py-5"><div class="spinner-border text-primary" role="status"></div></div>';
 
             try {
                 const url = `@Url.Action("GetMealsForSelection", "Menu")?search=${encodeURIComponent(currentSearch)}&page=${currentPage}&pageSize=4${currentDateString ? '&date=' + encodeURIComponent(currentDateString) : ''}`;
@@ -535,7 +567,6 @@
                 totalPages = data.totalPages;
                 currentPage = data.page;
 
-                // Render meals
                 if (data.meals && data.meals.length > 0) {
                     container.innerHTML = data.meals.map(meal => {
                         const isSoldOut = meal.isSoldOut === true;
@@ -545,48 +576,45 @@
                         
                         return `
                         <div class="col-md-6">
-                            <div class="card h-100 meal-option-card ${isSoldOut ? 'border-danger' : ''}" style="${cardStyle}" ${onClick}>
-                                <div class="position-relative" style="height: 150px; overflow: hidden;">
+                            <div class="card meal-option-card h-100 ${isSoldOut ? 'border-danger' : ''}" style="${cardStyle}" ${onClick}>
+                                <div class="position-relative" style="height: 180px; overflow: hidden;">
                                     <img src="${meal.imageUrl || 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'300\'%3E%3Crect fill=\'%23e5e7eb\' width=\'400\' height=\'300\'/%3E%3Ctext fill=\'%239ca3af\' font-family=\'Arial\' font-size=\'16\' x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dominant-baseline=\'middle\'%3ENo Image%3C/text%3E%3C/svg%3E'}" 
                                          alt="${meal.name}" 
                                          class="w-100 h-100" 
                                          style="object-fit: cover;"
                                          onerror="if(this.src.indexOf('data:image') === -1) { this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'300\'%3E%3Crect fill=\'%23e5e7eb\' width=\'400\' height=\'300\'/%3E%3Ctext fill=\'%239ca3af\' font-family=\'Arial\' font-size=\'16\' x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dominant-baseline=\'middle\'%3ENo Image%3C/text%3E%3C/svg%3E'; }" />
                                     ${isSoldOut ? '<span class="badge bg-danger position-absolute top-0 start-0 m-2"><i class="bi bi-x-circle"></i> Hết Hàng</span>' : ''}
-                                    ${meal.hasAllergen ? '<span class="badge bg-warning position-absolute top-0 end-0 m-2"><i class="bi bi-exclamation-triangle"></i></span>' : ''}
+                                    ${meal.hasAllergen ? '<span class="badge bg-warning text-dark position-absolute top-0 end-0 m-2"><i class="bi bi-exclamation-triangle"></i></span>' : ''}
                                 </div>
                                 <div class="card-body p-3">
-                                    <h6 class="fw-bold mb-2">${meal.name} ${isSoldOut ? '<span class="badge bg-danger ms-2">Hết Hàng</span>' : ''}</h6>
-                                    <p class="text-muted small mb-2">${meal.description.length > 60 ? meal.description.substring(0, 60) + '...' : meal.description}</p>
+                                    <h6 class="fw-semibold mb-2">${meal.name}</h6>
+                                    <p class="text-muted small mb-2" style="font-size: 0.8rem;">${meal.description.length > 60 ? meal.description.substring(0, 60) + '...' : meal.description}</p>
                                     <div class="d-flex gap-1 flex-wrap mb-2">
-                                        <span class="badge bg-info" style="font-size: 0.7rem;"><i class="bi bi-fire"></i> ${meal.calories} cal</span>
-                                        <span class="badge bg-primary" style="font-size: 0.7rem;">P:${meal.protein}</span>
-                                        <span class="badge bg-success" style="font-size: 0.7rem;">C:${meal.carbs}</span>
-                                        <span class="badge bg-warning text-dark" style="font-size: 0.7rem;">F:${meal.fat}</span>
+                                        <span class="badge bg-secondary" style="font-size: 0.7rem;">${meal.calories} cal</span>
+                                        <span class="badge bg-secondary" style="font-size: 0.7rem;">P:${meal.protein}</span>
+                                        <span class="badge bg-secondary" style="font-size: 0.7rem;">C:${meal.carbs}</span>
+                                        <span class="badge bg-secondary" style="font-size: 0.7rem;">F:${meal.fat}</span>
                                     </div>
-                                    ${availableQty !== null ? `<div class="d-flex align-items-center gap-1 mb-2">
-                                        <i class="bi bi-box-seam text-primary"></i>
+                                    ${availableQty !== null ? `<div class="d-flex align-items-center gap-1">
                                         <small class="text-muted">Còn lại: <strong class="${availableQty <= 5 ? 'text-danger' : availableQty <= 10 ? 'text-warning' : 'text-success'}">${availableQty} suất</strong></small>
                                     </div>` : ''}
-                                    ${isSoldOut ? '<div class="alert alert-danger mt-2 mb-0 py-1 px-2" style="font-size: 0.75rem;"><i class="bi bi-exclamation-circle"></i> Món này đã hết hàng cho ngày đã chọn.</div>' : ''}
+                                    ${isSoldOut ? '<div class="alert alert-danger mt-2 mb-0 py-1 px-2 small"><i class="bi bi-exclamation-circle"></i> Món này đã hết hàng</div>' : ''}
                                 </div>
                             </div>
                         </div>
                         `;
                     }).join('');
                 } else {
-                    container.innerHTML = '<div class="col-12 text-center py-4 text-muted">Không tìm thấy món ăn nào.</div>';
+                    container.innerHTML = '<div class="col-12 text-center py-5 text-muted">Không tìm thấy món ăn nào.</div>';
                 }
 
-                // Update pagination
                 updatePagination();
             } catch (error) {
                 console.error('Error loading meals:', error);
-                container.innerHTML = '<div class="col-12 text-center py-4 text-danger">Có lỗi xảy ra khi tải danh sách món ăn.</div>';
+                container.innerHTML = '<div class="col-12 text-center py-5 text-danger">Có lỗi xảy ra khi tải danh sách món ăn.</div>';
             }
         }
 
-        // Update pagination controls
         function updatePagination() {
             const pagination = document.getElementById('mealsPagination');
             const pageInfo = document.getElementById('pageInfo');
@@ -603,7 +631,6 @@
             }
         }
 
-        // Change page
         function changeMealPage(direction) {
             const newPage = currentPage + direction;
             if (newPage >= 1 && newPage <= totalPages) {
@@ -612,7 +639,6 @@
             }
         }
 
-        // Handle search with debounce
         let searchTimeout;
         function handleMealSearch(event) {
             clearTimeout(searchTimeout);
@@ -623,25 +649,21 @@
             }, 500);
         }
 
-        // Select meal from modal
         function selectMealFromModal(mealId, mealName, imageUrl, calories, protein, carbs, fat, hasAllergen, allergenWarning) {
-            // Update hidden input
             document.getElementById(`meal-input-${currentDate}-${currentSlot}`).value = mealId;
 
-            // Update selected meal display
             const selectedDiv = document.getElementById(`selected-meal-${currentDate}-${currentSlot}`);
             const selectedImage = document.getElementById(`selected-meal-image-${currentDate}-${currentSlot}`);
             const selectedName = document.getElementById(`selected-meal-name-${currentDate}-${currentSlot}`);
             const selectedInfo = document.getElementById(`selected-meal-info-${currentDate}-${currentSlot}`);
             const selectButton = document.querySelector(`button[data-date="${currentDate}"][data-slot="${currentSlot}"]`);
 
-            selectedImage.src = imageUrl || 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'300\'%3E%3Crect fill=\'%23e5e7eb\' width=\'400\' height=\'300\'/%3E%3Ctext fill=\'%239ca3af\' font-family=\'Arial\' font-size=\'16\' x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dominant-baseline=\'middle\'%3ENo Image%3C/text%3E%3C/svg%3E';
+            selectedImage.src = imageUrl || 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'60\' height=\'60\'%3E%3Crect fill=\'%23e5e7eb\' width=\'60\' height=\'60\'/%3E%3Ctext fill=\'%239ca3af\' font-family=\'Arial\' font-size=\'10\' x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dominant-baseline=\'middle\'%3ENo Image%3C/text%3E%3C/svg%3E';
             selectedName.textContent = mealName;
             selectedInfo.textContent = `${calories} cal • P:${protein} C:${carbs} F:${fat}`;
-            selectedDiv.style.display = 'flex';
+            selectedDiv.style.display = 'block';
             selectButton.style.display = 'none';
 
-            // Show allergen warning if needed
             const warningEl = document.getElementById(`warning-${currentDate}-${currentSlot}`);
             if (hasAllergen && allergenWarning) {
                 if (warningEl) {
@@ -652,20 +674,18 @@
                 warningEl.style.display = 'none';
             }
 
-            // Close modal
             const modal = bootstrap.Modal.getInstance(document.getElementById('mealSelectionModal'));
             if (modal) {
                 modal.hide();
             }
         }
 
-        // Clear meal selection
         function clearMealSelection(date, slot) {
             document.getElementById(`meal-input-${date}-${slot}`).value = '';
             document.getElementById(`selected-meal-${date}-${slot}`).style.display = 'none';
             const selectButton = document.querySelector(`button[data-date="${date}"][data-slot="${slot}"]`);
             if (selectButton) {
-                selectButton.style.display = 'inline-block';
+                selectButton.style.display = 'inline-flex';
             }
             const warningEl = document.getElementById(`warning-${date}-${slot}`);
             if (warningEl) {
@@ -675,16 +695,11 @@
 
         document.addEventListener('DOMContentLoaded', function() {
             const form = document.getElementById('mealSelectionForm');
-
-            // Form submission with loading state
             form.addEventListener('submit', function(e) {
                 const submitBtn = form.querySelector('button[type="submit"]');
                 const originalHtml = submitBtn.innerHTML;
-                
                 submitBtn.disabled = true;
                 submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang lưu...';
-                
-                // Re-enable after 10 seconds as fallback
                 setTimeout(() => {
                     if (submitBtn.disabled) {
                         submitBtn.disabled = false;
@@ -693,7 +708,6 @@
                 }, 10000);
             });
             
-            // Reset modal when closed
             const modal = document.getElementById('mealSelectionModal');
             if (modal) {
                 modal.addEventListener('hidden.bs.modal', function() {
