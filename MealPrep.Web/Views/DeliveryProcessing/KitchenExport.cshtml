@@ -6,16 +6,18 @@
 }
 
 <div class="container-fluid py-4">
-    <div class="row mb-4">
-        <div class="col-md-6">
-            <h2 class="fw-bold">🍳 Kitchen Export - @Model.DeliveryDate.ToString("dd/MM/yyyy")</h2>
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="mb-1 fw-semibold">Kitchen Export - @Model.DeliveryDate.ToString("dd/MM/yyyy")</h4>
+            <p class="text-muted small mb-0">Danh sách món cần nấu</p>
         </div>
-        <div class="col-md-6 text-end">
+        <div class="d-flex gap-2">
             <a asp-action="DownloadKitchenList" asp-route-date="@Model.DeliveryDate" 
-               class="btn btn-success me-2">
-                <i class="bi bi-download"></i> Download CSV
+               class="btn btn-sm btn-dark">
+                Download CSV
             </a>
-            <a asp-action="Index" class="btn btn-secondary">← Back</a>
+            <a asp-action="Index" class="btn btn-sm btn-outline-secondary">Quay lại</a>
         </div>
     </div>
 
@@ -28,75 +30,95 @@
     }
 
     <!-- Summary Cards -->
-    <div class="row g-4 mb-4">
+    <div class="row g-3 mb-4">
         <div class="col-md-3">
-            <div class="card bg-primary text-white">
+            <div class="card">
                 <div class="card-body">
-                    <h6>Total Orders</h6>
-                    <h3>@Model.TotalDeliveryOrders</h3>
+                    <p class="text-muted small mb-1">Tổng đơn hàng</p>
+                    <h4 class="mb-0">@Model.TotalDeliveryOrders</h4>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card bg-success text-white">
+            <div class="card">
                 <div class="card-body">
-                    <h6>Total Portions</h6>
-                    <h3>@Model.TotalMealPortions</h3>
+                    <p class="text-muted small mb-1">Tổng suất ăn</p>
+                    <h4 class="mb-0">@Model.TotalMealPortions</h4>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card bg-warning text-white">
+            <div class="card">
                 <div class="card-body">
-                    <h6>Total Revenue</h6>
-                    <h3>@Model.TotalRevenue.ToString("N0")đ</h3>
+                    <p class="text-muted small mb-1">Doanh thu</p>
+                    <h4 class="mb-0">@Model.TotalRevenue.ToString("N0")đ</h4>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card bg-info text-white">
+            <div class="card">
                 <div class="card-body">
-                    <h6>Unique Meals</h6>
-                    <h3>@Model.Items.Count</h3>
+                    <p class="text-muted small mb-1">Số món khác nhau</p>
+                    <h4 class="mb-0">@Model.Items.Count</h4>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Date Selector -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" asp-action="KitchenExport" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label small text-muted mb-1">Chọn ngày khác</label>
+                    <input type="date" name="date" class="form-control form-control-sm" 
+                           value="@Model.DeliveryDate.ToString("yyyy-MM-dd")">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-sm btn-dark w-100">Xem</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Kitchen List Table -->
     <div class="card">
-        <div class="card-header">
-            <h5 class="mb-0">📋 Danh sách món cần nấu</h5>
-            <small class="text-muted">Generated at: @Model.GeneratedAt.ToString("dd/MM/yyyy HH:mm:ss")</small>
+        <div class="card-header bg-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">Danh sách món cần nấu</h6>
+                <small class="text-muted">Generated: @Model.GeneratedAt.ToString("HH:mm:ss")</small>
+            </div>
         </div>
-        <div class="card-body">
+        <div class="card-body p-0">
             @if (Model.Items.Any())
             {
                 <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
+                    <table class="table table-sm table-hover align-middle mb-0">
+                        <thead class="table-light">
                             <tr>
-                                <th>#</th>
-                                <th>Meal Name</th>
-                                <th class="text-center">Total Quantity</th>
-                                <th class="text-end">Unit Price</th>
-                                <th class="text-center">Calories</th>
-                                <th>Ingredients</th>
+                                <th class="ps-3" style="width: 60px;">ID</th>
+                                <th>Tên Món</th>
+                                <th class="text-center" style="width: 120px;">Số Lượng</th>
+                                <th class="text-end" style="width: 100px;">Đơn Giá</th>
+                                <th class="text-center" style="width: 100px;">Calories</th>
+                                <th style="width: 300px;">Nguyên Liệu</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach (var item in Model.Items)
                             {
                                 <tr>
-                                    <td><strong>@item.MealId</strong></td>
+                                    <td class="ps-3">
+                                        <span class="text-muted">#@item.MealId</span>
+                                    </td>
                                     <td>
-                                        <strong>@item.MealName</strong>
+                                        <div class="fw-medium">@item.MealName</div>
                                     </td>
                                     <td class="text-center">
-                                        <span class="badge bg-primary fs-6">@item.TotalQuantity suất</span>
+                                        <span class="badge bg-dark">@item.TotalQuantity suất</span>
                                     </td>
                                     <td class="text-end">@item.UnitPrice.ToString("N0")đ</td>
-                                    <td class="text-center">@item.Calories kcal</td>
+                                    <td class="text-center">@item.Calories</td>
                                     <td>
                                         <small class="text-muted">@item.Ingredients</small>
                                     </td>
@@ -105,7 +127,7 @@
                         </tbody>
                         <tfoot class="table-light">
                             <tr>
-                                <th colspan="2">TOTAL</th>
+                                <th colspan="2" class="ps-3">TỔNG CỘNG</th>
                                 <th class="text-center">@Model.TotalMealPortions suất</th>
                                 <th colspan="3"></th>
                             </tr>
@@ -115,26 +137,46 @@
             }
             else
             {
-                <div class="alert alert-info">
-                    Không có món nào cần nấu cho ngày @Model.DeliveryDate.ToString("dd/MM/yyyy")
+                <div class="p-5 text-center text-muted">
+                    <p class="mb-0">Không có món nào cần nấu cho ngày @Model.DeliveryDate.ToString("dd/MM/yyyy")</p>
                 </div>
             }
         </div>
     </div>
-
-    <!-- Date Selector -->
-    <div class="card mt-4">
-        <div class="card-body">
-            <form method="get" asp-action="KitchenExport" class="row g-3">
-                <div class="col-md-6">
-                    <label class="form-label">Chọn ngày khác</label>
-                    <input type="date" name="date" class="form-control" 
-                           value="@Model.DeliveryDate.ToString("yyyy-MM-dd")">
-                </div>
-                <div class="col-md-6 d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary">View Kitchen List</button>
-                </div>
-            </form>
-        </div>
-    </div>
 </div>
+
+<style>
+    .card {
+        border: 1px solid #e5e7eb;
+        box-shadow: none;
+    }
+
+    .table th {
+        font-weight: 600;
+        font-size: 0.875rem;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+    }
+
+    .table td {
+        font-size: 0.875rem;
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: #f9fafb;
+    }
+
+    .badge {
+        font-weight: 500;
+        font-size: 0.75rem;
+    }
+
+    .btn-sm {
+        font-size: 0.875rem;
+    }
+
+    .form-control-sm {
+        font-size: 0.875rem;
+    }
+</style>

@@ -1,103 +1,214 @@
 @model List<MealPrep.BLL.DTOs.MealFeedbackReportDto>
 
 @{
-    ViewData["Title"] = "Low Rated Meals Report";
+    ViewData["Title"] = "Báo Cáo Đánh Giá Món Ăn";
     Layout = "_AdminLayout";
     var minRatings = ViewBag.MinRatings as int? ?? 5;
+    var starFilter = ViewBag.StarFilter as int?;
+    var currentPage = ViewBag.CurrentPage as int? ?? 1;
+    var totalPages = ViewBag.TotalPages as int? ?? 1;
+    var totalItems = ViewBag.TotalItems as int? ?? 0;
+    var pageSize = ViewBag.PageSize as int? ?? 10;
+    
+    var totalItemsBeforeFilter = ViewBag.TotalItemsBeforeFilter as int? ?? totalItems;
+    var needsImprovementCount = ViewBag.NeedsImprovementCount as int? ?? 0;
+    var totalBlockRequests = ViewBag.TotalBlockRequests as int? ?? 0;
 }
 
 <div class="container-fluid py-4">
-    <div class="row mb-4">
-        <div class="col-md-6">
-            <h2 class="fw-bold">📊 Low Rated Meals Report</h2>
-            <p class="text-muted">Món ăn đang bị đánh giá thấp - cần cải thiện</p>
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="mb-1 fw-semibold">Báo Cáo Đánh Giá Món Ăn</h4>
+            <p class="text-muted small mb-0">Phân tích đánh giá của khách hàng</p>
         </div>
-        <div class="col-md-6 text-end">
-            <a asp-controller="Admin" asp-action="Index" class="btn btn-secondary">← Back to Admin</a>
-        </div>
+        <a asp-controller="Admin" asp-action="Index" class="btn btn-sm btn-outline-secondary">
+            Quay Lại
+        </a>
     </div>
 
-    <!-- Filter -->
+    <!-- Filters -->
     <div class="card mb-4">
         <div class="card-body">
-            <form method="get" class="row g-3">
-                <div class="col-md-4">
-                    <label class="form-label">Minimum Ratings Required</label>
-                    <select name="minRatings" class="form-select">
-                        <option value="1" selected="@(minRatings == 1)">1+ ratings</option>
-                        <option value="5" selected="@(minRatings == 5)">5+ ratings</option>
-                        <option value="10" selected="@(minRatings == 10)">10+ ratings</option>
-                        <option value="20" selected="@(minRatings == 20)">20+ ratings</option>
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label small text-muted mb-1">Số lượng đánh giá tối thiểu</label>
+                    <select name="minRatings" class="form-select form-select-sm">
+                        <option value="1" selected="@(minRatings == 1)">1+</option>
+                        <option value="5" selected="@(minRatings == 5)">5+</option>
+                        <option value="10" selected="@(minRatings == 10)">10+</option>
+                        <option value="20" selected="@(minRatings == 20)">20+</option>
+                        <option value="50" selected="@(minRatings == 50)">50+</option>
                     </select>
                 </div>
-                <div class="col-md-4 d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary">Filter</button>
+                
+                <div class="col-md-3">
+                    <label class="form-label small text-muted mb-1">Lọc theo số sao</label>
+                    <select name="starFilter" class="form-select form-select-sm">
+                        <option value="" selected="@(!starFilter.HasValue)">Tất cả</option>
+                        <option value="1" selected="@(starFilter == 1)">1 sao</option>
+                        <option value="2" selected="@(starFilter == 2)">2 sao</option>
+                        <option value="3" selected="@(starFilter == 3)">3 sao</option>
+                        <option value="4" selected="@(starFilter == 4)">4 sao</option>
+                        <option value="5" selected="@(starFilter == 5)">5 sao</option>
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label small text-muted mb-1">Số món / trang</label>
+                    <select name="pageSize" class="form-select form-select-sm">
+                        <option value="10" selected="@(pageSize == 10)">10</option>
+                        <option value="20" selected="@(pageSize == 20)">20</option>
+                        <option value="50" selected="@(pageSize == 50)">50</option>
+                        <option value="100" selected="@(pageSize == 100)">100</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-sm btn-dark w-100">Lọc</button>
                 </div>
             </form>
         </div>
     </div>
 
+    <!-- Stats Summary -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted small mb-1">Tổng số món</p>
+                            <h4 class="mb-0">@totalItemsBeforeFilter</h4>
+                            @if (starFilter.HasValue && totalItems != totalItemsBeforeFilter)
+                            {
+                                <small class="text-muted">(@totalItems sau filter)</small>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted small mb-1">Cần cải thiện (&lt; 3 sao)</p>
+                            <h4 class="mb-0">@needsImprovementCount</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <p class="text-muted small mb-1">Yêu cầu chặn</p>
+                            <h4 class="mb-0">@totalBlockRequests</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Report Table -->
     <div class="card">
-        <div class="card-body">
-            <h5 class="card-title mb-3">Found: @Model.Count meals</h5>
-            
+        <div class="card-header bg-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">Danh Sách Món Ăn</h6>
+                <span class="badge bg-secondary">
+                    @if (starFilter.HasValue)
+                    {
+                        <text>@starFilter sao • @totalItems món</text>
+                    }
+                    else
+                    {
+                        <text>Trang @currentPage/@totalPages</text>
+                    }
+                </span>
+            </div>
+        </div>
+        <div class="card-body p-0">
             @if (Model.Any())
             {
                 <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
+                    <table class="table table-sm table-hover align-middle mb-0">
+                        <thead class="table-light">
                             <tr>
-                                <th>Meal ID</th>
-                                <th>Meal Name</th>
-                                <th class="text-center">Total Ratings</th>
-                                <th class="text-center">Avg Stars</th>
-                                <th class="text-center">Low (1-2⭐)</th>
-                                <th class="text-center">High (4-5⭐)</th>
-                                <th class="text-center">Block Requests</th>
-                                <th>Common Issues</th>
+                                <th class="ps-3">Món Ăn</th>
+                                <th class="text-center" style="width: 100px;">Tổng ĐG</th>
+                                <th class="text-center" style="width: 100px;">TB</th>
+                                <th class="text-center" style="width: 80px;">Thấp</th>
+                                <th class="text-center" style="width: 80px;">Cao</th>
+                                <th class="text-center" style="width: 80px;">Chặn</th>
+                                <th style="width: 250px;">Vấn Đề</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach (var meal in Model)
                             {
-                                var avgStarsClass = meal.AverageStars >= 4 ? "text-success" 
-                                    : meal.AverageStars >= 3 ? "text-warning" : "text-danger";
+                                var lowRatingPercent = meal.TotalRatings > 0 
+                                    ? (meal.LowRatingsCount * 100.0 / meal.TotalRatings) 
+                                    : 0;
                                 
-                                <tr>
-                                    <td><strong>@meal.MealId</strong></td>
-                                    <td>
-                                        <strong>@meal.MealName</strong>
-                                    </td>
-                                    <td class="text-center">@meal.TotalRatings</td>
-                                    <td class="text-center">
-                                        <span class="badge @avgStarsClass">
-                                            @meal.AverageStars.ToString("N1") ⭐
-                                        </span>
+                                var rowClass = meal.AverageStars < 3 ? "table-danger" : "";
+                                
+                                <tr class="@rowClass">
+                                    <td class="ps-3">
+                                        <div class="fw-medium">@meal.MealName</div>
+                                        <small class="text-muted">ID: @meal.MealId</small>
                                     </td>
                                     <td class="text-center">
-                                        <span class="badge bg-danger">@meal.LowRatingsCount</span>
+                                        @meal.TotalRatings
                                     </td>
                                     <td class="text-center">
-                                        <span class="badge bg-success">@meal.HighRatingsCount</span>
+                                        <div>
+                                            <div class="fw-medium">@meal.AverageStars.ToString("N1")</div>
+                                            <div class="progress" style="height: 3px;">
+                                                <div class="progress-bar bg-dark" 
+                                                     style="width: @((double)meal.AverageStars / 5.0 * 100)%"></div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <div>@meal.LowRatingsCount</div>
+                                        @if (lowRatingPercent > 50)
+                                        {
+                                            <small class="text-danger">@lowRatingPercent.ToString("N0")%</small>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        @meal.HighRatingsCount
                                     </td>
                                     <td class="text-center">
                                         @if (meal.BlockRequestsCount > 0)
                                         {
-                                            <span class="badge bg-warning text-dark">🚫 @meal.BlockRequestsCount</span>
+                                            <span class="badge bg-warning text-dark">@meal.BlockRequestsCount</span>
                                         }
                                         else
                                         {
-                                            <span class="text-muted">0</span>
+                                            <span class="text-muted">-</span>
                                         }
                                     </td>
                                     <td>
                                         @if (meal.CommonNegativeTags.Any())
                                         {
-                                            @foreach (var tag in meal.CommonNegativeTags)
-                                            {
-                                                <span class="badge bg-secondary me-1">@tag</span>
-                                            }
+                                            <div class="d-flex flex-wrap gap-1">
+                                                @foreach (var tag in meal.CommonNegativeTags.Take(3))
+                                                {
+                                                    <span class="badge bg-light text-dark border">@tag</span>
+                                                }
+                                                @if (meal.CommonNegativeTags.Count > 3)
+                                                {
+                                                    <span class="text-muted small">+@(meal.CommonNegativeTags.Count - 3)</span>
+                                                }
+                                            </div>
                                         }
                                         else
                                         {
@@ -109,31 +220,147 @@
                         </tbody>
                     </table>
                 </div>
+
+                <!-- Pagination -->
+                @if (totalPages > 1)
+                {
+                    <div class="card-footer bg-white">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="text-muted small">
+                                Hiển thị @((currentPage - 1) * pageSize + 1)-@Math.Min(currentPage * pageSize, totalItems) / @totalItems
+                            </div>
+                            
+                            <nav>
+                                <ul class="pagination pagination-sm mb-0">
+                                    <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                                        <a class="page-link" href="@Url.Action("AdminReport", new { minRatings, starFilter, page = currentPage - 1, pageSize })">
+                                            Trước
+                                        </a>
+                                    </li>
+
+                                    @{
+                                        var startPage = Math.Max(1, currentPage - 2);
+                                        var endPage = Math.Min(totalPages, currentPage + 2);
+                                    }
+
+                                    @if (startPage > 1)
+                                    {
+                                        <li class="page-item">
+                                            <a class="page-link" href="@Url.Action("AdminReport", new { minRatings, starFilter, page = 1, pageSize })">1</a>
+                                        </li>
+                                        @if (startPage > 2)
+                                        {
+                                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                                        }
+                                    }
+
+                                    @for (var i = startPage; i <= endPage; i++)
+                                    {
+                                        <li class="page-item @(i == currentPage ? "active" : "")">
+                                            <a class="page-link" href="@Url.Action("AdminReport", new { minRatings, starFilter, page = i, pageSize })">@i</a>
+                                        </li>
+                                    }
+
+                                    @if (endPage < totalPages)
+                                    {
+                                        @if (endPage < totalPages - 1)
+                                        {
+                                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                                        }
+                                        <li class="page-item">
+                                            <a class="page-link" href="@Url.Action("AdminReport", new { minRatings, starFilter, page = totalPages, pageSize })">@totalPages</a>
+                                        </li>
+                                    }
+
+                                    <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                                        <a class="page-link" href="@Url.Action("AdminReport", new { minRatings, starFilter, page = currentPage + 1, pageSize })">
+                                            Sau
+                                        </a>
+                                    </li>
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
+                }
             }
             else
             {
-                <div class="alert alert-success">
-                    <strong>🎉 Tuyệt vời!</strong> Không có món nào bị đánh giá thấp với tiêu chí @minRatings+ ratings.
+                <div class="p-5 text-center text-muted">
+                    <p class="mb-0">Không có dữ liệu phù hợp với bộ lọc hiện tại.</p>
+                    @if (starFilter.HasValue)
+                    {
+                        <small>Thử bỏ filter số sao để xem tất cả.</small>
+                    }
                 </div>
             }
         </div>
     </div>
-
-    <!-- Recommendations -->
-    @if (Model.Any())
-    {
-        <div class="card mt-4">
-            <div class="card-header bg-warning">
-                <h5 class="mb-0">⚠️ Recommendations</h5>
-            </div>
-            <div class="card-body">
-                <ul>
-                    <li><strong>Ưu tiên cải thiện:</strong> Các món có nhiều low ratings và block requests</li>
-                    <li><strong>Phân tích tags:</strong> Xem common issues để hiểu vấn đề cụ thể (mặn, khô, ít đạm...)</li>
-                    <li><strong>Test recipe:</strong> Thử nghiệm lại công thức nấu và điều chỉnh</li>
-                    <li><strong>Consider removal:</strong> Nếu món có quá nhiều block requests, cân nhắc loại bỏ khỏi menu</li>
-                </ul>
-            </div>
-        </div>
-    }
 </div>
+
+<style>
+    .card {
+        border: 1px solid #e5e7eb;
+        box-shadow: none;
+    }
+
+    .table th {
+        font-weight: 600;
+        font-size: 0.875rem;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+    }
+
+    .table td {
+        font-size: 0.875rem;
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: #f9fafb;
+    }
+
+    .progress {
+        background-color: #e5e7eb;
+    }
+
+    .progress-bar {
+        background-color: #1f2937;
+    }
+
+    .page-link {
+        color: #374151;
+        border-color: #e5e7eb;
+    }
+
+    .page-item.active .page-link {
+        background-color: #1f2937;
+        border-color: #1f2937;
+    }
+
+    .page-link:hover {
+        background-color: #f3f4f6;
+        color: #1f2937;
+        border-color: #e5e7eb;
+    }
+
+    .badge {
+        font-weight: 500;
+        font-size: 0.75rem;
+    }
+
+    .form-select-sm {
+        font-size: 0.875rem;
+    }
+
+    .btn-sm {
+        font-size: 0.875rem;
+    }
+
+    .table-danger {
+        background-color: #fee2e2;
+    }
+
+    .table-danger:hover {
+        background-color: #fecaca !important;
+    }
+</style>

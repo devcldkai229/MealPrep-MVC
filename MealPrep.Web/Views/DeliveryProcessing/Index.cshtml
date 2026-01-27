@@ -4,45 +4,48 @@
 }
 
 <div class="container-fluid py-4">
-    <div class="row mb-4">
-        <div class="col-12">
-            <h2 class="fw-bold mb-3">🚚 Delivery Processing Dashboard</h2>
-            <p class="text-muted">Quản lý quy trình giao hàng hàng ngày</p>
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="mb-1 fw-semibold">Delivery Processing</h4>
+            <p class="text-muted small mb-0">Quản lý quy trình giao hàng hàng ngày</p>
         </div>
     </div>
 
     <!-- Quick Actions -->
-    <div class="row g-4 mb-4">
+    <div class="row g-3 mb-4">
         <div class="col-md-4">
-            <div class="card h-100">
+            <div class="card">
                 <div class="card-body">
-                    <h5 class="card-title">📋 Daily Orders</h5>
-                    <p class="card-text">Xem và quản lý đơn hàng theo ngày</p>
-                    <a asp-action="DailyOrders" class="btn btn-primary">View Orders</a>
+                    <h6 class="card-title mb-3">Daily Orders</h6>
+                    <p class="text-muted small mb-3">Xem và quản lý đơn hàng theo ngày</p>
+                    <a asp-action="DailyOrders" class="btn btn-sm btn-dark w-100">Xem đơn hàng</a>
                 </div>
             </div>
         </div>
         
         <div class="col-md-4">
-            <div class="card h-100">
+            <div class="card">
                 <div class="card-body">
-                    <h5 class="card-title">🍳 Kitchen Export</h5>
-                    <p class="card-text">Xuất danh sách món cần nấu</p>
-                    <a asp-action="KitchenExport" class="btn btn-success">Export List</a>
+                    <h6 class="card-title mb-3">Kitchen Export</h6>
+                    <p class="text-muted small mb-3">Xuất danh sách món cần nấu</p>
+                    <a asp-action="KitchenExport" class="btn btn-sm btn-dark w-100">Xuất danh sách</a>
                 </div>
             </div>
         </div>
         
         <div class="col-md-4">
-            <div class="card h-100">
+            <div class="card">
                 <div class="card-body">
-                    <h5 class="card-title">🚀 Generate Orders</h5>
-                    <p class="card-text">Tạo đơn giao hàng cho ngày mai</p>
-                    <form asp-action="GenerateDeliveryOrders" method="post" class="mt-2">
+                    <h6 class="card-title mb-3">Generate Orders</h6>
+                    <p class="text-muted small mb-3">Tạo đơn giao hàng cho ngày chỉ định</p>
+                    <form asp-action="GenerateDeliveryOrders" method="post">
                         @Html.AntiForgeryToken()
-                        <input type="date" name="targetDate" class="form-control mb-2" 
-                               value="@DateOnly.FromDateTime(DateTime.Today.AddDays(1)).ToString("yyyy-MM-dd")">
-                        <button type="submit" class="btn btn-warning">Generate</button>
+                        <div class="mb-2">
+                            <input type="date" name="targetDate" class="form-control form-control-sm" 
+                                   value="@DateOnly.FromDateTime(DateTime.Today.AddDays(1)).ToString("yyyy-MM-dd")">
+                        </div>
+                        <button type="submit" class="btn btn-sm btn-dark w-100">Tạo đơn</button>
                     </form>
                 </div>
             </div>
@@ -50,38 +53,57 @@
     </div>
 
     <!-- Quick Stats -->
-    <div class="row g-4">
+    <div class="row g-3">
         <div class="col-md-3">
-            <div class="card bg-primary text-white">
+            <div class="card">
                 <div class="card-body">
-                    <h6>Today's Orders</h6>
-                    <h3>-</h3>
+                    <p class="text-muted small mb-1">Today's Orders</p>
+                    <h4 class="mb-0">-</h4>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card bg-success text-white">
+            <div class="card">
                 <div class="card-body">
-                    <h6>Delivered</h6>
-                    <h3>-</h3>
+                    <p class="text-muted small mb-1">Delivered</p>
+                    <h4 class="mb-0">-</h4>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card bg-warning text-white">
+            <div class="card">
                 <div class="card-body">
-                    <h6>In Progress</h6>
-                    <h3>-</h3>
+                    <p class="text-muted small mb-1">In Progress</p>
+                    <h4 class="mb-0">-</h4>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card bg-info text-white">
+            <div class="card">
                 <div class="card-body">
-                    <h6>Planned</h6>
-                    <h3>-</h3>
+                    <p class="text-muted small mb-1">Planned</p>
+                    <h4 class="mb-0">-</h4>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+    .card {
+        border: 1px solid #e5e7eb;
+        box-shadow: none;
+    }
+
+    .card-body {
+        padding: 1.25rem;
+    }
+
+    .btn-sm {
+        font-size: 0.875rem;
+    }
+
+    .form-control-sm {
+        font-size: 0.875rem;
+    }
+</style>

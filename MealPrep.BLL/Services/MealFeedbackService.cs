@@ -40,8 +40,10 @@ namespace MealPrep.BLL.Services
         /// 
         /// === WORKFLOW ===
         /// 1. Lấy ngày cần query (optional - nếu null thì lấy tất cả)
-        /// 2. Query DeliveryOrders của User đã giao (Status = Delivered)
-        /// 3. Flatten DeliveryOrderItems
+        /// 2. Query DeliveryOrders của User đã giao:
+        ///    - Cách 1: Status = Delivered (Admin set thủ công)
+        ///    - Cách 2: Items có DeliveredAt (Shipper upload ảnh)
+        /// 3. Flatten DeliveryOrderItems đã delivered
         /// 4. Filter: Chưa có rating (LEFT JOIN MealRating)
         /// 5. Map sang PendingFeedbackDto
         /// </summary>
@@ -52,14 +54,32 @@ namespace MealPrep.BLL.Services
 
             try
             {
-                // Query: Lấy DeliveryOrders của User đã giao (không giới hạn ngày nếu date = null)
+                // === BƯỚC 1: Debug - Log tổng quan ===
+                var allUserOrders = await _deliveryOrderRepo.Query()
+                    .Include(d => d.Subscription)
+                    .Include(d => d.Items)
+                    .Where(d => d.Subscription!.AppUserId == userId)
+                    .ToListAsync();
+                    
+                _logger.LogInformation("📊 DEBUG Summary for User {UserId}:", userId);
+                _logger.LogInformation("  - Total DeliveryOrders: {Total}", allUserOrders.Count);
+                _logger.LogInformation("  - Orders with Status=Delivered: {Count}", 
+                    allUserOrders.Count(d => d.Status == DAL.Enums.OrderStatus.Delivered));
+                _logger.LogInformation("  - Items with DeliveredAt: {Count}", 
+                    allUserOrders.SelectMany(d => d.Items).Count(i => i.DeliveredAt.HasValue));
+
+                // === BƯỚC 2: Query orders đã delivered ===
+                // ✅ Check CẢ HAI điều kiện:
+                // 1. Admin set Status = Delivered
+                // 2. Shipper upload ảnh → DeliveredAt != null
                 var query = _deliveryOrderRepo.Query()
                     .Include(d => d.Items)
                         .ThenInclude(i => i.Meal)
                     .Include(d => d.Subscription)
                     .Where(d =>
                         d.Subscription!.AppUserId == userId &&
-                        d.Status == DAL.Enums.OrderStatus.Delivered); // Chỉ lấy đơn đã giao
+                        (d.Status == DAL.Enums.OrderStatus.Delivered ||  // ✅ Cách 1: Admin set
+                         d.Items.Any(i => i.DeliveredAt.HasValue)));      // ✅ Cách 2: Shipper upload
 
                 // Chỉ filter theo ngày nếu date có giá trị
                 if (date.HasValue)
@@ -68,6 +88,8 @@ namespace MealPrep.BLL.Services
                 }
 
                 var deliveryOrders = await query.ToListAsync();
+                
+                _logger.LogInformation("📦 Found {Count} delivered orders", deliveryOrders.Count);
 
                 if (!deliveryOrders.Any())
                 {
@@ -75,18 +97,37 @@ namespace MealPrep.BLL.Services
                     return new List<PendingFeedbackDto>();
                 }
 
-                // Flatten items và filter chưa có rating
-                var allItemIds = deliveryOrders.SelectMany(d => d.Items).Select(i => i.Id).ToList();
+                // === BƯỚC 3: Lấy items đã delivered ===
+                // ✅ Item được coi là "delivered" nếu:
+                // 1. Order có Status = Delivered (Admin set)
+                // 2. HOẶC Item có DeliveredAt (Shipper upload ảnh)
+                var deliveredItems = deliveryOrders
+                    .SelectMany(d => d.Items.Select(i => new 
+                    { 
+                        Item = i, 
+                        DeliveryDate = d.DeliveryDate,
+                        IsDelivered = d.Status == DAL.Enums.OrderStatus.Delivered || i.DeliveredAt.HasValue
+                    }))
+                    .Where(x => x.IsDelivered) // ✅ Chỉ lấy items đã delivered
+                    .ToList();
+                    
+                _logger.LogInformation("📦 Total delivered items: {Count}", deliveredItems.Count);
+
+                // === BƯỚC 4: Filter items chưa có rating ===
+                var allItemIds = deliveredItems.Select(x => x.Item.Id).ToList();
                 
                 var ratedItemIds = await _ratingRepo.Query()
                     .Where(r => r.AppUserId == userId && allItemIds.Contains(r.DeliveryOrderItemId))
                     .Select(r => r.DeliveryOrderItemId)
                     .ToListAsync();
+                    
+                _logger.LogInformation("⭐ Already rated items: {Count}", ratedItemIds.Count);
 
-                var pendingItems = deliveryOrders
-                    .SelectMany(d => d.Items.Select(i => new { Item = i, DeliveryDate = d.DeliveryDate }))
+                var pendingItems = deliveredItems
                     .Where(x => x.Item.MealId.HasValue && !ratedItemIds.Contains(x.Item.Id))
                     .ToList();
+                    
+                _logger.LogInformation("⏳ Pending feedback items: {Count}", pendingItems.Count);
 
                 var result = pendingItems.Select(x => new PendingFeedbackDto(
                     x.Item.Id,
@@ -100,7 +141,7 @@ namespace MealPrep.BLL.Services
                     GetFirstMealImage(x.Item.Meal?.Images)
                 )).ToList();
 
-                _logger.LogInformation("✅ Found {Count} pending feedbacks", result.Count);
+                _logger.LogInformation("✅ Returning {Count} pending feedbacks", result.Count);
                 return result;
             }
             catch (Exception ex)
@@ -115,20 +156,41 @@ namespace MealPrep.BLL.Services
         /// </summary>
         public async Task<FeedbackNotificationDto> CheckPendingFeedbackNotificationAsync(Guid userId)
         {
-            var yesterday = DateOnly.FromDateTime(DateTime.Today.AddDays(-1));
-            var pendingFeedbacks = await GetPendingFeedbacksAsync(userId, yesterday);
+            // ✅ Lấy món đã delivered trong vài ngày gần đây (không chỉ hôm qua)
+            var recent7Days = DateOnly.FromDateTime(DateTime.Today.AddDays(-1));
+            
+            _logger.LogInformation("🔔 Checking pending feedback notification for User {UserId} (last 7 days)", userId);
+            
+            // Lấy tất cả món chưa đánh giá trong 7 ngày gần đây
+            var allPendingFeedbacks = await GetPendingFeedbacksAsync(userId, null);
+            
+            // Filter: Chỉ lấy những món delivered trong 7 ngày gần đây
+            var recentPendingFeedbacks = allPendingFeedbacks
+                .Where(f => f.DeliveryDate >= recent7Days && f.DeliveryDate <= DateOnly.FromDateTime(DateTime.Today))
+                .OrderByDescending(f => f.DeliveryDate)
+                .ToList();
+            
+            _logger.LogInformation("📊 Found {Count} pending feedbacks in last 7 days", recentPendingFeedbacks.Count);
 
-            if (pendingFeedbacks.Any())
+            if (recentPendingFeedbacks.Any())
             {
+                // Lấy ngày gần nhất có món cần đánh giá
+                var latestDate = recentPendingFeedbacks.First().DeliveryDate;
+                var latestCount = recentPendingFeedbacks.Count(f => f.DeliveryDate == latestDate);
+                
+                var message = latestDate == DateOnly.FromDateTime(DateTime.Today.AddDays(-1))
+                    ? $"Hôm qua bạn ăn có ngon không? Đánh giá {latestCount} món để giúp chúng tôi cải thiện!"
+                    : $"Bạn có {recentPendingFeedbacks.Count} món chưa đánh giá. Chia sẻ trải nghiệm của bạn nhé!";
+
                 return new FeedbackNotificationDto(
                     true,
-                    pendingFeedbacks.Count,
-                    yesterday,
-                    $"Hôm qua bạn ăn có ngon không? Đánh giá {pendingFeedbacks.Count} món để giúp chúng tôi cải thiện!"
+                    recentPendingFeedbacks.Count,
+                    latestDate,
+                    message
                 );
             }
 
-            return new FeedbackNotificationDto(false, 0, yesterday, string.Empty);
+            return new FeedbackNotificationDto(false, 0, DateOnly.FromDateTime(DateTime.Today), string.Empty);
         }
 
         /// <summary>
