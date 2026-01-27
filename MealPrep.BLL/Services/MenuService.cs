@@ -134,25 +134,7 @@ namespace MealPrep.BLL.Services
 
             var today = DateOnly.FromDateTime(DateTime.Today);
 
-            // Load inventory data for all dates in the week (for performance)
-            var weekDates = Enumerable.Range(0, 7)
-                .Select(i => weekStart.AddDays(i))
-                .Where(d => !activeSubscription.EndDate.HasValue || d <= activeSubscription.EndDate.Value)
-                .ToList();
-            
-            var inventoryByDateAndMeal = await _inventoryRepo.Query()
-                .Where(inv => weekDates.Contains(inv.Date))
-                .ToListAsync();
-            
-            // Load used quantities (from DeliveryOrderItems) for all dates
-            var usedQuantities = await _dbContext.Set<DeliveryOrderItem>()
-                .Include(i => i.DeliveryOrder)
-                .Where(i => weekDates.Contains(i.DeliveryOrder!.DeliveryDate) && i.MealId != null)
-                .GroupBy(i => new { i.DeliveryOrder!.DeliveryDate, i.MealId })
-                .Select(g => new { g.Key.DeliveryDate, g.Key.MealId, Used = g.Sum(x => x.Quantity) })
-                .ToListAsync();
-
-            // Build daily slots - exactly 7 days from weekStart
+            // Build daily slots - exactly 7 days from weekStart (không áp dụng giới hạn kho tạm thời)
             var dailySlots = new List<DailySlotDto>();
             var dayNames = new[] { "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy", "Chủ Nhật" };
 
@@ -219,21 +201,7 @@ namespace MealPrep.BLL.Services
                             }
                         }
 
-                        // Check inventory availability for this meal and date
-                        var inventory = inventoryByDateAndMeal.FirstOrDefault(inv => inv.Date == date && inv.MealId == meal.Id);
-                        var usedQty = usedQuantities
-                            .Where(u => u.DeliveryDate == date && u.MealId == meal.Id)
-                            .Sum(u => u.Used);
-                        
-                        int? availableQty = null;
-                        bool isSoldOut = false;
-                        
-                        if (inventory != null)
-                        {
-                            availableQty = Math.Max(0, inventory.QuantityLimit - usedQty);
-                            isSoldOut = availableQty <= 0;
-                        }
-
+                        // Tạm thời không áp dụng logic kho: luôn cho phép chọn món, không giới hạn số suất
                         return new MealOptionDto
                         {
                             MealId = meal.Id,
@@ -246,22 +214,20 @@ namespace MealPrep.BLL.Services
                             Fat = meal.Fat,
                             HasAllergen = false, // Already filtered, so always false
                             AllergenWarning = "", // No warning needed since filtered
-                            IsSoldOut = isSoldOut,
-                            AvailableQuantity = availableQty
+                            IsSoldOut = false,
+                            AvailableQuantity = null
                         };
                     }).ToList();
 
-                // Check if this date is locked (past date or has confirmed order)
+                // Check if this date is locked
+                // 1) Past or current day based on midnight (00:00) cutoff
+                //    => Khi đã sang ngày N, không thể chỉnh sửa các bữa của ngày N hoặc trước đó.
                 var hasOrder = ordersByDate.ContainsKey(date);
-                var isPastDate = date < today;
-                
-                // Check cut-off time: Cannot edit tomorrow's meals after 20:00 today
-                var tomorrow = today.AddDays(1);
                 var now = DateTime.Now;
-                var cutoffTime = new TimeOnly(20, 0); // 20:00
-                var currentTime = TimeOnly.FromDateTime(now);
-                var isPastCutoff = date == tomorrow && currentTime > cutoffTime;
-                
+                var dateMidnight = date.ToDateTime(TimeOnly.MinValue);
+                var isPastCutoff = now >= dateMidnight; // đã qua 00:00 của ngày delivery
+                var isPastDate = date < today; // vẫn giữ để phân biệt ở UI nếu cần
+
                 var isLocked = isPastDate || hasOrder || isPastCutoff;
 
                 // Get locked meals info if order exists
@@ -341,19 +307,6 @@ namespace MealPrep.BLL.Services
                 .Take(pageSize)
                 .ToList();
 
-            // Check inventory if date is provided
-            DateOnly checkDate = date ?? DateOnly.FromDateTime(DateTime.Today.AddDays(1)); // Default to tomorrow
-            var inventoryForDate = await _inventoryRepo.Query()
-                .Where(inv => inv.Date == checkDate)
-                .ToListAsync();
-            
-            var usedQuantities = await _dbContext.Set<DeliveryOrderItem>()
-                .Include(i => i.DeliveryOrder)
-                .Where(i => i.DeliveryOrder!.DeliveryDate == checkDate && i.MealId != null)
-                .GroupBy(i => i.MealId)
-                .Select(g => new { MealId = g.Key, Used = g.Sum(x => x.Quantity) })
-                .ToListAsync();
-
             // Map to MealOptionDto
             var mealOptions = meals.Select(meal =>
             {
@@ -368,22 +321,7 @@ namespace MealPrep.BLL.Services
                     }
                     catch { }
                 }
-                
-                // Check inventory availability
-                var inventory = inventoryForDate.FirstOrDefault(inv => inv.MealId == meal.Id);
-                var usedQty = usedQuantities
-                    .Where(u => u.MealId == meal.Id)
-                    .Sum(u => u.Used);
-                
-                int? availableQty = null;
-                bool isSoldOut = false;
-                
-                if (inventory != null)
-                {
-                    availableQty = Math.Max(0, inventory.QuantityLimit - usedQty);
-                    isSoldOut = availableQty <= 0;
-                }
-                
+
                 return new MealOptionDto
                 {
                     MealId = meal.Id,
@@ -396,8 +334,8 @@ namespace MealPrep.BLL.Services
                     Fat = meal.Fat,
                     HasAllergen = false, // Already filtered, so always false
                     AllergenWarning = "", // No warning needed since filtered
-                    IsSoldOut = isSoldOut,
-                    AvailableQuantity = availableQty
+                    IsSoldOut = false,
+                    AvailableQuantity = null
                 };
             }).ToList();
 
@@ -466,23 +404,13 @@ namespace MealPrep.BLL.Services
 
             // Validate selections and check for locked orders
             var today = DateOnly.FromDateTime(DateTime.Today);
-            var tomorrow = today.AddDays(1);
-            var now = DateTime.Now;
-            var cutoffTime = new TimeOnly(20, 0); // 20:00
-            var currentTime = TimeOnly.FromDateTime(now);
             
             foreach (var selection in selections)
             {
-                // Check if date is in the past
+                // Không cho phép chỉnh sửa các ngày trong quá khứ
                 if (selection.Date < today)
                 {
                     throw new InvalidOperationException($"Không thể thay đổi món ăn cho ngày {selection.Date:dd/MM/yyyy} (ngày đã qua).");
-                }
-
-                // Check cut-off time: Cannot edit tomorrow's meals after 20:00 today
-                if (selection.Date == tomorrow && currentTime > cutoffTime)
-                {
-                    throw new InvalidOperationException($"Không thể thay đổi món ăn cho ngày mai sau 20:00. Vui lòng liên hệ bếp để được hỗ trợ.");
                 }
 
                 // Check if date has a confirmed order (DeliveryOrder with items)
@@ -518,36 +446,7 @@ namespace MealPrep.BLL.Services
                     throw new InvalidOperationException($"Ngày {selection.Date:dd/MM/yyyy}: Không thể chọn cùng một món nhiều lần trong cùng một ngày.");
                 }
                 
-                // Validate inventory availability for each meal
-                foreach (var mealId in selection.SelectedMealIds)
-                {
-                    var inventory = await _inventoryRepo.Query()
-                        .FirstOrDefaultAsync(inv => inv.Date == selection.Date && inv.MealId == mealId);
-                    
-                    if (inventory != null)
-                    {
-                        // Count how many are already ordered for this date and meal
-                        var usedQty = await _dbContext.Set<DeliveryOrderItem>()
-                            .Include(i => i.DeliveryOrder)
-                            .Where(i => i.DeliveryOrder!.DeliveryDate == selection.Date && 
-                                       i.MealId == mealId &&
-                                       i.DeliveryOrderId != 0) // Exclude items from orders being updated
-                            .SumAsync(i => i.Quantity);
-                        
-                        // Count how many this user is trying to order (including current selection)
-                        var requestedQty = selection.SelectedMealIds.Count(id => id == mealId);
-                        var availableQty = inventory.QuantityLimit - usedQty;
-                        
-                        if (requestedQty > availableQty)
-                        {
-                            var meal = await _mealRepo.GetByIdAsync(mealId);
-                            var mealName = meal?.Name ?? $"Món #{mealId}";
-                            throw new InvalidOperationException(
-                                $"Ngày {selection.Date:dd/MM/yyyy}: Món '{mealName}' đã hết hàng. " +
-                                $"Chỉ còn {availableQty} suất, nhưng bạn yêu cầu {requestedQty} suất.");
-                        }
-                    }
-                }
+                // Không kiểm tra tồn kho tạm thời – cho phép chọn bất kỳ món nào còn active
             }
 
             // Validate meal existence and get meal details

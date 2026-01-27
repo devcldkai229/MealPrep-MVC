@@ -22,7 +22,19 @@
 
     var ratings = ViewBag.MealRatings as IEnumerable<MealRating> ?? Enumerable.Empty<MealRating>();
     int ratingCount = ViewBag.MealRatingCount ?? 0;
-    decimal ratingAverage = ViewBag.MealRatingAverage ?? 0M;
+    // ViewBag.MealRatingAverage có thể là double -> chuyển an toàn sang decimal
+    decimal ratingAverage = 0M;
+    if (ViewBag.MealRatingAverage != null)
+    {
+        try
+        {
+            ratingAverage = Convert.ToDecimal(ViewBag.MealRatingAverage);
+        }
+        catch
+        {
+            ratingAverage = 0M;
+        }
+    }
 }
 
 <div>

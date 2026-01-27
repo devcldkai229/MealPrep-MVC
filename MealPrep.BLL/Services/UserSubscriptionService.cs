@@ -39,5 +39,44 @@ namespace MealPrep.BLL.Services
                 .Include(s => s.Payments)
                 .FirstOrDefaultAsync(s => s.Id == id && s.AppUserId == userId);
         }
+
+        public async Task CancelPendingSubscriptionAsync(int id, Guid userId)
+        {
+            var subscription = await _context.Set<Subscription>()
+                .Include(s => s.Payments)
+                .FirstOrDefaultAsync(s => s.Id == id && s.AppUserId == userId);
+
+            if (subscription == null)
+            {
+                throw new InvalidOperationException("Không tìm thấy gói đăng ký.");
+            }
+
+            if (subscription.Status != DAL.Enums.SubscriptionStatus.PendingPayment)
+            {
+                throw new InvalidOperationException("Chỉ có thể hủy gói đang ở trạng thái Chờ thanh toán.");
+            }
+
+            // Nếu đã có payment Paid thì không cho hủy (tránh case thanh toán đã thành công)
+            if (subscription.Payments != null && subscription.Payments.Any(p => p.Status == "Paid"))
+            {
+                throw new InvalidOperationException("Gói này đã được thanh toán, không thể hủy.");
+            }
+
+            // Cập nhật trạng thái subscription
+            subscription.Status = DAL.Enums.SubscriptionStatus.Cancelled;
+            subscription.UpdatedAt = DateTime.UtcNow;
+
+            // Hủy các payment Pending (nếu có)
+            if (subscription.Payments != null)
+            {
+                foreach (var payment in subscription.Payments.Where(p => p.Status == "Pending"))
+                {
+                    payment.Status = "Cancelled";
+                    payment.ExpiredAt = DateTime.UtcNow;
+                }
+            }
+
+            await _context.SaveChangesAsync();
+        }
     }
 }

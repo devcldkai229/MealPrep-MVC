@@ -40,5 +40,30 @@ namespace MealPrep.Web.Controllers
 
             return View(subscription);
         }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CancelPending(int id)
+        {
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+            try
+            {
+                await _userSubscriptionService.CancelPendingSubscriptionAsync(id, userId);
+                TempData["SuccessMessage"] = "Đã hủy gói đăng ký đang chờ thanh toán. Bạn có thể đăng ký gói mới.";
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "User {UserId} failed to cancel pending subscription {SubscriptionId}", userId, id);
+                TempData["ErrorMessage"] = ex.Message;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error cancelling pending subscription {SubscriptionId} for user {UserId}", id, userId);
+                TempData["ErrorMessage"] = "Có lỗi xảy ra khi hủy gói đăng ký. Vui lòng thử lại sau.";
+            }
+
+            return RedirectToAction(nameof(Details), new { id });
+        }
     }
 }

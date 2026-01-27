@@ -157,7 +157,9 @@
                                                         <div class="d-flex align-items-center gap-2 p-3 bg-light rounded border border-danger">
                                                             <i class="bi bi-clock-history text-danger"></i>
                                                             <div class="flex-grow-1">
-                                                                <small class="text-muted">Đã quá giờ chốt (20:00)</small>
+                                                                <small class="text-muted">
+                                                                    Không thể chỉnh sửa vì đã qua thời hạn thay đổi cho ngày này.
+                                                                </small>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -261,7 +263,11 @@
                 }
                 else
                 {
-                    <input type="hidden" name="DeliveryAddress" value="@Model.DeliveryAddress" />
+                    <!-- User đã có địa chỉ trong hồ sơ: giữ ẩn nhưng vẫn gắn id để AI menu lấy được -->
+                    <input type="hidden"
+                           id="deliveryAddress"
+                           name="DeliveryAddress"
+                           value="@Model.DeliveryAddress" />
                 }
 
                 <!-- Action Buttons -->

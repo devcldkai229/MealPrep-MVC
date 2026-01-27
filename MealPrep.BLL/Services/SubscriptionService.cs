@@ -391,10 +391,72 @@ public class SubscriptionService : ISubscriptionService
         }
         catch (Exception ex)
         {
-            await transaction.RollbackAsync();
+            // Transaction có thể đã rollback trước đó trong các nhánh logic (ví dụ overlap).
+            // Try/catch để tránh lỗi "This SqlTransaction has completed".
+            try
+            {
+                await transaction.RollbackAsync();
+            }
+            catch (Exception rollbackEx)
+            {
+                _logger.LogWarning(rollbackEx, "Rollback failed or already completed for payment {PaymentCode}", paymentCode);
+            }
             _logger.LogError(ex, "Failed to update payment status for {PaymentCode}", paymentCode);
             throw;
         }
+    }
+
+    public async Task<Payment> CreateOrGetPendingPaymentAsync(int subscriptionId, Guid userId)
+    {
+        var subscription = await _subRepo.Query()
+            .Include(s => s.Payments)
+            .FirstOrDefaultAsync(s => s.Id == subscriptionId && s.AppUserId == userId);
+
+        if (subscription == null)
+        {
+            throw new InvalidOperationException("Không tìm thấy gói đăng ký.");
+        }
+
+        if (subscription.Status != SubscriptionStatus.PendingPayment)
+        {
+            throw new InvalidOperationException("Chỉ có thể thanh toán lại cho gói đang ở trạng thái Chờ thanh toán.");
+        }
+
+        // Nếu đã có payment đang Pending thì dùng lại để tránh tạo quá nhiều bản ghi
+        var existingPending = subscription.Payments
+            .FirstOrDefault(p => p.Status == "Pending");
+        if (existingPending != null)
+        {
+            return existingPending;
+        }
+
+        // Tạo payment mới
+        var amount = subscription.TotalAmount;
+        if (amount <= 0)
+        {
+            amount = await CalculateTotalPriceAsync(subscription.PlanId, 
+                (await _tierRepo.Query().FirstAsync(t => t.MealsPerDay == subscription.MealsPerDay)).Id);
+            subscription.TotalAmount = amount;
+        }
+
+        var payment = new Payment
+        {
+            AppUserId = userId,
+            SubscriptionId = subscription.Id,
+            Amount = amount,
+            Currency = "VND",
+            Method = "MoMo",
+            Status = "Pending",
+            PaymentCode = Guid.NewGuid().ToString(),
+            Description = $"Thanh toan subscription {subscription.PlanId} - {subscription.MealsPerDay} meals/day",
+            CreatedAt = DateTime.UtcNow,
+            ExpiredAt = DateTime.UtcNow.AddHours(24)
+        };
+
+        await _paymentRepo.AddAsync(payment);
+        await _paymentRepo.SaveChangesAsync();
+
+        return payment;
     }
 
     public async Task<Subscription?> GetSubscriptionByPaymentCodeAsync(string paymentCode)

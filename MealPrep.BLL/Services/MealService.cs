@@ -87,9 +87,12 @@ namespace MealPrep.BLL.Services
             // Filter by search
             if (!string.IsNullOrWhiteSpace(search))
             {
+                search = search.Trim();
+                var pattern = $"%{search}%";
+
                 query = query.Where(m =>
-                    m.Name.Contains(search, StringComparison.OrdinalIgnoreCase) ||
-                    (m.Description != null && m.Description.Contains(search, StringComparison.OrdinalIgnoreCase)));
+                    EF.Functions.Like(m.Name, pattern) ||
+                    (m.Description != null && EF.Functions.Like(m.Description, pattern)));
             }
 
             // Filter by active status if specified

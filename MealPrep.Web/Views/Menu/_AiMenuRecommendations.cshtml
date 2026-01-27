@@ -654,6 +654,13 @@
             }
         }
 
+        if (!deliveryAddress) {
+            alert('Vui lòng nhập địa chỉ giao hàng ở phía trên trước khi lưu menu AI.');
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+            return;
+        }
+
         fetch('@Url.Action("AcceptAiMenu", "Menu")', {
             method: 'POST',
             headers: {
@@ -663,7 +670,7 @@
             },
             body: JSON.stringify({ 
                 DaySelections: selections,
-                DeliveryAddress: deliveryAddress || null
+                DeliveryAddress: deliveryAddress
             })
         })
         .then(response => {

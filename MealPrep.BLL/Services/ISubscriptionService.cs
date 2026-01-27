@@ -31,5 +31,10 @@ namespace MealPrep.BLL.Services
         /// Lấy subscription từ mã thanh toán (dùng khi payment đã được xử lý trước đó)
         /// </summary>
         Task<Subscription?> GetSubscriptionByPaymentCodeAsync(string paymentCode);
+
+        /// <summary>
+        /// Tạo (hoặc lấy) payment mới cho một subscription đang chờ thanh toán để user thanh toán lại.
+        /// </summary>
+        Task<Payment> CreateOrGetPendingPaymentAsync(int subscriptionId, Guid userId);
     }
 }

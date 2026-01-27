@@ -1,7 +1,18 @@
 @model MealPrep.DAL.Entities.Meal
+@using System.Text.Json
 @{
     ViewData["Title"] = "Chỉnh Sửa Món Ăn";
     Layout = "_AdminLayout";
+
+    var existingImages = new List<string>();
+    try
+    {
+        if (!string.IsNullOrEmpty(Model.Images))
+        {
+            existingImages = JsonSerializer.Deserialize<List<string>>(Model.Images) ?? new List<string>();
+        }
+    }
+    catch { }
 }
 
 <div>
@@ -84,13 +95,28 @@
                         <small class="text-muted">Chọn một hoặc nhiều hình ảnh để upload lên S3. Hỗ trợ: JPG, PNG, GIF, WebP</small>
                         <div id="imagePreview" class="mt-3 d-flex flex-wrap gap-2"></div>
                     </div>
-                    
-                    <div class="mb-3">
-                        <label asp-for="Images" class="form-label fw-bold">Hình Ảnh Hiện Tại (JSON Array)</label>
-                        <textarea asp-for="Images" class="form-control" rows="2" placeholder='["URL 1", "URL 2", ...]'></textarea>
-                        <small class="text-muted">Danh sách URL hình ảnh hiện tại. Các ảnh mới upload sẽ được thêm vào danh sách này.</small>
-                        <span asp-validation-for="Images" class="text-danger"></span>
-                    </div>
+
+                    @if (existingImages.Any())
+                    {
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Hình Ảnh Hiện Tại</label>
+                            <div class="row g-2">
+                                @foreach (var img in existingImages)
+                                {
+                                    <div class="col-md-4">
+                                        <img src="@img"
+                                             class="img-fluid rounded border"
+                                             alt="@Model.Name"
+                                             style="height: 150px; object-fit: cover; width: 100%;">
+                                    </div>
+                                }
+                            </div>
+                            <small class="text-muted d-block mt-2">
+                                Các ảnh mới upload sẽ được thêm vào danh sách hiện tại. 
+                                Không cần nhập JSON URL thủ công.
+                            </small>
+                        </div>
+                    }
 
                     <div class="mb-3 form-check">
                         <input asp-for="IsActive" type="checkbox" class="form-check-input" />

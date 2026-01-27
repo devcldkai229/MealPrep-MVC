@@ -110,6 +110,52 @@ namespace MealPrep.Web.Controllers
             }
         }
 
+        /// <summary>
+        /// Thanh toán lại cho một subscription đang ở trạng thái Chờ thanh toán.
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RetryPayment(int subscriptionId)
+        {
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+            try
+            {
+                // Tạo hoặc lấy payment Pending hiện có cho subscription
+                var payment = await _svc.CreateOrGetPendingPaymentAsync(subscriptionId, userId);
+
+                // Build returnUrl & ipnUrl giống Checkout
+                var returnUrlBase = $"{Request.Scheme}://{Request.Host}";
+                var returnUrl = $"{returnUrlBase.TrimEnd('/')}{Url.Action(nameof(Callback), "Subscription")}";
+
+                var ipnBaseUrl = _configuration["AppSettings:BaseUrl"];
+                if (string.IsNullOrWhiteSpace(ipnBaseUrl))
+                {
+                    ipnBaseUrl = returnUrlBase;
+                }
+                var ipnUrl = $"{ipnBaseUrl.TrimEnd('/')}{Url.Action(nameof(IpnCallback), "Subscription")}";
+
+                _logger.LogInformation("RetryPayment MoMo URLs - returnUrl: {ReturnUrl}, ipnUrl: {IpnUrl}", returnUrl, ipnUrl);
+
+                var payUrl = await _momoService.CreatePaymentRequestAsync(payment, returnUrl, ipnUrl);
+                _logger.LogInformation("RetryPayment MoMo URL generated: {PayUrl}", payUrl);
+
+                return Redirect(payUrl);
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "RetryPayment failed: {Message}", ex.Message);
+                TempData["ErrorMessage"] = ex.Message;
+                return RedirectToAction("Details", "UserSubscriptions", new { id = subscriptionId });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to retry payment for subscription {SubscriptionId}", subscriptionId);
+                TempData["ErrorMessage"] = $"Có lỗi xảy ra khi tạo lại thanh toán: {ex.Message}";
+                return RedirectToAction("Details", "UserSubscriptions", new { id = subscriptionId });
+            }
+        }
+
         [HttpGet]
         [AllowAnonymous]
         public async Task<IActionResult> Callback(
