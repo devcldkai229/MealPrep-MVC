@@ -34,6 +34,7 @@ namespace MealPrep.BLL.Extensions
             
             // Delivery Processing Services (Flow 5)
             services.AddScoped<IDeliveryProcessingService, DeliveryProcessingService>();
+            services.AddScoped<IShipperService, ShipperService>();
             
             // Meal Feedback Services (Flow 8)
             services.AddScoped<IMealFeedbackService, MealFeedbackService>();

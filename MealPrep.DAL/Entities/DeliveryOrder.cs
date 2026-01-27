@@ -1,4 +1,5 @@
 using MealPrep.DAL.Enums;
+using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace MealPrep.DAL.Entities
@@ -14,6 +15,12 @@ namespace MealPrep.DAL.Entities
         [Required]
         public int SubscriptionId { get; set; }
         public Subscription? Subscription { get; set; }
+
+        /// <summary>
+        /// Shipper được gán để giao đơn này (AppUser với Role = Shipper)
+        /// </summary>
+        public Guid? ShipperId { get; set; }
+        public AppUser? Shipper { get; set; }
 
         [Required]
         public DateOnly DeliveryDate { get; set; }

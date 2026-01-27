@@ -26,5 +26,10 @@ namespace MealPrep.BLL.Services
         /// Xác nhận thanh toán và kích hoạt subscription
         /// </summary>
         Task<Subscription?> ConfirmPaymentAsync(string paymentCode, string? momoOrderId = null, string? rawResponse = null);
+
+        /// <summary>
+        /// Lấy subscription từ mã thanh toán (dùng khi payment đã được xử lý trước đó)
+        /// </summary>
+        Task<Subscription?> GetSubscriptionByPaymentCodeAsync(string paymentCode);
     }
 }

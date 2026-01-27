@@ -41,5 +41,20 @@ namespace MealPrep.BLL.Services
         /// Get available quantity (limit - used)
         /// </summary>
         Task<int?> GetAvailableQuantityAsync(int mealId, DateOnly date);
+
+        /// <summary>
+        /// Check if inventory exists for a given date and meal (optionally excluding an ID).
+        /// </summary>
+        Task<bool> ExistsForDateAndMealAsync(DateOnly date, int mealId, int? excludeId = null);
+
+        /// <summary>
+        /// Bulk create or update inventory limits for a date range and multiple meals.
+        /// Returns (createdCount, updatedCount, totalMeals, totalDays).
+        /// </summary>
+        Task<(int Created, int Updated, int TotalMeals, int TotalDays)> BulkCreateInventoriesAsync(
+            DateOnly startDate,
+            DateOnly endDate,
+            int[] mealIds,
+            int quantityLimit);
     }
 }

@@ -1,10 +1,7 @@
 using MealPrep.BLL.Services;
-using MealPrep.DAL.Data;
 using MealPrep.DAL.Entities;
-using MealPrep.DAL.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace MealPrep.Web.Controllers
@@ -12,17 +9,14 @@ namespace MealPrep.Web.Controllers
     [Authorize(Roles = "Shipper,Admin")]
     public class ShipperDeliveryController : Controller
     {
-        private readonly AppDbContext _context;
-        private readonly IS3Service _s3Service;
+        private readonly IShipperService _shipperService;
         private readonly ILogger<ShipperDeliveryController> _logger;
 
         public ShipperDeliveryController(
-            AppDbContext context,
-            IS3Service s3Service,
+            IShipperService shipperService,
             ILogger<ShipperDeliveryController> logger)
         {
-            _context = context;
-            _s3Service = s3Service;
+            _shipperService = shipperService;
             _logger = logger;
         }
 
@@ -33,17 +27,10 @@ namespace MealPrep.Web.Controllers
         public async Task<IActionResult> Index(DateOnly? date = null)
         {
             var deliveryDate = date ?? DateOnly.FromDateTime(DateTime.Today);
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var isShipper = User.IsInRole("Shipper") && !User.IsInRole("Admin");
 
-            var orders = await _context.Set<DeliveryOrder>()
-                .Include(o => o.Subscription)
-                    .ThenInclude(s => s!.AppUser)
-                .Include(o => o.DeliverySlot)
-                .Include(o => o.Items)
-                    .ThenInclude(i => i.Meal)
-                .Where(o => o.DeliveryDate == deliveryDate)
-                .OrderBy(o => o.Status)
-                .ThenBy(o => o.Subscription!.CustomerName)
-                .ToListAsync();
+            var orders = await _shipperService.GetOrdersForDateAsync(userId, deliveryDate, !isShipper);
 
             ViewBag.DeliveryDate = deliveryDate;
             ViewBag.Today = DateOnly.FromDateTime(DateTime.Today);
@@ -57,13 +44,10 @@ namespace MealPrep.Web.Controllers
         [HttpGet]
         public async Task<IActionResult> Details(int id)
         {
-            var order = await _context.Set<DeliveryOrder>()
-                .Include(o => o.Subscription)
-                    .ThenInclude(s => s!.AppUser)
-                .Include(o => o.DeliverySlot)
-                .Include(o => o.Items)
-                    .ThenInclude(i => i.Meal)
-                .FirstOrDefaultAsync(o => o.Id == id);
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var isShipper = User.IsInRole("Shipper") && !User.IsInRole("Admin");
+
+            var order = await _shipperService.GetOrderDetailsAsync(userId, id, !isShipper);
 
             if (order == null)
             {
@@ -82,81 +66,33 @@ namespace MealPrep.Web.Controllers
         {
             try
             {
-                if (image == null || image.Length == 0)
+                var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+                var isShipper = User.IsInRole("Shipper") && !User.IsInRole("Admin");
+
+                var result = await _shipperService.UploadDeliveryProofAsync(
+                    userId,
+                    deliveryOrderItemId,
+                    image?.OpenReadStream() ?? Stream.Null,
+                    image?.FileName ?? string.Empty,
+                    image?.ContentType ?? string.Empty,
+                    image?.Length ?? 0,
+                    !isShipper);
+
+                if (!result.Success)
                 {
-                    TempData["ErrorMessage"] = "Vui lòng chọn ảnh để upload.";
-                    return RedirectToAction(nameof(Details), new { id = await GetDeliveryOrderIdFromItem(deliveryOrderItemId) });
+                    TempData["ErrorMessage"] = result.Message;
+                    var fallbackId = result.DeliveryOrderId ?? 0;
+                    return RedirectToAction(nameof(Details), new { id = fallbackId });
                 }
 
-                if (!image.ContentType.StartsWith("image/"))
-                {
-                    TempData["ErrorMessage"] = "File phải là hình ảnh.";
-                    return RedirectToAction(nameof(Details), new { id = await GetDeliveryOrderIdFromItem(deliveryOrderItemId) });
-                }
-
-                // Validate file size (max 10MB)
-                if (image.Length > 10 * 1024 * 1024)
-                {
-                    TempData["ErrorMessage"] = "Kích thước file không được vượt quá 10MB.";
-                    return RedirectToAction(nameof(Details), new { id = await GetDeliveryOrderIdFromItem(deliveryOrderItemId) });
-                }
-
-                // Get DeliveryOrderItem
-                var orderItem = await _context.Set<DeliveryOrderItem>()
-                    .Include(i => i.DeliveryOrder)
-                    .FirstOrDefaultAsync(i => i.Id == deliveryOrderItemId);
-
-                if (orderItem == null)
-                {
-                    return NotFound();
-                }
-
-                // Upload image to S3
-                var s3Key = await _s3Service.UploadFileAsync(
-                    image.OpenReadStream(),
-                    image.FileName,
-                    "delivery-proofs",
-                    image.ContentType);
-
-                // Update DeliveryOrderItem with S3 key and delivery timestamp
-                orderItem.ImageS3Key = s3Key;
-                orderItem.DeliveredAt = DateTime.UtcNow;
-                _context.Set<DeliveryOrderItem>().Update(orderItem);
-
-                // If all items in the order are delivered, update order status
-                var deliveryOrder = orderItem.DeliveryOrder;
-                if (deliveryOrder != null)
-                {
-                    var allItems = await _context.Set<DeliveryOrderItem>()
-                        .Where(i => i.DeliveryOrderId == deliveryOrder.Id)
-                        .ToListAsync();
-
-                    var allDelivered = allItems.All(i => i.DeliveredAt.HasValue);
-                    if (allDelivered && deliveryOrder.Status != OrderStatus.Delivered)
-                    {
-                        deliveryOrder.Status = OrderStatus.Delivered;
-                        deliveryOrder.UpdatedAt = DateTime.UtcNow;
-                        _context.Set<DeliveryOrder>().Update(deliveryOrder);
-                    }
-                    else if (!allDelivered && deliveryOrder.Status == OrderStatus.Planned)
-                    {
-                        // Mark as Delivering if at least one item is delivered
-                        deliveryOrder.Status = OrderStatus.Delivering;
-                        deliveryOrder.UpdatedAt = DateTime.UtcNow;
-                        _context.Set<DeliveryOrder>().Update(deliveryOrder);
-                    }
-                }
-
-                await _context.SaveChangesAsync();
-
-                TempData["SuccessMessage"] = "Đã upload ảnh bằng chứng thành công!";
-                return RedirectToAction(nameof(Details), new { id = deliveryOrder!.Id });
+                TempData["SuccessMessage"] = result.Message;
+                return RedirectToAction(nameof(Details), new { id = result.DeliveryOrderId });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error uploading delivery proof for DeliveryOrderItem {ItemId}", deliveryOrderItemId);
                 TempData["ErrorMessage"] = $"Lỗi khi upload ảnh: {ex.Message}";
-                return RedirectToAction(nameof(Details), new { id = await GetDeliveryOrderIdFromItem(deliveryOrderItemId) });
+                return RedirectToAction(nameof(Details), new { id = 0 });
             }
         }
 
@@ -169,30 +105,18 @@ namespace MealPrep.Web.Controllers
         {
             try
             {
-                var order = await _context.Set<DeliveryOrder>()
-                    .Include(o => o.Items)
-                    .FirstOrDefaultAsync(o => o.Id == id);
+                var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+                var isShipper = User.IsInRole("Shipper") && !User.IsInRole("Admin");
 
-                if (order == null)
-                {
-                    return NotFound();
-                }
+                var result = await _shipperService.CompleteOrderAsync(userId, id, !isShipper);
 
-                // Check if all items have proof images
-                var allItemsHaveProof = order.Items.All(i => !string.IsNullOrWhiteSpace(i.ImageS3Key) && i.DeliveredAt.HasValue);
-                
-                if (!allItemsHaveProof)
+                if (!result.Success)
                 {
-                    TempData["ErrorMessage"] = "Vui lòng upload ảnh bằng chứng cho tất cả các món ăn trước khi hoàn thành đơn hàng.";
+                    TempData["ErrorMessage"] = result.Message;
                     return RedirectToAction(nameof(Details), new { id });
                 }
 
-                order.Status = OrderStatus.Delivered;
-                order.UpdatedAt = DateTime.UtcNow;
-                _context.Set<DeliveryOrder>().Update(order);
-                await _context.SaveChangesAsync();
-
-                TempData["SuccessMessage"] = "Đã hoàn thành đơn hàng thành công!";
+                TempData["SuccessMessage"] = result.Message;
                 return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
@@ -201,13 +125,6 @@ namespace MealPrep.Web.Controllers
                 TempData["ErrorMessage"] = $"Lỗi khi hoàn thành đơn hàng: {ex.Message}";
                 return RedirectToAction(nameof(Details), new { id });
             }
-        }
-
-        private async Task<int> GetDeliveryOrderIdFromItem(int deliveryOrderItemId)
-        {
-            var item = await _context.Set<DeliveryOrderItem>()
-                .FirstOrDefaultAsync(i => i.Id == deliveryOrderItemId);
-            return item?.DeliveryOrderId ?? 0;
         }
     }
 }

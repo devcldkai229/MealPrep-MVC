@@ -3,7 +3,6 @@ using MealPrep.DAL.Entities;
 using MealPrep.Web.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -17,7 +16,7 @@ public class MenuController : Controller
     private readonly IAiMenuService _aiMenuService;
     private readonly IMealService _mealService;
     private readonly IUserService _userService;
-    private readonly MealPrep.DAL.Data.AppDbContext _context;
+    private readonly ISubscriptionService _subscriptionService;
     private readonly ILogger<MenuController> _logger;
 
     public MenuController(
@@ -25,14 +24,14 @@ public class MenuController : Controller
         IAiMenuService aiMenuService,
         IMealService mealService,
         IUserService userService,
-        MealPrep.DAL.Data.AppDbContext context,
+        ISubscriptionService subscriptionService,
         ILogger<MenuController> logger)
     {
         _menuService = menuService;
         _aiMenuService = aiMenuService;
         _mealService = mealService;
         _userService = userService;
-        _context = context;
+        _subscriptionService = subscriptionService;
         _logger = logger;
     }
 
@@ -49,9 +48,9 @@ public class MenuController : Controller
             return RedirectToAction("Index", "Subscription");
         }
 
-        // Get user delivery address
-        var user = await _context.Set<AppUser>().FindAsync(userId);
-        var deliveryAddress = user?.DeliveryAddress;
+        // Get user delivery address via BLL
+        var userProfile = await _userService.GetUserProfileAsync(userId);
+        var deliveryAddress = userProfile?.DeliveryAddress;
         var hasDeliveryAddress = !string.IsNullOrWhiteSpace(deliveryAddress);
 
         // Map DTO to ViewModel
@@ -201,11 +200,9 @@ public class MenuController : Controller
             var weekStart = weeklySelection.DailySlots.FirstOrDefault()?.Date 
                 ?? DateOnly.FromDateTime(DateTime.Today);
 
-            // Get subscription details to validate date range
-            var subscription = await _context.Set<Subscription>()
-                .Include(s => s.Plan)
-                .FirstOrDefaultAsync(s => s.Id == weeklySelection.SubscriptionId && s.AppUserId == userId);
-            
+            // Get subscription details to validate date range via BLL
+            var subscription = await _subscriptionService.GetDetailsAsync(weeklySelection.SubscriptionId, userId);
+
             if (subscription == null)
             {
                 return Json(new { success = false, message = "Không tìm thấy thông tin đăng ký." });
@@ -220,17 +217,8 @@ public class MenuController : Controller
 
             // Find remaining days (days without confirmed orders)
             var today = DateOnly.FromDateTime(DateTime.Today);
-            var existingOrders = await _context.Set<DeliveryOrder>()
-                .Include(o => o.Items)
-                .Where(o => o.SubscriptionId == subscription.Id &&
-                           o.DeliveryDate >= weekStart &&
-                           o.DeliveryDate <= weekEnd)
-                .ToListAsync();
-
-            var datesWithOrders = existingOrders
-                .Where(o => o.Items.Any()) // Only orders with items are considered "confirmed"
-                .Select(o => o.DeliveryDate)
-                .ToHashSet();
+            var datesWithOrders = await _menuService.GetDatesWithConfirmedOrdersAsync(
+                subscription.Id, weekStart, weekEnd);
 
             // Build list of remaining dates (future dates without orders)
             var remainingDates = new List<DateOnly>();
@@ -477,9 +465,8 @@ public class MenuController : Controller
                 return Json(new { success = false, message = "Không tìm thấy đăng ký đang hoạt động." });
             }
 
-            // Get subscription to validate dates
-            var subscription = await _context.Set<Subscription>()
-                .FirstOrDefaultAsync(s => s.Id == weeklySelection.SubscriptionId && s.AppUserId == userId);
+            // Get subscription to validate dates via BLL
+            var subscription = await _subscriptionService.GetDetailsAsync(weeklySelection.SubscriptionId, userId);
             
             if (subscription == null)
             {

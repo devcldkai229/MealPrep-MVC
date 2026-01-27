@@ -3,7 +3,6 @@ using MealPrep.DAL.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -15,18 +14,15 @@ namespace MealPrep.Web.Controllers
     {
         private readonly IAdminInventoryService _inventoryService;
         private readonly IMealService _mealService;
-        private readonly DAL.Data.AppDbContext _dbContext;
         private readonly ILogger<AdminInventoryController> _logger;
 
         public AdminInventoryController(
             IAdminInventoryService inventoryService,
             IMealService mealService,
-            DAL.Data.AppDbContext dbContext,
             ILogger<AdminInventoryController> logger)
         {
             _inventoryService = inventoryService;
             _mealService = mealService;
-            _dbContext = dbContext;
             _logger = logger;
         }
 
@@ -81,10 +77,9 @@ namespace MealPrep.Web.Controllers
                 try
                 {
                     // Check if inventory already exists for this date and meal
-                    var existing = await _dbContext.Set<KitchenInventory>()
-                        .FirstOrDefaultAsync(i => i.Date == inventory.Date && i.MealId == inventory.MealId);
+                    var exists = await _inventoryService.ExistsForDateAndMealAsync(inventory.Date, inventory.MealId);
 
-                    if (existing != null)
+                    if (exists)
                     {
                         ModelState.AddModelError("MealId", "Đã có giới hạn kho cho món này vào ngày này. Vui lòng cập nhật thay vì tạo mới.");
                         await LoadMealsSelectList();
@@ -134,12 +129,9 @@ namespace MealPrep.Web.Controllers
                 try
                 {
                     // Check if another inventory exists for this date and meal (different ID)
-                    var existing = await _dbContext.Set<KitchenInventory>()
-                        .FirstOrDefaultAsync(i => i.Date == inventory.Date && 
-                                                  i.MealId == inventory.MealId && 
-                                                  i.Id != inventory.Id);
+                    var exists = await _inventoryService.ExistsForDateAndMealAsync(inventory.Date, inventory.MealId, inventory.Id);
 
-                    if (existing != null)
+                    if (exists)
                     {
                         ModelState.AddModelError("MealId", "Đã có giới hạn kho khác cho món này vào ngày này.");
                         inventory.QuantityUsed = await _inventoryService.GetUsedQuantityAsync(inventory.MealId, inventory.Date);
@@ -241,52 +233,10 @@ namespace MealPrep.Web.Controllers
 
             try
             {
-                var totalCreated = 0;
-                var totalUpdated = 0;
-                var totalDays = (end.DayNumber - start.DayNumber) + 1;
-                var totalMeals = mealIds.Length;
+                var (created, updated, totalMeals, totalDays) =
+                    await _inventoryService.BulkCreateInventoriesAsync(start, end, mealIds, quantityLimit);
 
-                foreach (var mealId in mealIds)
-                {
-                    // Verify meal exists and is active
-                    var meal = await _mealService.GetAllMealsAsync();
-                    var targetMeal = meal.FirstOrDefault(m => m.Id == mealId && m.IsActive);
-                    if (targetMeal == null)
-                    {
-                        _logger.LogWarning("Meal {MealId} not found or inactive, skipping", mealId);
-                        continue;
-                    }
-
-                    for (var date = start; date <= end; date = date.AddDays(1))
-                    {
-                        var existing = await _dbContext.Set<KitchenInventory>()
-                            .FirstOrDefaultAsync(i => i.Date == date && i.MealId == mealId);
-
-                        if (existing != null)
-                        {
-                            existing.QuantityLimit = quantityLimit;
-                            existing.UpdatedAt = DateTime.UtcNow;
-                            _dbContext.Set<KitchenInventory>().Update(existing);
-                            totalUpdated++;
-                        }
-                        else
-                        {
-                            var inventory = new KitchenInventory
-                            {
-                                Date = date,
-                                MealId = mealId,
-                                QuantityLimit = quantityLimit,
-                                CreatedAt = DateTime.UtcNow
-                            };
-                            await _dbContext.Set<KitchenInventory>().AddAsync(inventory);
-                            totalCreated++;
-                        }
-                    }
-                }
-
-                await _dbContext.SaveChangesAsync();
-
-                TempData["SuccessMessage"] = $"Đã tạo {totalCreated} và cập nhật {totalUpdated} giới hạn kho thành công cho {totalMeals} món ăn trong {totalDays} ngày.";
+                TempData["SuccessMessage"] = $"Đã tạo {created} và cập nhật {updated} giới hạn kho thành công cho {totalMeals} món ăn trong {totalDays} ngày.";
                 return RedirectToAction(nameof(Index), new { date = start.ToString("yyyy-MM-dd") });
             }
             catch (Exception ex)

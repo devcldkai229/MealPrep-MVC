@@ -52,7 +52,32 @@ namespace MealPrep.Web.Controllers
                 return NotFound();
             }
 
+            // Load active shippers (AppUser với Role.Name = "Shipper")
+            var shippers = await _adminDeliveryOrderService.GetActiveShippersAsync();
+            ViewBag.Shippers = shippers;
+
             return View(order);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AssignShipper(int id, Guid? shipperId)
+        {
+            try
+            {
+                await _adminDeliveryOrderService.AssignShipperAsync(id, shipperId);
+
+                TempData["SuccessMessage"] = shipperId.HasValue
+                    ? $"Đã gán Shipper cho đơn hàng #{id}"
+                    : $"Đã bỏ gán Shipper cho đơn hàng #{id}";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error assigning shipper for delivery order {OrderId}", id);
+                TempData["ErrorMessage"] = $"Lỗi khi gán Shipper: {ex.Message}";
+            }
+
+            return RedirectToAction(nameof(Details), new { id });
         }
 
         [HttpPost]

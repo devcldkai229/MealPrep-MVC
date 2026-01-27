@@ -23,6 +23,11 @@ namespace MealPrep.BLL.Services
         Task SaveMealSelectionsAsync(Guid userId, int subscriptionId, List<MealSelectionRequestDto> selections);
 
         /// <summary>
+        /// Lấy danh sách ngày đã có DeliveryOrder được xác nhận (có items) trong khoảng ngày.
+        /// </summary>
+        Task<HashSet<DateOnly>> GetDatesWithConfirmedOrdersAsync(int subscriptionId, DateOnly fromDate, DateOnly toDate);
+
+        /// <summary>
         /// Check if meal contains allergens for user
         /// </summary>
         bool CheckAllergen(string ingredients, List<string> userAllergies);

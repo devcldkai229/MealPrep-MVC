@@ -198,27 +198,21 @@ namespace MealPrep.Web.Controllers
                 {
                     if (ex.Message.Contains("already processed"))
                     {
-                        // Payment already processed, try to get subscription ID from payment
+                        // Payment already processed, try to get subscription via BLL service
                         try
                         {
-                            var paymentService = HttpContext.RequestServices.GetRequiredService<ISubscriptionService>();
-                            // Query payment to get subscription ID
-                            var paymentRepo = HttpContext.RequestServices.GetRequiredService<MealPrep.DAL.Repositories.IRepository<MealPrep.DAL.Entities.Payment>>();
-                            var payment = await paymentRepo.Query()
-                                .Include(p => p.Subscription)
-                                .FirstOrDefaultAsync(p => p.PaymentCode == orderId);
-                            
-                            if (payment?.Subscription != null)
+                            var subscription = await _svc.GetSubscriptionByPaymentCodeAsync(orderId);
+                            if (subscription != null)
                             {
                                 TempData["SuccessMessage"] = "Thanh toán đã được xử lý trước đó. Gói đăng ký của bạn đã được kích hoạt.";
-                                
+
                                 if (User.Identity?.IsAuthenticated == true)
                                 {
-                                    return RedirectToAction("Details", "UserSubscriptions", new { id = payment.Subscription.Id });
+                                    return RedirectToAction("Details", "UserSubscriptions", new { id = subscription.Id });
                                 }
                                 else
                                 {
-                                    var returnUrl = Url.Action("Details", "UserSubscriptions", new { id = payment.Subscription.Id });
+                                    var returnUrl = Url.Action("Details", "UserSubscriptions", new { id = subscription.Id });
                                     TempData["ReturnUrl"] = returnUrl;
                                     return RedirectToAction("Login", "Auth", new { returnUrl = returnUrl });
                                 }
@@ -228,10 +222,10 @@ namespace MealPrep.Web.Controllers
                         {
                             _logger.LogError(innerEx, "Error getting subscription from already processed payment");
                         }
-                        
+
                         // Fallback: redirect to subscriptions list
                         TempData["SuccessMessage"] = "Thanh toán đã được xử lý trước đó.";
-                        
+
                         if (User.Identity?.IsAuthenticated == true)
                         {
                             return RedirectToAction("Index", "UserSubscriptions");

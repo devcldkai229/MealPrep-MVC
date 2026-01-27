@@ -22,5 +22,15 @@ namespace MealPrep.BLL.Services
             DateOnly? toDate);
         Task<DeliveryOrder?> GetDeliveryOrderDetailsAsync(int id);
         Task UpdateDeliveryOrderStatusAsync(int id, OrderStatus status);
+
+        /// <summary>
+        /// Lấy danh sách shipper đang hoạt động.
+        /// </summary>
+        Task<List<AppUser>> GetActiveShippersAsync();
+
+        /// <summary>
+        /// Gán hoặc bỏ gán shipper cho một DeliveryOrder.
+        /// </summary>
+        Task AssignShipperAsync(int deliveryOrderId, Guid? shipperId);
     }
 }

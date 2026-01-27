@@ -134,5 +134,29 @@ namespace MealPrep.BLL.Services
             order.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
         }
+
+        public async Task<List<AppUser>> GetActiveShippersAsync()
+        {
+            return await _context.Users
+                .Include(u => u.Role)
+                .Where(u => u.IsActive && u.Role.Name == "Shipper")
+                .OrderBy(u => u.FullName)
+                .ToListAsync();
+        }
+
+        public async Task AssignShipperAsync(int deliveryOrderId, Guid? shipperId)
+        {
+            var order = await _context.DeliveryOrders.FindAsync(deliveryOrderId);
+            if (order == null)
+            {
+                throw new ArgumentException($"Không tìm thấy đơn giao hàng #{deliveryOrderId}");
+            }
+
+            order.ShipperId = shipperId;
+            order.UpdatedAt = DateTime.UtcNow;
+
+            _context.DeliveryOrders.Update(order);
+            await _context.SaveChangesAsync();
+        }
     }
 }

@@ -404,6 +404,21 @@ namespace MealPrep.BLL.Services
             return (mealOptions, totalCount);
         }
 
+        public async Task<HashSet<DateOnly>> GetDatesWithConfirmedOrdersAsync(int subscriptionId, DateOnly fromDate, DateOnly toDate)
+        {
+            var existingOrders = await _deliveryOrderRepo.Query()
+                .Include(o => o.Items)
+                .Where(o => o.SubscriptionId == subscriptionId &&
+                            o.DeliveryDate >= fromDate &&
+                            o.DeliveryDate <= toDate)
+                .ToListAsync();
+
+            return existingOrders
+                .Where(o => o.Items.Any())
+                .Select(o => o.DeliveryDate)
+                .ToHashSet();
+        }
+
         public async Task SaveMealSelectionsAsync(Guid userId, int subscriptionId, List<MealSelectionRequestDto> selections)
         {
             // Verify active subscription
@@ -476,9 +491,14 @@ namespace MealPrep.BLL.Services
                     .FirstOrDefaultAsync(o => o.SubscriptionId == activeSubscription.Id && 
                                              o.DeliveryDate == selection.Date);
 
+                // If this date already has a confirmed order, skip it instead of blocking the whole save.
+                // This allows user to save selections for other (future/unlocked) days.
                 if (existingOrder != null && existingOrder.Items.Any())
                 {
-                    throw new InvalidOperationException($"Ngày {selection.Date:dd/MM/yyyy} đã có đơn hàng được xác nhận. Không thể thay đổi món ăn.");
+                    _logger.LogInformation(
+                        "Skipping meal selection change for {Date} because a confirmed order already exists (OrderId={OrderId})",
+                        selection.Date, existingOrder.Id);
+                    continue;
                 }
 
                 if (selection.SelectedMealIds.Count > activeSubscription.MealsPerDay)

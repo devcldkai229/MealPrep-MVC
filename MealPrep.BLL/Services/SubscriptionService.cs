@@ -396,5 +396,19 @@ public class SubscriptionService : ISubscriptionService
             throw;
         }
     }
+
+    public async Task<Subscription?> GetSubscriptionByPaymentCodeAsync(string paymentCode)
+    {
+        if (string.IsNullOrWhiteSpace(paymentCode))
+        {
+            throw new ArgumentException("Payment code cannot be empty", nameof(paymentCode));
+        }
+
+        var payment = await _paymentRepo.Query()
+            .Include(p => p.Subscription)
+            .FirstOrDefaultAsync(p => p.PaymentCode == paymentCode);
+
+        return payment?.Subscription;
+    }
 }
 }

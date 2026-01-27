@@ -364,3 +364,5 @@ FodyWeavers.xsd
 
 # Python AI Recommendation Service
 recommend_ai/
+
+generate_meal_ai/

@@ -197,6 +197,12 @@ namespace MealPrep.DAL.Data
                     .WithMany()
                     .HasForeignKey(d => d.DeliverySlotId)
                     .OnDelete(DeleteBehavior.SetNull);
+
+                // Shipper (AppUser) được gán cho DeliveryOrder
+                entity.HasOne(d => d.Shipper)
+                    .WithMany()
+                    .HasForeignKey(d => d.ShipperId)
+                    .OnDelete(DeleteBehavior.SetNull);
             });
 
             // DeliveryOrderItem

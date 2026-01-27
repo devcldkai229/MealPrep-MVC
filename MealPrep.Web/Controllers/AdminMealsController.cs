@@ -10,15 +10,18 @@ namespace MealPrep.Web.Controllers
     {
         private readonly IMealService _mealService;
         private readonly IS3Service _s3Service;
+        private readonly IMealFeedbackService _mealFeedbackService;
         private readonly ILogger<AdminMealsController> _logger;
 
         public AdminMealsController(
             IMealService mealService,
             IS3Service s3Service,
+            IMealFeedbackService mealFeedbackService,
             ILogger<AdminMealsController> logger)
         {
             _mealService = mealService;
             _s3Service = s3Service;
+            _mealFeedbackService = mealFeedbackService;
             _logger = logger;
         }
 
@@ -45,6 +48,14 @@ namespace MealPrep.Web.Controllers
             {
                 return NotFound();
             }
+
+            // Load ratings for this meal via BLL service
+            var ratings = await _mealFeedbackService.GetMealRatingsAsync(id);
+            ViewBag.MealRatings = ratings;
+            ViewBag.MealRatingCount = ratings.Count;
+            ViewBag.MealRatingAverage = ratings.Count > 0
+                ? Math.Round(ratings.Average(r => r.Stars), 1)
+                : 0;
 
             return View(meal);
         }

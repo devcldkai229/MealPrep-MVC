@@ -119,5 +119,73 @@ namespace MealPrep.BLL.Services
             var used = await GetUsedQuantityAsync(mealId, date);
             return Math.Max(0, inventory.QuantityLimit - used);
         }
+
+        public async Task<bool> ExistsForDateAndMealAsync(DateOnly date, int mealId, int? excludeId = null)
+        {
+            var query = _inventoryRepo.Query()
+                .Where(i => i.Date == date && i.MealId == mealId);
+
+            if (excludeId.HasValue)
+            {
+                query = query.Where(i => i.Id != excludeId.Value);
+            }
+
+            return await query.AnyAsync();
+        }
+
+        public async Task<(int Created, int Updated, int TotalMeals, int TotalDays)> BulkCreateInventoriesAsync(
+            DateOnly startDate,
+            DateOnly endDate,
+            int[] mealIds,
+            int quantityLimit)
+        {
+            if (mealIds == null || mealIds.Length == 0)
+            {
+                throw new ArgumentException("Danh sách món ăn trống.", nameof(mealIds));
+            }
+
+            if (startDate > endDate)
+            {
+                throw new ArgumentException("Ngày bắt đầu phải nhỏ hơn hoặc bằng ngày kết thúc.");
+            }
+
+            var totalCreated = 0;
+            var totalUpdated = 0;
+            var totalDays = (endDate.DayNumber - startDate.DayNumber) + 1;
+            var totalMeals = mealIds.Length;
+
+            foreach (var mealId in mealIds)
+            {
+                for (var date = startDate; date <= endDate; date = date.AddDays(1))
+                {
+                    var existing = await _inventoryRepo.Query()
+                        .FirstOrDefaultAsync(i => i.Date == date && i.MealId == mealId);
+
+                    if (existing != null)
+                    {
+                        existing.QuantityLimit = quantityLimit;
+                        existing.UpdatedAt = DateTime.UtcNow;
+                        _inventoryRepo.Update(existing);
+                        totalUpdated++;
+                    }
+                    else
+                    {
+                        var inventory = new KitchenInventory
+                        {
+                            Date = date,
+                            MealId = mealId,
+                            QuantityLimit = quantityLimit,
+                            CreatedAt = DateTime.UtcNow
+                        };
+                        await _inventoryRepo.AddAsync(inventory);
+                        totalCreated++;
+                    }
+                }
+            }
+
+            await _inventoryRepo.SaveChangesAsync();
+
+            return (totalCreated, totalUpdated, totalMeals, totalDays);
+        }
     }
 }
