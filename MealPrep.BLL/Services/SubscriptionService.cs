@@ -122,10 +122,11 @@ public class SubscriptionService : ISubscriptionService
     {
         return _subRepo.Query()
             .Include(s => s.DeliveryOrders)
-                .ThenInclude(o => o.DeliverySlot)
-            .Include(s => s.DeliveryOrders)
                 .ThenInclude(o => o.Items)
                     .ThenInclude(i => i.Meal)
+            .Include(s => s.DeliveryOrders)
+                .ThenInclude(o => o.Items)
+                    .ThenInclude(i => i.DeliverySlot)
             .Include(s => s.Plan)
             .Include(s => s.Payments)
             .FirstOrDefaultAsync(s => s.Id == id && s.AppUserId == userId);
@@ -338,8 +339,10 @@ public class SubscriptionService : ISubscriptionService
             {
                 // StartDate = TransactionDate.AddDays(1) (Next-Day Rule)
                 // If user pays on Jan 26th, subscription starts on Jan 27th
-                var newStartDate = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(1);
-                var newEndDate = newStartDate.AddDays(6); // Total 7 days
+                // Use local time (Today) instead of UTC to match user's timezone
+                var today = DateOnly.FromDateTime(DateTime.Today);
+                var newStartDate = today.AddDays(1); // Tomorrow
+                var newEndDate = newStartDate.AddDays(6); // Total 7 days: StartDate + 6 more days
 
                 // Re-validate overlap before activating (in case user has created another subscription while payment was pending)
                 var userId = subscription.AppUserId;

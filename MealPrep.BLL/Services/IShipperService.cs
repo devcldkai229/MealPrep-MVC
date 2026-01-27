@@ -51,7 +51,8 @@ namespace MealPrep.BLL.Services
     public record UploadProofResult(
         bool Success,
         string Message,
-        int? DeliveryOrderId);
+        int? DeliveryOrderId,
+        string? ImagePresignedUrl = null); // Presigned URL để hiển thị ảnh ngay sau khi upload
 
     public record CompleteOrderResult(
         bool Success,

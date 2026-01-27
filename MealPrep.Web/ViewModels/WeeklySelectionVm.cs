@@ -54,5 +54,10 @@ public class MealSelectionRequest
 {
     public DateOnly Date { get; set; }
     public List<int> SelectedMealIds { get; set; } = new();
+    /// <summary>
+    /// Dictionary: SlotIndex -> MealId
+    /// SlotIndex 0 = Morning, 1 = Evening, etc.
+    /// </summary>
+    public Dictionary<int, int> SelectedMealsBySlot { get; set; } = new();
     public string? DeliveryAddress { get; set; } // Địa chỉ giao hàng (optional, sẽ lấy từ user nếu không có)
 }

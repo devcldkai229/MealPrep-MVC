@@ -32,10 +32,11 @@ namespace MealPrep.BLL.Services
             return await _context.Set<Subscription>()
                 .Include(s => s.Plan)
                 .Include(s => s.DeliveryOrders.OrderBy(d => d.DeliveryDate))
-                    .ThenInclude(d => d.DeliverySlot)
-                .Include(s => s.DeliveryOrders)
                     .ThenInclude(d => d.Items)
                         .ThenInclude(i => i.Meal)
+                .Include(s => s.DeliveryOrders)
+                    .ThenInclude(d => d.Items)
+                        .ThenInclude(i => i.DeliverySlot)
                 .Include(s => s.Payments)
                 .FirstOrDefaultAsync(s => s.Id == id && s.AppUserId == userId);
         }

@@ -54,6 +54,41 @@ namespace MealPrep.Web.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetRevenueByMonth(int year, int month)
+        {
+            try
+            {
+                // Validate input
+                if (year < 2020 || year > 2100)
+                {
+                    return Json(new { error = "Năm không hợp lệ" });
+                }
+                
+                if (month < 1 || month > 12)
+                {
+                    return Json(new { error = "Tháng không hợp lệ" });
+                }
+                
+                var revenueData = await _dashboardService.GetRevenueByMonthAsync(year, month);
+                
+                // Convert DateOnly to string format for JSON serialization
+                var result = revenueData.Select(r => new
+                {
+                    Date = r.Date.ToString("yyyy-MM-dd"),
+                    Revenue = r.Revenue
+                }).ToList();
+                
+                return Json(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting revenue by month. Year: {Year}, Month: {Month}", year, month);
+                return Json(new { error = $"Có lỗi xảy ra khi lấy dữ liệu doanh thu: {ex.Message}" });
+            }
+        }
+
+        [HttpGet]
         public async Task<IActionResult> GetStats()
         {
             try

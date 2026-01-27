@@ -1,15 +1,9 @@
 @model MealPrep.Web.ViewModels.AdminDashboardVm
-@using System.Text.Json
-@using System.Text.Json.Serialization
 
 @{
     ViewData["Title"] = "Admin Dashboard";
     Layout = "_AdminLayout";
 }
-
-<form id="embeddingForm" style="display: none;">
-    @Html.AntiForgeryToken()
-</form>
 
 <div>
     <!-- Header -->
@@ -18,7 +12,7 @@
         <p class="text-muted mb-0">Thống kê và phân tích dữ liệu</p>
     </div>
 
-    <!-- Quick Stats (KPI Cards) - Minimal Colors -->
+    <!-- Quick Stats (KPI Cards) -->
     <div class="row g-3 mb-4">
         <div class="col-md-6 col-lg-3">
             <div class="app-card p-4 h-100 border-start border-4" style="border-color: #6B7280 !important;">
@@ -77,77 +71,255 @@
         </div>
     </div>
 
-    <!-- Charts Section -->
+    <!-- Statistics Section -->
     <div class="row g-4 mb-4">
-        <!-- Monthly Revenue Chart (Bar Chart) -->
-        <div class="col-lg-8">
+        <!-- Monthly Revenue Summary -->
+        <div class="col-lg-6">
             <div class="app-card p-4">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5 class="fw-semibold mb-0">Doanh Thu Trong Tháng</h5>
                     <span class="text-muted small">@DateTime.Now.ToString("MMMM yyyy", new System.Globalization.CultureInfo("vi-VN"))</span>
                 </div>
-                <canvas id="monthlyRevenueChart" height="80"></canvas>
+                @if (Model.MonthlyRevenue != null && Model.MonthlyRevenue.Any())
+                {
+                    var totalMonthlyRevenue = Model.MonthlyRevenue.Sum(r => r.Revenue);
+                    var daysWithRevenue = Model.MonthlyRevenue.Count(r => r.Revenue > 0);
+                    var avgDailyRevenue = daysWithRevenue > 0 ? totalMonthlyRevenue / daysWithRevenue : 0;
+                    var maxDailyRevenue = Model.MonthlyRevenue.Max(r => r.Revenue);
+                    var maxDay = Model.MonthlyRevenue.FirstOrDefault(r => r.Revenue == maxDailyRevenue);
+                    
+                    <div class="row g-3 mb-3">
+                        <div class="col-6">
+                            <div class="text-muted small">Tổng Doanh Thu</div>
+                            <div class="h4 fw-bold">@totalMonthlyRevenue.ToString("N0")₫</div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-muted small">Trung Bình Mỗi Ngày</div>
+                            <div class="h4 fw-bold">@avgDailyRevenue.ToString("N0")₫</div>
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th class="text-muted small fw-semibold">Ngày</th>
+                                    <th class="text-muted small fw-semibold text-end">Doanh Thu</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var revenue in Model.MonthlyRevenue.OrderByDescending(r => r.Date).Take(10))
+                                {
+                                    <tr>
+                                        <td class="small">@revenue.Date.ToString("dd/MM/yyyy")</td>
+                                        <td class="small text-end fw-semibold">@revenue.Revenue.ToString("N0")₫</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    @if (Model.MonthlyRevenue.Count > 10)
+                    {
+                        <small class="text-muted d-block mt-2">Hiển thị 10 ngày gần nhất</small>
+                    }
+                }
+                else
+                {
+                    <p class="text-muted text-center py-4 mb-0">Chưa có dữ liệu doanh thu trong tháng</p>
+                }
             </div>
         </div>
 
         <!-- Orders Status Distribution -->
-        <div class="col-lg-4">
+        <div class="col-lg-6">
             <div class="app-card p-4">
                 <h5 class="fw-semibold mb-3">Phân Bố Trạng Thái Đơn Hàng</h5>
-                <canvas id="ordersStatusChart"></canvas>
+                @if (Model.OrdersStatusDistribution != null && Model.OrdersStatusDistribution.Any())
+                {
+                    var totalOrders = Model.OrdersStatusDistribution.Values.Sum();
+                    var statusLabels = new Dictionary<string, string>
+                    {
+                        { "Planned", "Đã Lên Lịch" },
+                        { "Preparing", "Đang Chuẩn Bị" },
+                        { "Delivering", "Đang Giao" },
+                        { "Delivered", "Đã Giao" },
+                        { "Cancelled", "Đã Hủy" }
+                    };
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-muted small">Tổng số đơn hàng</span>
+                            <span class="h5 fw-bold mb-0">@totalOrders</span>
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th class="text-muted small fw-semibold">Trạng Thái</th>
+                                    <th class="text-muted small fw-semibold text-end">Số Lượng</th>
+                                    <th class="text-muted small fw-semibold text-end">Tỷ Lệ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var status in Model.OrdersStatusDistribution.OrderByDescending(s => s.Value))
+                                {
+                                    var percentage = totalOrders > 0 ? (status.Value * 100.0m / totalOrders) : 0;
+                                    var label = statusLabels.ContainsKey(status.Key) ? statusLabels[status.Key] : status.Key;
+                                    
+                                    <tr>
+                                        <td class="small">@label</td>
+                                        <td class="small text-end fw-semibold">@status.Value</td>
+                                        <td class="small text-end">
+                                            <span class="badge rounded-pill" style="background: #E5E7EB; color: #111827;">
+                                                @percentage.ToString("F1")%
+                                            </span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted text-center py-4 mb-0">Chưa có đơn hàng nào để thống kê</p>
+                }
             </div>
         </div>
     </div>
 
+    <!-- Additional Statistics -->
     <div class="row g-4 mb-4">
-        <!-- Revenue & Subscription Growth (30 Days) -->
-        <div class="col-lg-8">
-            <div class="app-card p-4">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="fw-semibold mb-0">Tăng Trưởng (30 Ngày Qua)</h5>
-                </div>
-                <canvas id="revenueGrowthChart" height="80"></canvas>
-            </div>
-        </div>
-
         <!-- User Segmentation -->
         <div class="col-lg-4">
             <div class="app-card p-4">
                 <h5 class="fw-semibold mb-3">Phân Loại Khách Hàng</h5>
-                <canvas id="userSegmentationChart"></canvas>
+                @if (Model.UserSegmentationByGoal != null && Model.UserSegmentationByGoal.Any())
+                {
+                    var totalUsers = Model.UserSegmentationByGoal.Values.Sum();
+                    var goalLabels = new Dictionary<string, string>
+                    {
+                        { "Maintain", "Duy Trì" },
+                        { "FatLoss", "Giảm Cân" },
+                        { "MuscleGain", "Tăng Cơ" }
+                    };
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted small">Tổng số hồ sơ</span>
+                            <span class="h5 fw-bold mb-0">@totalUsers</span>
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th class="text-muted small fw-semibold">Mục Tiêu</th>
+                                    <th class="text-muted small fw-semibold text-end">Số Lượng</th>
+                                    <th class="text-muted small fw-semibold text-end">Tỷ Lệ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var goal in Model.UserSegmentationByGoal.OrderByDescending(g => g.Value))
+                                {
+                                    var percentage = totalUsers > 0 ? (goal.Value * 100.0m / totalUsers) : 0;
+                                    var label = goalLabels.ContainsKey(goal.Key) ? goalLabels[goal.Key] : goal.Key;
+                                    
+                                    <tr>
+                                        <td class="small">@label</td>
+                                        <td class="small text-end fw-semibold">@goal.Value</td>
+                                        <td class="small text-end">
+                                            <span class="badge rounded-pill" style="background: #E5E7EB; color: #111827;">
+                                                @percentage.ToString("F1")%
+                                            </span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted text-center py-4 mb-0">Chưa có hồ sơ dinh dưỡng nào để phân loại</p>
+                }
             </div>
         </div>
-    </div>
 
-    <div class="row g-4 mb-4">
         <!-- Top Disliked Meals -->
-        <div class="col-lg-6">
+        <div class="col-lg-4">
             <div class="app-card p-4">
                 <h5 class="fw-semibold mb-3">Top Món Bị Ghét Nhất</h5>
-                <canvas id="dislikedMealsChart" height="60"></canvas>
+                @if (Model.TopDislikedMeals != null && Model.TopDislikedMeals.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th class="text-muted small fw-semibold">Món Ăn</th>
+                                    <th class="text-muted small fw-semibold text-end">Số Người</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var meal in Model.TopDislikedMeals.Take(5))
+                                {
+                                    <tr>
+                                        <td class="small">@meal.MealName</td>
+                                        <td class="small text-end fw-semibold">
+                                            <span class="badge rounded-pill" style="background: #E5E7EB; color: #111827;">
+                                                @meal.DislikeCount
+                                            </span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted text-center py-4 mb-0">Chưa có dữ liệu món bị ghét</p>
+                }
             </div>
         </div>
 
         <!-- Top Allergies -->
-        <div class="col-lg-6">
+        <div class="col-lg-4">
             <div class="app-card p-4">
                 <h5 class="fw-semibold mb-3">Top Dị Ứng</h5>
-                <div class="list-group list-group-flush">
-                    @if (Model.TopAllergies.Any())
-                    {
-                        @foreach (var allergy in Model.TopAllergies.Take(5))
-                        {
-                            <div class="list-group-item d-flex justify-content-between align-items-center px-0 border-0 border-bottom">
-                                <span class="text-muted">@allergy.AllergyName</span>
-                                <span class="badge rounded-pill" style="background: #E5E7EB; color: #111827;">@allergy.UserCount</span>
-                            </div>
-                        }
-                    }
-                    else
-                    {
-                        <p class="text-muted text-center py-3 mb-0">Chưa có dữ liệu</p>
-                    }
-                </div>
+                @if (Model.TopAllergies != null && Model.TopAllergies.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th class="text-muted small fw-semibold">Loại Dị Ứng</th>
+                                    <th class="text-muted small fw-semibold text-end">Số Người</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var allergy in Model.TopAllergies.Take(5))
+                                {
+                                    <tr>
+                                        <td class="small">@allergy.AllergyName</td>
+                                        <td class="small text-end fw-semibold">
+                                            <span class="badge rounded-pill" style="background: #E5E7EB; color: #111827;">
+                                                @allergy.UserCount
+                                            </span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted text-center py-4 mb-0">Chưa có dữ liệu dị ứng</p>
+                }
             </div>
         </div>
     </div>
@@ -243,513 +415,280 @@
         </div>
     </div>
 
-    <!-- Meal Embedding Management -->
+    <!-- Revenue Detail Chart Section -->
     <div class="row g-4 mb-4">
         <div class="col-12">
             <div class="app-card p-4">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <div>
-                        <h5 class="fw-bold mb-1">
-                            <i class="bi bi-cpu text-primary me-2"></i>Quản Lý Meal Embeddings
-                        </h5>
-                        <p class="text-muted small mb-0">Generate vector embeddings cho các món ăn để hỗ trợ AI recommendation</p>
+                    <h5 class="fw-semibold mb-0">Biểu Đồ Doanh Thu Chi Tiết</h5>
+                    <div class="d-flex gap-2">
+                        <select id="revenueYear" class="form-select form-select-sm" style="width: auto;">
+                            @{
+                                var currentYear = DateTime.Now.Year;
+                                for (int year = currentYear; year >= currentYear - 2; year--)
+                                {
+                                    var isSelected = year == currentYear ? "selected" : "";
+                                    <option value="@year" selected="@isSelected">@year</option>
+                                }
+                            }
+                        </select>
+                        <select id="revenueMonth" class="form-select form-select-sm" style="width: auto;">
+                            @{
+                                var currentMonth = DateTime.Now.Month;
+                                var monthNames = new[] { "Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6", 
+                                                         "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12" };
+                                for (int month = 1; month <= 12; month++)
+                                {
+                                    var isSelected = month == currentMonth ? "selected" : "";
+                                    <option value="@month" selected="@isSelected">@monthNames[month - 1]</option>
+                                }
+                            }
+                        </select>
+                        <button type="button" id="loadRevenueBtn" class="btn btn-sm btn-primary">
+                            <i class="bi bi-search"></i> Xem
+                        </button>
                     </div>
                 </div>
                 
-                <div class="d-grid gap-2">
-                    <button type="button" id="generateAllEmbeddingsBtn" class="btn btn-primary btn-lg">
-                        <i class="bi bi-arrow-repeat me-2"></i>Generate Embeddings Cho Tất Cả Món Ăn
-                    </button>
-                    <small class="text-muted text-center">
-                        <i class="bi bi-info-circle"></i> Chỉ generate cho các món chưa có embedding
-                    </small>
+                <div id="revenueChartContainer">
+                    <canvas id="revenueDetailChart" height="60"></canvas>
                 </div>
                 
-                <!-- Loading Overlay -->
-                <div id="embeddingLoadingOverlay" class="mt-3" style="display: none;">
-                    <div class="d-flex align-items-center gap-3 p-4 bg-light rounded">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div>
-                        <div class="flex-grow-1">
-                            <div class="fw-semibold mb-1" id="loadingStatus">Đang xử lý...</div>
-                            <div class="progress" style="height: 6px;">
-                                <div id="loadingProgress" class="progress-bar progress-bar-striped progress-bar-animated" 
-                                     role="progressbar" style="width: 0%"></div>
-                            </div>
-                            <small class="text-muted" id="loadingDetails">Đang kết nối với AI service...</small>
-                        </div>
+                <div id="revenueChartLoading" class="text-center py-4" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Đang tải...</span>
                     </div>
+                    <p class="text-muted mt-2 mb-0">Đang tải dữ liệu...</p>
                 </div>
-
-                <div id="embeddingResult" class="mt-3" style="display: none;"></div>
+                
+                <div id="revenueChartError" class="alert alert-info" style="display: none;">
+                    <i class="bi bi-info-circle"></i> <span id="revenueChartErrorMessage"></span>
+                </div>
+                
+                <div id="revenueChartEmpty" class="text-center py-5" style="display: none;">
+                    <i class="bi bi-bar-chart" style="font-size: 3rem; color: #D1D5DB;"></i>
+                    <p class="text-muted mt-3 mb-0">Chưa có dữ liệu doanh thu cho tháng này</p>
+                    <small class="text-muted">Vui lòng chọn tháng khác hoặc kiểm tra lại dữ liệu thanh toán</small>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 @section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script>
-        // Monthly Revenue Chart (Bar Chart)
-        const monthlyRevenueCtx = document.getElementById('monthlyRevenueChart').getContext('2d');
-        const monthlyRevenueData = @Html.Raw(JsonSerializer.Serialize(Model.MonthlyRevenue));
-        
-        const monthlyLabels = monthlyRevenueData.map(d => {
-            const dateStr = typeof d.date === 'string' ? d.date : `${d.date.year}-${String(d.date.month).padStart(2, '0')}-${String(d.date.day).padStart(2, '0')}`;
-            const [year, month, day] = dateStr.split('-').map(Number);
-            return day;
-        });
-        
-        const monthlyRevenueValues = monthlyRevenueData.map(d => d.revenue);
-        
-        new Chart(monthlyRevenueCtx, {
-            type: 'bar',
-            data: {
-                labels: monthlyLabels,
-                datasets: [{
-                    label: 'Doanh Thu (₫)',
-                    data: monthlyRevenueValues,
-                    backgroundColor: 'rgba(107, 114, 128, 0.8)',
-                    borderColor: 'rgba(107, 114, 128, 1)',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return 'Doanh thu: ' + context.parsed.y.toLocaleString('vi-VN') + '₫';
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function(value) {
-                                return value.toLocaleString('vi-VN') + '₫';
-                            }
-                        }
-                    }
-                }
-            }
-        });
+        let revenueChart = null;
 
-        // Orders Status Distribution Chart
-        const ordersStatusCtx = document.getElementById('ordersStatusChart').getContext('2d');
-        const ordersStatusData = @Html.Raw(JsonSerializer.Serialize(Model.OrdersStatusDistribution));
-        
-        const statusLabels = {
-            'Planned': 'Đã Lên Lịch',
-            'Preparing': 'Đang Chuẩn Bị',
-            'Delivering': 'Đang Giao',
-            'Delivered': 'Đã Giao',
-            'Cancelled': 'Đã Hủy'
-        };
-        
-        new Chart(ordersStatusCtx, {
-            type: 'doughnut',
-            data: {
-                labels: Object.keys(ordersStatusData).map(k => statusLabels[k] || k),
-                datasets: [{
-                    data: Object.values(ordersStatusData),
-                    backgroundColor: [
-                        'rgba(107, 114, 128, 0.8)',
-                        'rgba(107, 114, 128, 0.6)',
-                        'rgba(107, 114, 128, 0.4)',
-                        'rgba(107, 114, 128, 0.9)',
-                        'rgba(107, 114, 128, 0.3)'
-                    ],
-                    borderWidth: 2,
-                    borderColor: '#fff'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: { position: 'bottom' },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                const percentage = ((context.parsed / total) * 100).toFixed(1);
-                                return context.label + ': ' + context.parsed + ' (' + percentage + '%)';
-                            }
+        function loadRevenueChart(year, month) {
+            const loadingDiv = document.getElementById('revenueChartLoading');
+            const errorDiv = document.getElementById('revenueChartError');
+            const chartContainer = document.getElementById('revenueChartContainer');
+            const canvas = document.getElementById('revenueDetailChart');
+            
+            // Show loading
+            loadingDiv.style.display = 'block';
+            errorDiv.style.display = 'none';
+            chartContainer.style.display = 'none';
+            
+            // Fetch data
+            const url = `@Url.Action("GetRevenueByMonth", "Admin")?year=${year}&month=${month}`;
+            console.log('Fetching revenue data from:', url);
+            
+            fetch(url)
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    if (!response.ok) {
+                        return response.json().then(err => {
+                            throw new Error(err.error || `HTTP ${response.status}: ${response.statusText}`);
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Received data:', data);
+                    
+                    // Check if data has error property
+                    if (data && data.error) {
+                        throw new Error(data.error);
+                    }
+                    
+                    // Check if data is array
+                    if (!Array.isArray(data)) {
+                        throw new Error('Dữ liệu trả về không đúng định dạng');
+                    }
+                    
+                    // Check if data is empty
+                    if (data.length === 0) {
+                        loadingDiv.style.display = 'none';
+                        chartContainer.style.display = 'none';
+                        errorDiv.style.display = 'none';
+                        const emptyDiv = document.getElementById('revenueChartEmpty');
+                        if (emptyDiv) {
+                            emptyDiv.style.display = 'block';
                         }
+                        return;
                     }
-                }
-            }
-        });
-
-        // Revenue & Subscription Growth Chart (Line - Dual Axis)
-        const revenueGrowthCtx = document.getElementById('revenueGrowthChart').getContext('2d');
-        const revenueDataRaw = @Html.Raw(JsonSerializer.Serialize(Model.RevenueGrowth));
-        const subscriptionDataRaw = @Html.Raw(JsonSerializer.Serialize(Model.SubscriptionGrowth));
-        
-        const revenueData = revenueDataRaw.map(d => ({
-            date: typeof d.date === 'string' ? d.date : `${d.date.year}-${String(d.date.month).padStart(2, '0')}-${String(d.date.day).padStart(2, '0')}`,
-            revenue: d.revenue
-        }));
-        const subscriptionData = subscriptionDataRaw.map(d => ({
-            date: typeof d.date === 'string' ? d.date : `${d.date.year}-${String(d.date.month).padStart(2, '0')}-${String(d.date.day).padStart(2, '0')}`,
-            newSubscriptions: d.newSubscriptions
-        }));
-        
-        const allDates = [...new Set([...revenueData.map(d => d.date), ...subscriptionData.map(d => d.date)])].sort();
-        const revenueMap = new Map(revenueData.map(d => [d.date, d.revenue]));
-        const subscriptionMap = new Map(subscriptionData.map(d => [d.date, d.newSubscriptions]));
-        
-        new Chart(revenueGrowthCtx, {
-            type: 'line',
-            data: {
-                labels: allDates.map(dateStr => {
-                    const [year, month, day] = dateStr.split('-').map(Number);
-                    const date = new Date(year, month - 1, day);
-                    return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
-                }),
-                datasets: [
-                    {
-                        label: 'Doanh Thu (₫)',
-                        data: allDates.map(dateStr => revenueMap.get(dateStr) || 0),
-                        borderColor: 'rgba(107, 114, 128, 1)',
-                        backgroundColor: 'rgba(107, 114, 128, 0.1)',
-                        yAxisID: 'y',
-                        tension: 0.4
-                    },
-                    {
-                        label: 'Subscription Mới',
-                        data: allDates.map(dateStr => subscriptionMap.get(dateStr) || 0),
-                        borderColor: 'rgba(156, 163, 175, 1)',
-                        backgroundColor: 'rgba(156, 163, 175, 0.1)',
-                        yAxisID: 'y1',
-                        tension: 0.4
+                    
+                    // Process data
+                    const processedData = data.map(d => {
+                        let dateStr;
+                        if (typeof d.Date === 'string') {
+                            dateStr = d.Date;
+                        } else if (d.Date && typeof d.Date === 'object') {
+                            dateStr = `${d.Date.year}-${String(d.Date.month).padStart(2, '0')}-${String(d.Date.day).padStart(2, '0')}`;
+                        } else {
+                            console.error('Invalid date format:', d.Date);
+                            return null;
+                        }
+                        
+                        if (!dateStr) return null;
+                        
+                        const [y, m, day] = dateStr.split('-').map(Number);
+                        const revenue = parseFloat(d.Revenue) || 0;
+                        
+                        return {
+                            day: day,
+                            revenue: revenue,
+                            dateStr: dateStr
+                        };
+                    }).filter(d => d !== null);
+                    
+                    // Sort by day
+                    processedData.sort((a, b) => a.day - b.day);
+                    
+                    const labels = processedData.map(d => d.day);
+                    const revenues = processedData.map(d => d.revenue);
+                    const totalRevenue = revenues.reduce((a, b) => a + b, 0);
+                    const maxRevenue = Math.max(...revenues, 0);
+                    
+                    console.log('Processed data:', {
+                        labels: labels,
+                        revenues: revenues,
+                        totalRevenue: totalRevenue,
+                        maxRevenue: maxRevenue,
+                        dataLength: processedData.length
+                    });
+                    
+                    // Check if all revenues are zero
+                    if (totalRevenue === 0) {
+                        loadingDiv.style.display = 'none';
+                        chartContainer.style.display = 'none';
+                        errorDiv.style.display = 'none';
+                        const emptyDiv = document.getElementById('revenueChartEmpty');
+                        if (emptyDiv) {
+                            emptyDiv.style.display = 'block';
+                        }
+                        return;
                     }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                interaction: { mode: 'index', intersect: false },
-                plugins: {
-                    legend: { display: true, position: 'top' },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                if (context.datasetIndex === 0) {
-                                    return 'Doanh thu: ' + context.parsed.y.toLocaleString('vi-VN') + '₫';
-                                } else {
-                                    return 'Subscription mới: ' + context.parsed.y;
+                    
+                    loadingDiv.style.display = 'none';
+                    chartContainer.style.display = 'block';
+                    const emptyDiv = document.getElementById('revenueChartEmpty');
+                    if (emptyDiv) {
+                        emptyDiv.style.display = 'none';
+                    }
+                    errorDiv.style.display = 'none';
+                    
+                    // Destroy existing chart if exists
+                    if (revenueChart) {
+                        revenueChart.destroy();
+                    }
+                    
+                    // Create new chart
+                    const ctx = canvas.getContext('2d');
+                    revenueChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Doanh Thu (₫)',
+                                data: revenues,
+                                backgroundColor: 'rgba(107, 114, 128, 0.8)',
+                                borderColor: 'rgba(107, 114, 128, 1)',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            return 'Doanh thu: ' + context.parsed.y.toLocaleString('vi-VN') + '₫';
+                                        }
+                                    }
+                                },
+                                title: {
+                                    display: true,
+                                    text: `Tổng doanh thu: ${totalRevenue.toLocaleString('vi-VN')}₫`,
+                                    font: { size: 14, weight: 'bold' }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    max: maxRevenue > 0 ? Math.ceil(maxRevenue * 1.1 / 100000) * 100000 : 1000000,
+                                    ticks: {
+                                        callback: function(value) {
+                                            return value.toLocaleString('vi-VN') + '₫';
+                                        },
+                                        stepSize: maxRevenue > 0 ? Math.ceil(maxRevenue / 5 / 100000) * 100000 : 200000
+                                    }
+                                },
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: 'Ngày trong tháng'
+                                    },
+                                    ticks: {
+                                        stepSize: 1
+                                    }
                                 }
                             }
                         }
-                    }
-                },
-                scales: {
-                    y: {
-                        type: 'linear',
-                        display: true,
-                        position: 'left',
-                        title: { display: true, text: 'Doanh Thu (₫)' }
-                    },
-                    y1: {
-                        type: 'linear',
-                        display: true,
-                        position: 'right',
-                        title: { display: true, text: 'Số Lượng' },
-                        grid: { drawOnChartArea: false }
-                    }
-                }
-            }
-        });
-
-        // Top Disliked Meals Chart (Horizontal Bar)
-        const dislikedMealsCtx = document.getElementById('dislikedMealsChart').getContext('2d');
-        const dislikedMealsData = @Html.Raw(JsonSerializer.Serialize(Model.TopDislikedMeals));
-        
-        new Chart(dislikedMealsCtx, {
-            type: 'bar',
-            data: {
-                labels: dislikedMealsData.map(m => m.mealName),
-                datasets: [{
-                    label: 'Số Lượng',
-                    data: dislikedMealsData.map(m => m.dislikeCount),
-                    backgroundColor: 'rgba(107, 114, 128, 0.8)',
-                    borderColor: 'rgba(107, 114, 128, 1)',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                indexAxis: 'y',
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return 'Số người không thích: ' + context.parsed.x;
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    x: { beginAtZero: true, ticks: { stepSize: 1 } }
-                }
-            }
-        });
-
-        // User Segmentation Chart (Doughnut)
-        const userSegmentationCtx = document.getElementById('userSegmentationChart').getContext('2d');
-        const segmentationData = @Html.Raw(JsonSerializer.Serialize(Model.UserSegmentationByGoal));
-        
-        const goalLabels = {
-            'Maintain': 'Duy Trì',
-            'FatLoss': 'Giảm Cân',
-            'MuscleGain': 'Tăng Cơ'
-        };
-        
-        const grayShades = [
-            'rgba(107, 114, 128, 0.8)',
-            'rgba(156, 163, 175, 0.8)',
-            'rgba(209, 213, 219, 0.8)'
-        ];
-        
-        new Chart(userSegmentationCtx, {
-            type: 'doughnut',
-            data: {
-                labels: Object.keys(segmentationData).map(k => goalLabels[k] || k),
-                datasets: [{
-                    data: Object.values(segmentationData),
-                    backgroundColor: grayShades.slice(0, Object.keys(segmentationData).length),
-                    borderWidth: 2,
-                    borderColor: '#fff'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: { position: 'bottom' },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                const percentage = ((context.parsed / total) * 100).toFixed(1);
-                                return context.label + ': ' + context.parsed + ' (' + percentage + '%)';
-                            }
-                        }
-                    }
-                }
-            }
-        });
-
-        // Meal Embedding Management - Wait for DOM to be ready
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM Content Loaded - Initializing embedding button');
-            
-            const generateBtn = document.getElementById('generateAllEmbeddingsBtn');
-            if (!generateBtn) {
-                console.error('✗ Generate button NOT found! ID: generateAllEmbeddingsBtn');
-                return;
-            }
-            
-            console.log('✓ Generate button found, adding event listener');
-            
-            generateBtn.addEventListener('click', async function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log('Generate button clicked');
-                console.log('Generate button clicked');
-                const btn = this;
-                const originalText = btn.innerHTML;
-                const resultDiv = document.getElementById('embeddingResult');
-                const loadingOverlay = document.getElementById('embeddingLoadingOverlay');
-                const loadingStatus = document.getElementById('loadingStatus');
-                const loadingDetails = document.getElementById('loadingDetails');
-                const loadingProgress = document.getElementById('loadingProgress');
-                
-                // Disable button and show loading overlay
-                btn.disabled = true;
-                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang xử lý...';
-                
-                // Show loading overlay with progress
-                if (loadingOverlay) {
-                    loadingOverlay.style.display = 'block';
-                    if (loadingStatus) loadingStatus.textContent = 'Đang xử lý...';
-                    if (loadingDetails) loadingDetails.textContent = 'Đang kết nối với AI service...';
-                    if (loadingProgress) loadingProgress.style.width = '10%';
-                }
-                
-                if (resultDiv) {
-                    resultDiv.style.display = 'none';
-                    resultDiv.innerHTML = '';
-                }
-                
-                // Simulate progress updates
-                const progressInterval = setInterval(() => {
-                    if (loadingProgress) {
-                        const currentWidth = parseInt(loadingProgress.style.width) || 10;
-                        if (currentWidth < 90) {
-                            loadingProgress.style.width = (currentWidth + 5) + '%';
-                        }
-                    }
-                }, 500);
-
-                try {
-                    const formData = new FormData();
-                    
-                    // Try multiple ways to get anti-forgery token
-                    let tokenInput = document.querySelector('#embeddingForm input[name="__RequestVerificationToken"]');
-                    if (!tokenInput) {
-                        tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
-                    }
-                    if (!tokenInput) {
-                        tokenInput = document.querySelector('form input[name="__RequestVerificationToken"]');
-                    }
-                    
-                    if (tokenInput) {
-                        formData.append('__RequestVerificationToken', tokenInput.value);
-                        console.log('Anti-forgery token found');
-                    } else {
-                        console.warn('Anti-forgery token not found, request may fail');
-                    }
-
-                    const url = '@Url.Action("GenerateAllMealEmbeddings", "Admin")';
-                    console.log('Sending request to:', url);
-                    console.log('FormData entries:', Array.from(formData.entries()));
-                    
-                    // Update loading status
-                    if (loadingStatus) loadingStatus.textContent = 'Đang gửi request...';
-                    if (loadingDetails) loadingDetails.textContent = 'Đang kết nối với server...';
-                    if (loadingProgress) loadingProgress.style.width = '30%';
-                    
-                    const response = await fetch(url, {
-                        method: 'POST',
-                        headers: {
-                            'RequestVerificationToken': tokenInput ? tokenInput.value : ''
-                        },
-                        body: formData
                     });
-
-                    console.log('Response status:', response.status);
-                    console.log('Response headers:', Object.fromEntries(response.headers.entries()));
-                    
-                    // Update loading status
-                    if (loadingStatus) loadingStatus.textContent = 'Đang xử lý response...';
-                    if (loadingDetails) loadingDetails.textContent = 'Đang nhận dữ liệu từ server...';
-                    if (loadingProgress) loadingProgress.style.width = '70%';
-                    
-                    if (!response.ok) {
-                        const errorText = await response.text();
-                        console.error('Response error:', errorText);
-                        throw new Error(`HTTP ${response.status}: ${errorText}`);
+                })
+                .catch(error => {
+                    console.error('Error loading revenue chart:', error);
+                    loadingDiv.style.display = 'none';
+                    chartContainer.style.display = 'none';
+                    const emptyDiv = document.getElementById('revenueChartEmpty');
+                    if (emptyDiv) {
+                        emptyDiv.style.display = 'none';
                     }
-
-                    const contentType = response.headers.get('content-type');
-                    if (!contentType || !contentType.includes('application/json')) {
-                        const text = await response.text();
-                        console.error('Unexpected response type:', contentType, 'Body:', text);
-                        throw new Error(`Unexpected response type: ${contentType}`);
+                    errorDiv.style.display = 'block';
+                    const errorMsg = document.getElementById('revenueChartErrorMessage');
+                    if (errorMsg) {
+                        errorMsg.textContent = error.message || 'Không thể tải dữ liệu doanh thu. Vui lòng thử lại.';
                     }
-
-                    const result = await response.json();
-                    console.log('Response result:', result);
-                    
-                    // Complete progress
-                    clearInterval(progressInterval);
-                    if (loadingProgress) loadingProgress.style.width = '100%';
-                    if (loadingStatus) loadingStatus.textContent = 'Hoàn thành!';
-                    if (loadingDetails) loadingDetails.textContent = 'Đã xử lý xong tất cả requests';
-                    
-                    // Hide loading overlay after a short delay
-                    setTimeout(() => {
-                        if (loadingOverlay) loadingOverlay.style.display = 'none';
-                    }, 500);
-                    
-                    if (resultDiv) {
-                        if (result.success) {
-                            resultDiv.className = 'mt-3 alert alert-success';
-                            resultDiv.innerHTML = `
-                                <h6 class="fw-bold mb-2"><i class="bi bi-check-circle me-2"></i>Hoàn Thành!</h6>
-                                <p class="mb-2">${result.message}</p>
-                                <ul class="mb-0 small">
-                                    <li>Thành công: <strong>${result.successCount}</strong> món</li>
-                                    <li>Thất bại: <strong>${result.failCount}</strong> món</li>
-                                </ul>
-                                ${result.errors && result.errors.length > 0 ? `
-                                    <details class="mt-2">
-                                        <summary class="small">Xem lỗi chi tiết</summary>
-                                        <ul class="small mt-2 mb-0">
-                                            ${result.errors.map(e => `<li>${e}</li>`).join('')}
-                                        </ul>
-                                    </details>
-                                ` : ''}
-                            `;
-                        } else {
-                            resultDiv.className = 'mt-3 alert alert-danger';
-                            resultDiv.innerHTML = `
-                                <h6 class="fw-bold mb-2"><i class="bi bi-exclamation-triangle me-2"></i>Lỗi</h6>
-                                <p class="mb-0">${result.message}</p>
-                            `;
-                        }
-                        resultDiv.style.display = 'block';
-                    }
-                } catch (error) {
-                    console.error('Error generating embeddings:', error);
-                    
-                    // Stop progress and hide loading
-                    clearInterval(progressInterval);
-                    if (loadingOverlay) {
-                        loadingOverlay.style.display = 'none';
-                    }
-                    
-                    if (resultDiv) {
-                        resultDiv.className = 'mt-3 alert alert-danger';
-                        resultDiv.innerHTML = `
-                            <h6 class="fw-bold mb-2"><i class="bi bi-exclamation-triangle me-2"></i>Lỗi</h6>
-                            <p class="mb-0">Có lỗi xảy ra: ${error.message}</p>
-                            <small class="text-muted">Kiểm tra console để xem chi tiết lỗi</small>
-                        `;
-                        resultDiv.style.display = 'block';
-                    } else {
-                        alert('Lỗi: ' + error.message + '\nKiểm tra console để xem chi tiết.');
-                    }
-                } finally {
-                    btn.disabled = false;
-                    btn.innerHTML = originalText;
-                }
-            });
-        } else {
-            console.error('Generate button not found! ID: generateAllEmbeddingsBtn');
+                });
         }
 
-        // Debug: Check if button exists on page load
+        // Load initial chart
         document.addEventListener('DOMContentLoaded', function() {
-            const btn = document.getElementById('generateAllEmbeddingsBtn');
-            if (btn) {
-                console.log('✓ Generate button found on page load');
-            } else {
-                console.error('✗ Generate button NOT found on page load');
-            }
+            const yearSelect = document.getElementById('revenueYear');
+            const monthSelect = document.getElementById('revenueMonth');
+            const loadBtn = document.getElementById('loadRevenueBtn');
             
-            const form = document.getElementById('embeddingForm');
-            if (form) {
-                console.log('✓ Embedding form found');
-                const token = form.querySelector('input[name="__RequestVerificationToken"]');
-                if (token) {
-                    console.log('✓ Anti-forgery token found');
-                } else {
-                    console.error('✗ Anti-forgery token NOT found in form');
-                }
-            } else {
-                console.error('✗ Embedding form NOT found');
-            }
+            // Load current month/year on page load
+            loadRevenueChart(yearSelect.value, monthSelect.value);
+            
+            // Load on button click
+            loadBtn.addEventListener('click', function() {
+                loadRevenueChart(yearSelect.value, monthSelect.value);
+            });
+            
+            // Load on select change
+            yearSelect.addEventListener('change', function() {
+                loadRevenueChart(yearSelect.value, monthSelect.value);
+            });
+            
+            monthSelect.addEventListener('change', function() {
+                loadRevenueChart(yearSelect.value, monthSelect.value);
+            });
         });
     </script>
 }

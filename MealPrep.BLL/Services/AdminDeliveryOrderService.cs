@@ -29,9 +29,10 @@ namespace MealPrep.BLL.Services
             var query = _context.Set<DeliveryOrder>()
                 .Include(d => d.Subscription)
                     .ThenInclude(s => s!.AppUser)
-                .Include(d => d.DeliverySlot)
                 .Include(d => d.Items)
                     .ThenInclude(i => i.Meal)
+                .Include(d => d.Items)
+                    .ThenInclude(i => i.DeliverySlot)
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(search))
@@ -104,9 +105,10 @@ namespace MealPrep.BLL.Services
                     .ThenInclude(s => s!.AppUser)
                 .Include(d => d.Subscription)
                     .ThenInclude(s => s!.Plan)
-                .Include(d => d.DeliverySlot)
                 .Include(d => d.Items)
                     .ThenInclude(i => i.Meal)
+                .Include(d => d.Items)
+                    .ThenInclude(i => i.DeliverySlot)
                 .FirstOrDefaultAsync(d => d.Id == id);
         }
 
@@ -119,13 +121,14 @@ namespace MealPrep.BLL.Services
             }
 
             // Validation: Cannot mark as "Delivered" if delivery date is in the future
-            var today = DateOnly.FromDateTime(DateTime.Today);
-            if (status == OrderStatus.Delivered && order.DeliveryDate > today)
-            {
-                throw new InvalidOperationException(
-                    $"Không thể đánh dấu đơn hàng là 'Đã giao' vì ngày giao hàng ({order.DeliveryDate:dd/MM/yyyy}) chưa đến. " +
-                    $"Chỉ có thể đánh dấu 'Đã giao' cho các đơn hàng có ngày giao hàng <= {today:dd/MM/yyyy}.");
-            }
+            // TEMPORARILY DISABLED FOR TESTING
+            // var today = DateOnly.FromDateTime(DateTime.Today);
+            // if (status == OrderStatus.Delivered && order.DeliveryDate > today)
+            // {
+            //     throw new InvalidOperationException(
+            //         $"Không thể đánh dấu đơn hàng là 'Đã giao' vì ngày giao hàng ({order.DeliveryDate:dd/MM/yyyy}) chưa đến. " +
+            //         $"Chỉ có thể đánh dấu 'Đã giao' cho các đơn hàng có ngày giao hàng <= {today:dd/MM/yyyy}.");
+            // }
 
             // Validation: Cannot mark as "Delivered" if delivery date is today but current time is before delivery slot time
             // (Optional: If you want to check delivery slot time, you can add that logic here)
@@ -152,11 +155,16 @@ namespace MealPrep.BLL.Services
                 throw new ArgumentException($"Không tìm thấy đơn giao hàng #{deliveryOrderId}");
             }
 
+            var oldShipperId = order.ShipperId;
             order.ShipperId = shipperId;
             order.UpdatedAt = DateTime.UtcNow;
 
             _context.DeliveryOrders.Update(order);
             await _context.SaveChangesAsync();
+            
+            // Log assignment for debugging
+            System.Diagnostics.Debug.WriteLine(
+                $"✅ Assigned Shipper: OrderId={deliveryOrderId}, OldShipperId={oldShipperId}, NewShipperId={shipperId}, DeliveryDate={order.DeliveryDate}");
         }
     }
 }

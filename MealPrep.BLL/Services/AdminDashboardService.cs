@@ -116,6 +116,41 @@ namespace MealPrep.BLL.Services
             }).ToList();
         }
 
+        public async Task<List<RevenueGrowthDto>> GetRevenueByMonthAsync(int year, int month)
+        {
+            var startOfMonth = new DateTime(year, month, 1).Date;
+            var endOfMonth = startOfMonth.AddMonths(1).AddDays(-1).Date;
+            
+            // Get all days in the specified month
+            var allDays = Enumerable.Range(1, DateTime.DaysInMonth(year, month))
+                .Select(day => new DateOnly(year, month, day))
+                .ToList();
+            
+            // Get revenue data
+            var revenueData = await _context.Set<Payment>()
+                .Where(p => p.Status == "Paid" && 
+                           p.PaidAt.HasValue && 
+                           p.PaidAt.Value.Date >= startOfMonth && 
+                           p.PaidAt.Value.Date <= endOfMonth)
+                .GroupBy(p => DateOnly.FromDateTime(p.PaidAt!.Value.Date))
+                .Select(g => new RevenueGrowthDto
+                {
+                    Date = g.Key,
+                    Revenue = g.Sum(p => p.Amount)
+                })
+                .ToListAsync();
+            
+            // Create map for quick lookup
+            var revenueMap = revenueData.ToDictionary(r => r.Date, r => r.Revenue);
+            
+            // Return all days with revenue (0 if no revenue)
+            return allDays.Select(date => new RevenueGrowthDto
+            {
+                Date = date,
+                Revenue = revenueMap.ContainsKey(date) ? revenueMap[date] : 0
+            }).ToList();
+        }
+
         public async Task<Dictionary<string, int>> GetOrdersStatusDistributionAsync()
         {
             return await _context.Set<DeliveryOrder>()

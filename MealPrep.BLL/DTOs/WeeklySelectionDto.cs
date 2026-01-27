@@ -53,7 +53,18 @@ namespace MealPrep.BLL.DTOs
     public class MealSelectionRequestDto
     {
         public DateOnly Date { get; set; }
+        /// <summary>
+        /// Dictionary: SlotIndex (0, 1, 2...) -> MealId
+        /// SlotIndex 0 = Morning, 1 = Evening (hoặc theo thứ tự trong MealsPerDay)
+        /// </summary>
+        public Dictionary<int, int> SelectedMealsBySlot { get; set; } = new();
+        
+        /// <summary>
+        /// Legacy: List of meal IDs (for backward compatibility)
+        /// Will be mapped to SelectedMealsBySlot if provided
+        /// </summary>
         public List<int> SelectedMealIds { get; set; } = new();
+        
         /// <summary>
         /// Địa chỉ giao hàng (optional, sẽ lấy từ user nếu không có)
         /// </summary>

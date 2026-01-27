@@ -63,24 +63,48 @@ namespace MealPrep.BLL.Services
                 return null;
             }
 
-            // Use provided startDate or subscription StartDate, default to today if not provided
+            // Use provided startDate or subscription StartDate, default to tomorrow if subscription starts today or earlier
             DateOnly weekStart;
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            var tomorrow = today.AddDays(1);
+            
             if (startDate.HasValue)
             {
                 weekStart = startDate.Value;
             }
             else
             {
-                // Default to subscription StartDate, or today if subscription hasn't started
-                weekStart = activeSubscription.StartDate > DateOnly.FromDateTime(DateTime.Today) 
-                    ? activeSubscription.StartDate 
-                    : DateOnly.FromDateTime(DateTime.Today);
+                // If subscription StartDate is today or earlier, start from tomorrow
+                // Otherwise, use subscription StartDate
+                if (activeSubscription.StartDate <= today)
+                {
+                    // Subscription already started or starts today, begin from tomorrow
+                    weekStart = tomorrow;
+                }
+                else
+                {
+                    // Subscription starts in the future, use StartDate
+                    weekStart = activeSubscription.StartDate;
+                }
             }
 
             // Ensure weekStart is within subscription period
-            if (weekStart < activeSubscription.StartDate)
+            // Special case: If subscription StartDate is today or earlier, always start from tomorrow
+            if (activeSubscription.StartDate <= today)
             {
-                weekStart = activeSubscription.StartDate;
+                // Force start from tomorrow if subscription already started or starts today
+                if (weekStart <= today)
+                {
+                    weekStart = tomorrow;
+                }
+            }
+            else
+            {
+                // Subscription starts in the future, ensure weekStart is not before StartDate
+                if (weekStart < activeSubscription.StartDate)
+                {
+                    weekStart = activeSubscription.StartDate;
+                }
             }
             if (activeSubscription.EndDate.HasValue && weekStart > activeSubscription.EndDate.Value)
             {
@@ -123,6 +147,8 @@ namespace MealPrep.BLL.Services
             var existingOrders = await _deliveryOrderRepo.Query()
                 .Include(o => o.Items)
                     .ThenInclude(i => i.Meal)
+                .Include(o => o.Items)
+                    .ThenInclude(i => i.DeliverySlot)
                 .Where(o => o.SubscriptionId == activeSubscription.Id &&
                            o.DeliveryDate >= weekStart &&
                            o.DeliveryDate <= weekEnd)
@@ -132,18 +158,20 @@ namespace MealPrep.BLL.Services
                 .Where(o => o.Items.Any()) // Only orders with items are considered "confirmed"
                 .ToDictionary(o => o.DeliveryDate);
 
-            var today = DateOnly.FromDateTime(DateTime.Today);
+            // today is already defined above
 
             // Build daily slots - exactly 7 days from weekStart (không áp dụng giới hạn kho tạm thời)
             var dailySlots = new List<DailySlotDto>();
             var dayNames = new[] { "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy", "Chủ Nhật" };
 
-            // Calculate number of days to show (max 7, or until subscription end)
+            // Calculate number of days to show
+            // Always try to show 7 days from weekStart, but respect subscription EndDate if it's earlier
             var daysToShow = 7;
             if (activeSubscription.EndDate.HasValue)
             {
                 var daysUntilEnd = (activeSubscription.EndDate.Value.DayNumber - weekStart.DayNumber) + 1;
-                daysToShow = Math.Min(7, daysUntilEnd);
+                // Ensure we show at least the days available, up to 7 days
+                daysToShow = Math.Min(7, Math.Max(1, daysUntilEnd));
             }
 
             for (int i = 0; i < daysToShow; i++)
@@ -231,19 +259,29 @@ namespace MealPrep.BLL.Services
                 var isLocked = isPastDate || hasOrder || isPastCutoff;
 
                 // Get locked meals info if order exists
+                // Map items to slot index based on DeliverySlotId: Morning (Id=1) = 0, Evening (Id=3) = 1
                 var lockedMeals = new List<LockedMealInfo>();
                 if (hasOrder && ordersByDate[date].Items.Any())
                 {
-                    var orderItems = ordersByDate[date].Items.OrderBy(i => i.Id).ToList();
-                    for (int slotIdx = 0; slotIdx < orderItems.Count && slotIdx < activeSubscription.MealsPerDay; slotIdx++)
+                    var orderItems = ordersByDate[date].Items
+                        .Where(i => i.DeliverySlotId.HasValue)
+                        .OrderBy(i => i.DeliverySlotId == 1 ? 0 : 1) // Morning (Id=1) trước, Evening (Id=3) sau
+                        .ThenBy(i => i.Id)
+                        .ToList();
+                    
+                    foreach (var item in orderItems)
                     {
-                        var item = orderItems[slotIdx];
-                        lockedMeals.Add(new LockedMealInfo
+                        // Map DeliverySlotId to SlotIndex: Morning (Id=1) = 0, Evening (Id=3) = 1
+                        int slotIndex = item.DeliverySlotId == 1 ? 0 : (item.DeliverySlotId == 3 ? 1 : -1);
+                        if (slotIndex >= 0 && slotIndex < activeSubscription.MealsPerDay)
                         {
-                            MealId = item.MealId ?? 0,
-                            MealName = item.MealNameSnapshot,
-                            SlotIndex = slotIdx
-                        });
+                            lockedMeals.Add(new LockedMealInfo
+                            {
+                                MealId = item.MealId ?? 0,
+                                MealName = item.MealNameSnapshot,
+                                SlotIndex = slotIndex
+                            });
+                        }
                     }
                 }
 
@@ -346,6 +384,7 @@ namespace MealPrep.BLL.Services
         {
             var existingOrders = await _deliveryOrderRepo.Query()
                 .Include(o => o.Items)
+                    .ThenInclude(i => i.DeliverySlot)
                 .Where(o => o.SubscriptionId == subscriptionId &&
                             o.DeliveryDate >= fromDate &&
                             o.DeliveryDate <= toDate)
@@ -463,15 +502,32 @@ namespace MealPrep.BLL.Services
 
             var mealDict = meals.ToDictionary(m => m.Id);
 
-            // Get default delivery slot (first active slot)
-            var defaultSlot = await _slotRepo.Query()
-                .Where(s => s.IsActive)
-                .FirstOrDefaultAsync();
+            // Get active delivery slots: chỉ lấy Morning và Evening (theo thứ tự: Morning trước, Evening sau)
+            var activeSlots = await _slotRepo.Query()
+                .Where(s => s.IsActive && (s.Name == "Morning" || s.Name == "Evening"))
+                .OrderBy(s => s.Name == "Morning" ? 0 : 1) // Morning trước, Evening sau
+                .ToListAsync();
 
-            if (defaultSlot == null)
+            if (activeSlots == null || !activeSlots.Any() || activeSlots.Count < 2)
             {
-                throw new InvalidOperationException("Không tìm thấy khung giờ giao hàng. Vui lòng liên hệ quản trị viên.");
+                throw new InvalidOperationException("Không tìm thấy đủ khung giờ giao hàng (cần Morning và Evening). Vui lòng liên hệ quản trị viên.");
             }
+
+            // Map slot index to slot: 0 = Morning, 1 = Evening
+            // Đảm bảo chỉ có 2 slots: Morning và Evening
+            var morningSlot = activeSlots.FirstOrDefault(s => s.Name == "Morning");
+            var eveningSlot = activeSlots.FirstOrDefault(s => s.Name == "Evening");
+
+            if (morningSlot == null || eveningSlot == null)
+            {
+                throw new InvalidOperationException("Hệ thống cần có cả Morning và Evening slot. Vui lòng liên hệ quản trị viên.");
+            }
+
+            var slotMap = new Dictionary<int, DeliverySlot>
+            {
+                { 0, morningSlot }, // Slot index 0 = Morning
+                { 1, eveningSlot }  // Slot index 1 = Evening
+            };
 
             // Calculate subscription period
             if (!activeSubscription.EndDate.HasValue)
@@ -510,6 +566,7 @@ namespace MealPrep.BLL.Services
                 // Orders with items are locked and cannot be modified
                 var existingOrders = await _deliveryOrderRepo.Query()
                     .Include(o => o.Items)
+                        .ThenInclude(i => i.DeliverySlot)
                     .Where(o => o.SubscriptionId == activeSubscription.Id &&
                                o.DeliveryDate >= weekStart &&
                                o.DeliveryDate <= weekEnd)
@@ -552,12 +609,49 @@ namespace MealPrep.BLL.Services
                     decimal totalAmount = 0;
                     var orderItems = new List<DeliveryOrderItem>();
 
-                    // Calculate total amount and create items for selected meals
-                    foreach (var mealId in selection.SelectedMealIds)
+                    // Process selections: Use SelectedMealsBySlot if available, otherwise fallback to SelectedMealIds
+                    var mealsToProcess = new List<(int MealId, int SlotIndex)>();
+                    
+                    if (selection.SelectedMealsBySlot != null && selection.SelectedMealsBySlot.Any())
+                    {
+                        // New format: Dictionary<SlotIndex, MealId>
+                        foreach (var kvp in selection.SelectedMealsBySlot)
+                        {
+                            mealsToProcess.Add((kvp.Value, kvp.Key));
+                        }
+                    }
+                    else if (selection.SelectedMealIds != null && selection.SelectedMealIds.Any())
+                    {
+                        // Legacy format: List of MealIds (assign to slots in order)
+                        for (int i = 0; i < selection.SelectedMealIds.Count; i++)
+                        {
+                            mealsToProcess.Add((selection.SelectedMealIds[i], i));
+                        }
+                    }
+
+                    // Calculate total amount and create items for selected meals with slot assignment
+                    foreach (var (mealId, slotIndex) in mealsToProcess)
                     {
                         if (!mealDict.TryGetValue(mealId, out var meal))
                         {
                             throw new InvalidOperationException($"Meal {mealId} not found or inactive");
+                        }
+
+                        // Get slot for this index (0 = Morning, 1 = Evening)
+                        if (!slotMap.TryGetValue(slotIndex, out var slot))
+                        {
+                            // If slot index is invalid, default to Morning (index 0)
+                            if (slotIndex < 0)
+                            {
+                                slot = slotMap[0]; // Default to Morning
+                                _logger.LogWarning("Invalid SlotIndex {SlotIndex}, defaulting to Morning", slotIndex);
+                            }
+                            else
+                            {
+                                // If slot index exceeds available slots (shouldn't happen with 2 slots), use Evening
+                                slot = slotMap[1]; // Default to Evening
+                                _logger.LogWarning("SlotIndex {SlotIndex} exceeds available slots, using Evening", slotIndex);
+                            }
                         }
 
                         var quantity = 1;
@@ -571,6 +665,7 @@ namespace MealPrep.BLL.Services
                             MealNameSnapshot = meal.Name,
                             Quantity = quantity,
                             UnitPrice = unitPrice,
+                            DeliverySlotId = slot.Id, // Assign slot to item
                             DeliveryAddress = deliveryAddress // Save address snapshot for this delivery item
                         };
                         orderItems.Add(orderItem);
@@ -587,12 +682,11 @@ namespace MealPrep.BLL.Services
                     }
                     else
                     {
-                        // Create new DeliveryOrder for this date
+                        // Create new DeliveryOrder for this date (no DeliverySlotId at order level anymore)
                         deliveryOrder = new DeliveryOrder
                         {
                             SubscriptionId = activeSubscription.Id,
                             DeliveryDate = currentDate,
-                            DeliverySlotId = defaultSlot.Id,
                             Status = OrderStatus.Planned,
                             TotalAmount = totalAmount,
                             CreatedAt = DateTime.UtcNow

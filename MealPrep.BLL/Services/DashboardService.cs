@@ -57,7 +57,7 @@ namespace MealPrep.BLL.Services
             if (activeSub != null)
             {
                 nextOrder = await _deliveryOrders.Query()
-                    .Include(o => o.DeliverySlot)
+                    .Include(o => o.Items)!.ThenInclude(i => i.DeliverySlot)
                     .Include(o => o.Subscription)
                     .Where(o => o.SubscriptionId == activeSub.Id && 
                                o.DeliveryDate >= today &&
@@ -118,21 +118,22 @@ namespace MealPrep.BLL.Services
                 .ToListAsync();
 
             var recentDeliveryOrders = await _deliveryOrders.Query()
-                .Include(o => o.DeliverySlot)
-                .Include(o => o.Items).ThenInclude(i => i.Meal)
+                .Include(o => o.Items)!.ThenInclude(i => i.Meal)
+                .Include(o => o.Items)!.ThenInclude(i => i.DeliverySlot)
                 .Where(o => userSubscriptionIds.Contains(o.SubscriptionId))
                 .OrderByDescending(o => o.DeliveryDate)
                 .Take(5)
                 .ToListAsync();
 
             // Map DeliveryOrder to Order for backward compatibility with DTO
+            // Note: DeliverySlot is now at item level, so we get first item's slot or null
             var recentOrders = recentDeliveryOrders.Select(deliveryOrder => new Order
             {
                 Id = deliveryOrder.Id,
                 SubscriptionId = deliveryOrder.SubscriptionId,
                 DeliveryDate = deliveryOrder.DeliveryDate,
-                DeliverySlotId = deliveryOrder.DeliverySlotId ?? 0,
-                DeliverySlot = deliveryOrder.DeliverySlot,
+                DeliverySlotId = deliveryOrder.Items.FirstOrDefault()?.DeliverySlotId ?? 0,
+                DeliverySlot = deliveryOrder.Items.FirstOrDefault()?.DeliverySlot, // Get slot from first item
                 Status = deliveryOrder.Status,
                 Items = deliveryOrder.Items.Select(deliveryItem => new OrderItem
                 {
@@ -154,7 +155,7 @@ namespace MealPrep.BLL.Services
             return new DashboardDto
             {
                 SubscriptionStatus = activeSub?.Status.ToString() ?? "No subscription",
-                NextDeliveryText = nextOrder == null ? "No upcoming delivery" : $"{nextOrder.DeliveryDate} • {nextOrder.DeliverySlot?.Name}",
+                NextDeliveryText = nextOrder == null ? "No upcoming delivery" : $"{nextOrder.DeliveryDate} • {nextOrder.Items.FirstOrDefault()?.DeliverySlot?.Name ?? "N/A"}",
                 TodayCalories = todayCalories,
                 FeaturedMeals = featured,
                 FeaturedMealsWithRatings = featuredMealsWithRatings,

@@ -29,29 +29,53 @@ namespace MealPrep.BLL.Services
 
         public async Task<List<DeliveryOrder>> GetOrdersForDateAsync(Guid userId, DateOnly date, bool isAdmin)
         {
-            var query = _context.DeliveryOrders
+            IQueryable<DeliveryOrder> query = _context.DeliveryOrders
                 .Include(o => o.Subscription)!.ThenInclude(s => s!.AppUser)
-                .Include(o => o.DeliverySlot)
                 .Include(o => o.Items)!.ThenInclude(i => i.Meal)
-                .Where(o => o.DeliveryDate == date);
+                .Include(o => o.Items)!.ThenInclude(i => i.DeliverySlot);
 
             if (!isAdmin)
             {
+                // For shipper: Show all orders assigned to them, regardless of delivery date
+                // This allows shipper to see future orders that have been assigned to them
                 query = query.Where(o => o.ShipperId == userId);
+                
+                // Debug logging - check all assigned orders
+                var allAssignedOrders = await _context.DeliveryOrders
+                    .Where(o => o.ShipperId == userId)
+                    .Select(o => new { o.Id, o.ShipperId, o.DeliveryDate })
+                    .ToListAsync();
+                
+                _logger.LogInformation(
+                    "🔍 Shipper {UserId} requesting orders. Total assigned orders: {Total}, Orders for date {Date}: {ForDate}",
+                    userId, allAssignedOrders.Count,
+                    date, allAssignedOrders.Count(o => o.DeliveryDate == date));
+            }
+            else
+            {
+                // For admin: Filter by date as before
+                query = query.Where(o => o.DeliveryDate == date);
             }
 
-            return await query
-                .OrderBy(o => o.Status)
+            var result = await query
+                .OrderBy(o => o.DeliveryDate)
+                .ThenBy(o => o.Status)
                 .ThenBy(o => o.Subscription!.CustomerName)
                 .ToListAsync();
+            
+            _logger.LogInformation(
+                "📦 Returning {Count} orders for userId {UserId}, date {Date}, isAdmin: {IsAdmin}",
+                result.Count, userId, date, isAdmin);
+
+            return result;
         }
 
         public async Task<DeliveryOrder?> GetOrderDetailsAsync(Guid userId, int orderId, bool isAdmin)
         {
             var query = _context.DeliveryOrders
                 .Include(o => o.Subscription)!.ThenInclude(s => s!.AppUser)
-                .Include(o => o.DeliverySlot)
                 .Include(o => o.Items)!.ThenInclude(i => i.Meal)
+                .Include(o => o.Items)!.ThenInclude(i => i.DeliverySlot)
                 .Where(o => o.Id == orderId);
 
             if (!isAdmin)
@@ -64,12 +88,17 @@ namespace MealPrep.BLL.Services
 
         public async Task<ShipperDashboardStatsDto> GetDashboardStatsAsync(Guid userId, DateOnly date, bool isAdmin)
         {
-            var ordersQuery = _context.DeliveryOrders
-                .Where(o => o.DeliveryDate == date);
+            var ordersQuery = _context.DeliveryOrders.AsQueryable();
 
             if (!isAdmin)
             {
+                // For shipper: Show stats for all assigned orders, not just today
                 ordersQuery = ordersQuery.Where(o => o.ShipperId == userId);
+            }
+            else
+            {
+                // For admin: Filter by date as before
+                ordersQuery = ordersQuery.Where(o => o.DeliveryDate == date);
             }
 
             var totalOrders = await ordersQuery.CountAsync();
@@ -87,11 +116,17 @@ namespace MealPrep.BLL.Services
 
             var itemsQuery = _context.DeliveryOrderItems
                 .Include(i => i.DeliveryOrder)
-                .Where(i => i.DeliveryOrder!.DeliveryDate == date);
+                .AsQueryable();
 
             if (!isAdmin)
             {
+                // For shipper: Show stats for all items in assigned orders
                 itemsQuery = itemsQuery.Where(i => i.DeliveryOrder!.ShipperId == userId);
+            }
+            else
+            {
+                // For admin: Filter by date as before
+                itemsQuery = itemsQuery.Where(i => i.DeliveryOrder!.DeliveryDate == date);
             }
 
             var totalItems = await itemsQuery.CountAsync();
@@ -186,11 +221,18 @@ namespace MealPrep.BLL.Services
 
                 await _context.SaveChangesAsync();
 
+                // Generate presigned URL để hiển thị ảnh ngay sau khi upload
+                var presignedUrl = _s3Service.GetPresignedUrl(s3Key, expirationHours: 24);
+
                 _logger.LogInformation(
                     "Shipper {UserId} uploaded delivery proof for DeliveryOrderItem {ItemId}, S3Key: {S3Key}",
                     userId, deliveryOrderItemId, s3Key);
 
-                return new UploadProofResult(true, "Đã upload ảnh bằng chứng thành công!", deliveryOrder?.Id);
+                return new UploadProofResult(
+                    true, 
+                    "Đã upload ảnh bằng chứng thành công!", 
+                    deliveryOrder?.Id,
+                    presignedUrl);
             }
             catch (Exception ex)
             {

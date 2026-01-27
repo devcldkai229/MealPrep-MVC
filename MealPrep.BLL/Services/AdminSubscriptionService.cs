@@ -71,7 +71,8 @@ namespace MealPrep.BLL.Services
                 .Include(s => s.AppUser)
                 .Include(s => s.Plan)
                 .Include(s => s.DeliveryOrders)
-                    .ThenInclude(d => d.DeliverySlot)
+                    .ThenInclude(d => d.Items)
+                        .ThenInclude(i => i.DeliverySlot)
                 .Include(s => s.Payments)
                 .FirstOrDefaultAsync(s => s.Id == id);
         }

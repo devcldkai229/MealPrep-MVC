@@ -78,6 +78,24 @@ namespace MealPrep.Web.Controllers
                     image?.Length ?? 0,
                     !isShipper);
 
+                // If AJAX request, return JSON
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                {
+                    if (!result.Success)
+                    {
+                        return Json(new { success = false, message = result.Message });
+                    }
+
+                    return Json(new 
+                    { 
+                        success = true, 
+                        message = result.Message,
+                        imageUrl = result.ImagePresignedUrl,
+                        deliveryOrderId = result.DeliveryOrderId
+                    });
+                }
+
+                // Otherwise, redirect (backward compatibility)
                 if (!result.Success)
                 {
                     TempData["ErrorMessage"] = result.Message;
@@ -91,6 +109,12 @@ namespace MealPrep.Web.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error uploading delivery proof for DeliveryOrderItem {ItemId}", deliveryOrderItemId);
+                
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                {
+                    return Json(new { success = false, message = $"Lỗi khi upload ảnh: {ex.Message}" });
+                }
+
                 TempData["ErrorMessage"] = $"Lỗi khi upload ảnh: {ex.Message}";
                 return RedirectToAction(nameof(Details), new { id = 0 });
             }

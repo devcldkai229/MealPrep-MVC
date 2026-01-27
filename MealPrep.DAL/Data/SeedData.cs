@@ -177,7 +177,7 @@ namespace MealPrep.DAL.Data
                     Id = 2,
                     Name = "Afternoon",
                     Capacity = 100,
-                    IsActive = true
+                    IsActive = false // Disabled - chỉ dùng Morning và Evening
                 },
                 new DeliverySlot
                 {

@@ -27,6 +27,13 @@ namespace MealPrep.DAL.Entities
         public string MealNameSnapshot { get; set; } = string.Empty;
 
         /// <summary>
+        /// DeliverySlot cho món này (Morning/Evening)
+        /// Mỗi item có thể thuộc buổi khác nhau
+        /// </summary>
+        public int? DeliverySlotId { get; set; }
+        public DeliverySlot? DeliverySlot { get; set; }
+
+        /// <summary>
         /// Loại bữa: Breakfast, Lunch, Dinner (optional)
         /// </summary>
         [StringLength(50)]

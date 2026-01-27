@@ -25,9 +25,6 @@ namespace MealPrep.DAL.Entities
         [Required]
         public DateOnly DeliveryDate { get; set; }
 
-        public int? DeliverySlotId { get; set; }
-        public DeliverySlot? DeliverySlot { get; set; }
-
         /// <summary>
         /// Trạng thái: Planned, Preparing, Delivering, Delivered, Skipped, Cancelled
         /// </summary>

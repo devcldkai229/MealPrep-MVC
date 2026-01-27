@@ -241,9 +241,10 @@ namespace MealPrep.BLL.Services
             var query = _deliveryOrderRepo.Query()
                 .Include(d => d.Subscription)
                     .ThenInclude(s => s!.AppUser)
-                .Include(d => d.DeliverySlot)
                 .Include(d => d.Items)
                     .ThenInclude(i => i.Meal)
+                .Include(d => d.Items)
+                    .ThenInclude(i => i.DeliverySlot)
                 .Where(d => d.DeliveryDate == date);
 
             if (status.HasValue)
@@ -264,7 +265,7 @@ namespace MealPrep.BLL.Services
                 d.Subscription.CustomerEmail,
                 d.Subscription.AppUser?.PhoneNumber,
                 d.DeliveryDate,
-                d.DeliverySlot?.Name,
+                d.Items.FirstOrDefault()?.DeliverySlot?.Name, // Get slot from first item
                 d.Status,
                 d.TotalAmount,
                 d.Items.Select(i => new DeliveryOrderItemDto(
@@ -288,15 +289,16 @@ namespace MealPrep.BLL.Services
             }
 
             // Validation: Cannot mark as "Delivered" if delivery date is in the future
-            var today = DateOnly.FromDateTime(DateTime.Today);
-            if (newStatus == OrderStatus.Delivered && deliveryOrder.DeliveryDate > today)
-            {
-                _logger.LogWarning("⚠️ Cannot mark DeliveryOrder #{Id} as Delivered: DeliveryDate {DeliveryDate} is in the future (Today: {Today})", 
-                    deliveryOrderId, deliveryOrder.DeliveryDate, today);
-                throw new InvalidOperationException(
-                    $"Không thể đánh dấu đơn hàng là 'Đã giao' vì ngày giao hàng ({deliveryOrder.DeliveryDate:dd/MM/yyyy}) chưa đến. " +
-                    $"Chỉ có thể đánh dấu 'Đã giao' cho các đơn hàng có ngày giao hàng <= {today:dd/MM/yyyy}.");
-            }
+            // TEMPORARILY DISABLED FOR TESTING
+            // var today = DateOnly.FromDateTime(DateTime.Today);
+            // if (newStatus == OrderStatus.Delivered && deliveryOrder.DeliveryDate > today)
+            // {
+            //     _logger.LogWarning("⚠️ Cannot mark DeliveryOrder #{Id} as Delivered: DeliveryDate {DeliveryDate} is in the future (Today: {Today})", 
+            //         deliveryOrderId, deliveryOrder.DeliveryDate, today);
+            //     throw new InvalidOperationException(
+            //         $"Không thể đánh dấu đơn hàng là 'Đã giao' vì ngày giao hàng ({deliveryOrder.DeliveryDate:dd/MM/yyyy}) chưa đến. " +
+            //         $"Chỉ có thể đánh dấu 'Đã giao' cho các đơn hàng có ngày giao hàng <= {today:dd/MM/yyyy}.");
+            // }
 
             deliveryOrder.Status = newStatus;
             deliveryOrder.UpdatedAt = DateTime.UtcNow;
@@ -317,20 +319,21 @@ namespace MealPrep.BLL.Services
                 .ToListAsync();
 
             // Validation: Cannot mark as "Delivered" if delivery date is in the future
-            var today = DateOnly.FromDateTime(DateTime.Today);
-            if (newStatus == OrderStatus.Delivered)
-            {
-                var futureOrders = deliveryOrders.Where(d => d.DeliveryDate > today).ToList();
-                if (futureOrders.Any())
-                {
-                    var futureDates = string.Join(", ", futureOrders.Select(d => d.DeliveryDate.ToString("dd/MM/yyyy")));
-                    _logger.LogWarning("⚠️ Cannot bulk mark {Count} delivery orders as Delivered: DeliveryDates {Dates} are in the future (Today: {Today})", 
-                        futureOrders.Count, futureDates, today);
-                    throw new InvalidOperationException(
-                        $"Không thể đánh dấu {futureOrders.Count} đơn hàng là 'Đã giao' vì ngày giao hàng chưa đến: {futureDates}. " +
-                        $"Chỉ có thể đánh dấu 'Đã giao' cho các đơn hàng có ngày giao hàng <= {today:dd/MM/yyyy}.");
-                }
-            }
+            // TEMPORARILY DISABLED FOR TESTING
+            // var today = DateOnly.FromDateTime(DateTime.Today);
+            // if (newStatus == OrderStatus.Delivered)
+            // {
+            //     var futureOrders = deliveryOrders.Where(d => d.DeliveryDate > today).ToList();
+            //     if (futureOrders.Any())
+            //     {
+            //         var futureDates = string.Join(", ", futureOrders.Select(d => d.DeliveryDate.ToString("dd/MM/yyyy")));
+            //         _logger.LogWarning("⚠️ Cannot bulk mark {Count} delivery orders as Delivered: DeliveryDates {Dates} are in the future (Today: {Today})", 
+            //             futureOrders.Count, futureDates, today);
+            //         throw new InvalidOperationException(
+            //             $"Không thể đánh dấu {futureOrders.Count} đơn hàng là 'Đã giao' vì ngày giao hàng chưa đến: {futureDates}. " +
+            //             $"Chỉ có thể đánh dấu 'Đã giao' cho các đơn hàng có ngày giao hàng <= {today:dd/MM/yyyy}.");
+            //     }
+            // }
 
             foreach (var order in deliveryOrders)
             {

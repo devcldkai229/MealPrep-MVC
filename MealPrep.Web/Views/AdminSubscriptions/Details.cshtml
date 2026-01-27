@@ -144,7 +144,17 @@
                                     <tr>
                                         <td>#@order.Id</td>
                                         <td>@order.DeliveryDate.ToString("dd/MM/yyyy")</td>
-                                        <td>@(order.DeliverySlot?.Name ?? "N/A")</td>
+                                        <td>
+                                            @if (order.Items.Any())
+                                            {
+                                                var slots = order.Items.Where(i => i.DeliverySlot != null).Select(i => i.DeliverySlot!.Name).Distinct();
+                                                @string.Join(", ", slots)
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">N/A</span>
+                                            }
+                                        </td>
                                         <td>
                                             <span class="badge bg-info">@order.Status</span>
                                         </td>

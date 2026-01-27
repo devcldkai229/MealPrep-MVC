@@ -15,7 +15,8 @@ namespace MealPrep.BLL.Services
         // Charts Data
         Task<List<KitchenPrepForecastDto>> GetKitchenPrepForecastAsync(DateOnly? date = null);
         Task<List<RevenueGrowthDto>> GetRevenueGrowthAsync(int days = 30);
-        Task<List<RevenueGrowthDto>> GetMonthlyRevenueAsync(); // Doanh thu theo ngày trong tháng
+        Task<List<RevenueGrowthDto>> GetMonthlyRevenueAsync(); // Doanh thu theo ngày trong tháng hiện tại
+        Task<List<RevenueGrowthDto>> GetRevenueByMonthAsync(int year, int month); // Doanh thu theo ngày trong tháng/năm cụ thể
         Task<List<SubscriptionGrowthDto>> GetSubscriptionGrowthAsync(int days = 30);
         Task<Dictionary<string, int>> GetUserSegmentationByGoalAsync();
         Task<List<TopDislikedMealDto>> GetTopDislikedMealsAsync(int top = 5);

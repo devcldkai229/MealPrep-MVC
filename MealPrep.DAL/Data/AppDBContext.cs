@@ -193,11 +193,6 @@ namespace MealPrep.DAL.Data
                     .HasForeignKey(d => d.SubscriptionId)
                     .OnDelete(DeleteBehavior.Restrict);
 
-                entity.HasOne(d => d.DeliverySlot)
-                    .WithMany()
-                    .HasForeignKey(d => d.DeliverySlotId)
-                    .OnDelete(DeleteBehavior.SetNull);
-
                 // Shipper (AppUser) được gán cho DeliveryOrder
                 entity.HasOne(d => d.Shipper)
                     .WithMany()
@@ -218,6 +213,12 @@ namespace MealPrep.DAL.Data
                 entity.HasOne(i => i.Meal)
                     .WithMany()
                     .HasForeignKey(i => i.MealId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                // DeliverySlot cho từng item (Morning/Evening)
+                entity.HasOne(i => i.DeliverySlot)
+                    .WithMany()
+                    .HasForeignKey(i => i.DeliverySlotId)
                     .OnDelete(DeleteBehavior.SetNull);
             });
 

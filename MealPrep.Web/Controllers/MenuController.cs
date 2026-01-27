@@ -101,7 +101,7 @@ public class MenuController : Controller
     {
         var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
-        // Parse form data into selections
+        // Parse form data into selections with slot information
         var selections = new List<MealSelectionRequest>();
         var dateGroups = new Dictionary<string, MealSelectionRequest>();
 
@@ -115,7 +115,11 @@ public class MenuController : Controller
 
                 if (!dateGroups.ContainsKey(dayNumber))
                 {
-                    dateGroups[dayNumber] = new MealSelectionRequest { SelectedMealIds = new List<int>() };
+                    dateGroups[dayNumber] = new MealSelectionRequest 
+                    { 
+                        SelectedMealIds = new List<int>(),
+                        SelectedMealsBySlot = new Dictionary<int, int>()
+                    };
                 }
 
                 if (field == "Date")
@@ -127,6 +131,15 @@ public class MenuController : Controller
                 }
                 else if (field.StartsWith("SelectedMealIds[") && int.TryParse(Request.Form[key], out var mealId) && mealId > 0)
                 {
+                    // Extract slot index from field name: SelectedMealIds[0], SelectedMealIds[1], etc.
+                    var slotMatch = Regex.Match(field, @"SelectedMealIds\[(\d+)\]");
+                    if (slotMatch.Success && int.TryParse(slotMatch.Groups[1].Value, out var slotIndex))
+                    {
+                        // Map slot index to meal ID
+                        dateGroups[dayNumber].SelectedMealsBySlot[slotIndex] = mealId;
+                    }
+                    
+                    // Also keep in SelectedMealIds for backward compatibility
                     if (!dateGroups[dayNumber].SelectedMealIds.Contains(mealId))
                     {
                         dateGroups[dayNumber].SelectedMealIds.Add(mealId);
@@ -135,7 +148,7 @@ public class MenuController : Controller
             }
         }
 
-        selections = dateGroups.Values.Where(s => s.Date != default && s.SelectedMealIds.Any()).ToList();
+        selections = dateGroups.Values.Where(s => s.Date != default && (s.SelectedMealIds.Any() || s.SelectedMealsBySlot.Any())).ToList();
 
         // Get subscription ID from form or get from service
         var dto = await _menuService.GetWeeklySelectionAsync(userId);
@@ -156,7 +169,8 @@ public class MenuController : Controller
         var selectionDtos = selections.Select(s => new MealPrep.BLL.DTOs.MealSelectionRequestDto
         {
             Date = s.Date,
-            SelectedMealIds = s.SelectedMealIds,
+            SelectedMealIds = s.SelectedMealIds, // Keep for backward compatibility
+            SelectedMealsBySlot = s.SelectedMealsBySlot, // New format with slot mapping
             DeliveryAddress = deliveryAddress // Pass address to DTO (only first selection needs it, but we pass it to all for consistency)
         }).ToList();
 

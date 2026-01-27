@@ -60,9 +60,6 @@
                     <dt class="col-sm-5">Ngày Giao:</dt>
                     <dd class="col-sm-7">@Model.DeliveryDate.ToString("dd/MM/yyyy")</dd>
 
-                    <dt class="col-sm-5">Slot:</dt>
-                    <dd class="col-sm-7">@(Model.DeliverySlot?.Name ?? "N/A")</dd>
-
                     <dt class="col-sm-5">Trạng Thái:</dt>
                     <dd class="col-sm-7">
                         @switch (Model.Status)
@@ -136,10 +133,6 @@
                             }
                         </div>
                         <label class="form-label fw-semibold mb-2">Chọn Trạng Thái Mới</label>
-                        @{
-                            var today = DateOnly.FromDateTime(DateTime.Today);
-                            var canMarkAsDelivered = Model.DeliveryDate <= today;
-                        }
                         <select name="status" class="form-select">
                             @foreach (OrderStatus status in Enum.GetValues(typeof(OrderStatus)))
                             {
@@ -152,22 +145,12 @@
                                     OrderStatus.Cancelled => "Đã Hủy",
                                     _ => status.ToString()
                                 };
-                                var isDisabled = status == OrderStatus.Delivered && !canMarkAsDelivered;
                                 <option value="@((int)status)" 
-                                        selected="@(Model.Status == status)" 
-                                        disabled="@isDisabled">
-                                    @statusText@(isDisabled ? $" (Chưa đến ngày giao: {Model.DeliveryDate:dd/MM/yyyy})" : "")
+                                        selected="@(Model.Status == status)">
+                                    @statusText
                                 </option>
                             }
                         </select>
-                        @if (!canMarkAsDelivered)
-                        {
-                            <small class="text-danger d-block mt-2">
-                                <i class="bi bi-exclamation-triangle me-1"></i>
-                                Không thể đánh dấu "Đã Giao" vì ngày giao hàng (@Model.DeliveryDate.ToString("dd/MM/yyyy")) chưa đến. 
-                                Chỉ có thể đánh dấu "Đã Giao" cho các đơn hàng có ngày giao hàng &lt;= @today.ToString("dd/MM/yyyy").
-                            </small>
-                        }
                     </div>
                     <button type="submit" class="btn btn-primary w-100 mb-2">
                         <i class="bi bi-check-circle me-2"></i>Cập Nhật Trạng Thái
@@ -230,6 +213,7 @@
                             <thead>
                                 <tr>
                                     <th>Món Ăn</th>
+                                    <th>Bữa</th>
                                     <th>Loại</th>
                                     <th>Số Lượng</th>
                                     <th>Đơn Giá</th>
@@ -250,6 +234,16 @@
                                             else
                                             {
                                                 @item.MealNameSnapshot
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (item.DeliverySlot != null)
+                                            {
+                                                <span class="badge bg-info">@item.DeliverySlot.Name</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">N/A</span>
                                             }
                                         </td>
                                         <td>@(item.MealType ?? "N/A")</td>
