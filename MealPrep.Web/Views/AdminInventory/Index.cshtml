@@ -1,0 +1,163 @@
+@model List<MealPrep.DAL.Entities.KitchenInventory>
+@{
+    ViewData["Title"] = "Quản Lý Kho Nguyên Liệu";
+    Layout = "_AdminLayout";
+}
+
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">Quản Lý Kho Nguyên Liệu</h2>
+            <p class="text-muted mb-0">Thiết lập giới hạn số lượng món ăn theo ngày</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="BulkCreate" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Tạo Hàng Loạt
+            </a>
+            <a asp-action="Create" asp-route-date="@ViewBag.SelectedDate.ToString("yyyy-MM-dd")" class="btn btn-success">
+                <i class="bi bi-plus-lg"></i> Thêm Mới
+            </a>
+        </div>
+    </div>
+
+    <!-- Alerts -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Date Filter -->
+    <div class="app-card p-4 mb-4">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label fw-semibold">Chọn Ngày</label>
+                <input type="date" name="date" value="@ViewBag.SelectedDate.ToString("yyyy-MM-dd")" class="form-control" required />
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search"></i> Xem
+                </button>
+            </div>
+            <div class="col-md-6 text-end">
+                <a asp-action="Index" asp-route-date="@DateTime.Today.ToString("yyyy-MM-dd")" class="btn btn-outline-secondary">
+                    Hôm Nay
+                </a>
+                <a asp-action="Index" asp-route-date="@DateTime.Today.AddDays(1).ToString("yyyy-MM-dd")" class="btn btn-outline-secondary">
+                    Ngày Mai
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Inventory Table -->
+    <div class="app-card p-0">
+        @if (Model != null && Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Món Ăn</th>
+                            <th>Giới Hạn</th>
+                            <th>Đã Sử Dụng</th>
+                            <th>Còn Lại</th>
+                            <th>Tỷ Lệ</th>
+                            <th>Ghi Chú</th>
+                            <th>Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var inv in Model)
+                        {
+                            var available = inv.QuantityLimit - inv.QuantityUsed;
+                            var percentage = inv.QuantityLimit > 0 ? (inv.QuantityUsed * 100.0 / inv.QuantityLimit) : 0;
+                            var isLowStock = available <= 5 && available > 0;
+                            var isOutOfStock = available <= 0;
+                            
+                            <tr class="@(isOutOfStock ? "table-danger" : isLowStock ? "table-warning" : "")">
+                                <td>
+                                    <div class="fw-semibold">@(inv.Meal?.Name ?? $"Món #{inv.MealId}")</div>
+                                    <small class="text-muted">ID: @inv.MealId</small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">@inv.QuantityLimit suất</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">@inv.QuantityUsed suất</span>
+                                </td>
+                                <td>
+                                    @if (isOutOfStock)
+                                    {
+                                        <span class="badge bg-danger">
+                                            <i class="bi bi-x-circle"></i> Hết Hàng
+                                        </span>
+                                    }
+                                    else if (isLowStock)
+                                    {
+                                        <span class="badge bg-warning text-dark">
+                                            <i class="bi bi-exclamation-triangle"></i> @available suất
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-success">@available suất</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="progress" style="height: 20px; width: 100px;">
+                                        <div class="progress-bar @(percentage >= 100 ? "bg-danger" : percentage >= 80 ? "bg-warning" : "bg-success")" 
+                                             role="progressbar" 
+                                             style="width: @(Math.Min(100, percentage))%"
+                                             aria-valuenow="@percentage" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="100">
+                                            @percentage.ToString("F0")%
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <small class="text-muted">@(inv.Notes ?? "-")</small>
+                                </td>
+                                <td>
+                                    <div class="d-flex gap-1">
+                                        <a asp-action="Edit" asp-route-id="@inv.Id" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <form asp-action="Delete" asp-route-id="@inv.Id" method="post" class="d-inline" 
+                                              onsubmit="return confirm('Bạn có chắc muốn xóa giới hạn kho này?');">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5">
+                <i class="bi bi-inbox" style="font-size: 3rem; color: #9CA3AF;"></i>
+                <p class="text-muted mt-3">Chưa có giới hạn kho cho ngày @ViewBag.SelectedDate.ToString("dd/MM/yyyy")</p>
+                <a asp-action="Create" asp-route-date="@ViewBag.SelectedDate.ToString("yyyy-MM-dd")" class="btn btn-primary">
+                    <i class="bi bi-plus-lg"></i> Tạo Giới Hạn Đầu Tiên
+                </a>
+            </div>
+        }
+    </div>
+</div>

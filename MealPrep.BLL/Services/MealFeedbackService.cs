@@ -36,61 +36,68 @@ namespace MealPrep.BLL.Services
         }
 
         /// <summary>
-        /// 🔍 Lấy danh sách món của ngày hôm qua (hoặc date cụ thể) chưa được đánh giá
+        /// 🔍 Lấy danh sách món đã giao chưa được đánh giá
         /// 
         /// === WORKFLOW ===
-        /// 1. Lấy ngày cần query (default = hôm qua)
-        /// 2. Query DeliveryOrders của User có DeliveryDate = targetDate
+        /// 1. Lấy ngày cần query (optional - nếu null thì lấy tất cả)
+        /// 2. Query DeliveryOrders của User đã giao (Status = Delivered)
         /// 3. Flatten DeliveryOrderItems
         /// 4. Filter: Chưa có rating (LEFT JOIN MealRating)
         /// 5. Map sang PendingFeedbackDto
         /// </summary>
         public async Task<List<PendingFeedbackDto>> GetPendingFeedbacksAsync(Guid userId, DateOnly? date = null)
         {
-            var targetDate = date ?? DateOnly.FromDateTime(DateTime.Today.AddDays(-1));
-
-            _logger.LogInformation("📋 Getting pending feedbacks for User {UserId} on {Date}", userId, targetDate);
+            _logger.LogInformation("📋 Getting pending feedbacks for User {UserId}{DateFilter}", 
+                userId, date.HasValue ? $" on {date.Value}" : " (all dates)");
 
             try
             {
-                // Query: Lấy DeliveryOrders của User cho ngày targetDate
-                var deliveryOrders = await _deliveryOrderRepo.Query()
+                // Query: Lấy DeliveryOrders của User đã giao (không giới hạn ngày nếu date = null)
+                var query = _deliveryOrderRepo.Query()
                     .Include(d => d.Items)
                         .ThenInclude(i => i.Meal)
                     .Include(d => d.Subscription)
                     .Where(d =>
                         d.Subscription!.AppUserId == userId &&
-                        d.DeliveryDate == targetDate &&
-                        d.Status == DAL.Enums.OrderStatus.Delivered) // Chỉ lấy đơn đã giao
-                    .ToListAsync();
+                        d.Status == DAL.Enums.OrderStatus.Delivered); // Chỉ lấy đơn đã giao
+
+                // Chỉ filter theo ngày nếu date có giá trị
+                if (date.HasValue)
+                {
+                    query = query.Where(d => d.DeliveryDate == date.Value);
+                }
+
+                var deliveryOrders = await query.ToListAsync();
 
                 if (!deliveryOrders.Any())
                 {
-                    _logger.LogInformation("📭 No delivered orders found for {Date}", targetDate);
+                    _logger.LogInformation("📭 No delivered orders found");
                     return new List<PendingFeedbackDto>();
                 }
 
                 // Flatten items và filter chưa có rating
+                var allItemIds = deliveryOrders.SelectMany(d => d.Items).Select(i => i.Id).ToList();
+                
                 var ratedItemIds = await _ratingRepo.Query()
-                    .Where(r => r.AppUserId == userId && r.DeliveryDate == targetDate)
+                    .Where(r => r.AppUserId == userId && allItemIds.Contains(r.DeliveryOrderItemId))
                     .Select(r => r.DeliveryOrderItemId)
                     .ToListAsync();
 
                 var pendingItems = deliveryOrders
-                    .SelectMany(d => d.Items)
-                    .Where(i => i.MealId.HasValue && !ratedItemIds.Contains(i.Id))
+                    .SelectMany(d => d.Items.Select(i => new { Item = i, DeliveryDate = d.DeliveryDate }))
+                    .Where(x => x.Item.MealId.HasValue && !ratedItemIds.Contains(x.Item.Id))
                     .ToList();
 
-                var result = pendingItems.Select(item => new PendingFeedbackDto(
-                    item.Id,
-                    item.MealId!.Value,
-                    item.MealNameSnapshot,
-                    targetDate,
-                    item.Meal?.Calories ?? 0,
-                    item.Meal?.Protein ?? 0,
-                    item.Meal?.Carbs ?? 0,
-                    item.Meal?.Fat ?? 0,
-                    GetFirstMealImage(item.Meal?.Images)
+                var result = pendingItems.Select(x => new PendingFeedbackDto(
+                    x.Item.Id,
+                    x.Item.MealId!.Value,
+                    x.Item.MealNameSnapshot,
+                    x.DeliveryDate,
+                    x.Item.Meal?.Calories ?? 0,
+                    x.Item.Meal?.Protein ?? 0,
+                    x.Item.Meal?.Carbs ?? 0,
+                    x.Item.Meal?.Fat ?? 0,
+                    GetFirstMealImage(x.Item.Meal?.Images)
                 )).ToList();
 
                 _logger.LogInformation("✅ Found {Count} pending feedbacks", result.Count);
@@ -130,13 +137,8 @@ namespace MealPrep.BLL.Services
         /// === WORKFLOW ===
         /// 1. Validate: DeliveryOrderItem có thuộc về User không?
         /// 2. Lưu MealRating vào DB
-        /// 3. Logic xử lý theo Stars:
-        ///    a. Nếu 1-2 sao + RequestBlock = true
-        ///       → Thêm vào UserDislikedMeal
-        ///    b. Nếu 4-5 sao
-        ///       → (Optional) Tăng priority score (hiện tại skip)
-        /// 4. Ghi vào NutritionLog (confirm đã ăn)
-        /// 5. Return result
+        /// 3. Ghi vào NutritionLog (confirm đã ăn)
+        /// 4. Return result
         /// </summary>
         public async Task<SubmitRatingResult> SubmitMealRatingAsync(Guid userId, SubmitMealRatingDto dto)
         {
@@ -154,14 +156,14 @@ namespace MealPrep.BLL.Services
                 if (deliveryItem == null)
                 {
                     _logger.LogWarning("❌ DeliveryOrderItem {ItemId} not found", dto.DeliveryOrderItemId);
-                    return new SubmitRatingResult(false, "Món ăn không tồn tại", false, false);
+                    return new SubmitRatingResult(false, "Món ăn không tồn tại", false);
                 }
 
                 if (deliveryItem.DeliveryOrder?.Subscription?.AppUserId != userId)
                 {
                     _logger.LogWarning("❌ User {UserId} does not own DeliveryOrderItem {ItemId}", 
                         userId, dto.DeliveryOrderItemId);
-                    return new SubmitRatingResult(false, "Bạn không có quyền đánh giá món này", false, false);
+                    return new SubmitRatingResult(false, "Bạn không có quyền đánh giá món này", false);
                 }
 
                 // === STEP 2: Check duplicate rating ===
@@ -176,7 +178,6 @@ namespace MealPrep.BLL.Services
                     existingRating.Stars = dto.Stars;
                     existingRating.Tags = dto.Tags != null ? JsonSerializer.Serialize(dto.Tags) : null;
                     existingRating.Comments = dto.Comments;
-                    existingRating.RequestedBlock = dto.RequestBlock;
                     existingRating.UpdatedAt = DateTime.UtcNow;
 
                     _ratingRepo.Update(existingRating);
@@ -193,7 +194,7 @@ namespace MealPrep.BLL.Services
                         Stars = dto.Stars,
                         Tags = dto.Tags != null ? JsonSerializer.Serialize(dto.Tags) : null,
                         Comments = dto.Comments,
-                        RequestedBlock = dto.RequestBlock,
+                        RequestedBlock = false,
                         MarkedAsConsumed = true,
                         CreatedAt = DateTime.UtcNow
                     };
@@ -203,30 +204,7 @@ namespace MealPrep.BLL.Services
 
                 await _ratingRepo.SaveChangesAsync();
 
-                // === STEP 4: Handle low ratings (1-2 sao) ===
-                bool blockedMeal = false;
-                if (dto.Stars <= 2 && dto.RequestBlock)
-                {
-                    var alreadyDisliked = await _dislikedMealRepo.Query()
-                        .AnyAsync(d => d.AppUserId == userId && d.MealId == dto.MealId);
-
-                    if (!alreadyDisliked)
-                    {
-                        var dislikedMeal = new UserDislikedMeal
-                        {
-                            AppUserId = userId,
-                            MealId = dto.MealId
-                        };
-
-                        await _dislikedMealRepo.AddAsync(dislikedMeal);
-                        await _dislikedMealRepo.SaveChangesAsync();
-
-                        blockedMeal = true;
-                        _logger.LogInformation("🚫 User {UserId} blocked Meal {MealId}", userId, dto.MealId);
-                    }
-                }
-
-                // === STEP 5: Ghi vào NutritionLog ===
+                // === STEP 4: Ghi vào NutritionLog ===
                 bool addedToNutritionLog = false;
                 var existingLog = await _nutritionLogRepo.Query()
                     .FirstOrDefaultAsync(n =>
@@ -264,12 +242,12 @@ namespace MealPrep.BLL.Services
                     ? "Cảm ơn phản hồi! Chúng tôi sẽ cải thiện món này."
                     : "Cảm ơn! Rất vui vì bạn thích món này! 🎉";
 
-                return new SubmitRatingResult(true, message, blockedMeal, addedToNutritionLog);
+                return new SubmitRatingResult(true, message, addedToNutritionLog);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "❌ Error submitting rating");
-                return new SubmitRatingResult(false, "Đã xảy ra lỗi khi ghi nhận đánh giá", false, false);
+                return new SubmitRatingResult(false, "Đã xảy ra lỗi khi ghi nhận đánh giá", false);
             }
         }
 
@@ -387,6 +365,15 @@ namespace MealPrep.BLL.Services
                 .ToListAsync();
 
             return ratings.Any() ? (decimal)ratings.Average() : 0;
+        }
+
+        /// <summary>
+        /// 📊 Lấy số lượng đánh giá của một món
+        /// </summary>
+        public async Task<int> GetMealRatingCountAsync(int mealId)
+        {
+            return await _ratingRepo.Query()
+                .CountAsync(r => r.MealId == mealId);
         }
 
         // === HELPER METHODS ===

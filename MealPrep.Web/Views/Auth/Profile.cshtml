@@ -211,6 +211,21 @@
                                         <div class="form-text">Phạm vi: 1-6 bữa</div>
                                     </div>
 
+                                    <!-- Calories In Day -->
+                                    <div class="col-md-6">
+                                        <label class="form-label">
+                                            <i class="bi bi-fire"></i> Calories Trong Một Ngày (kcal)
+                                        </label>
+                                        <div class="input-group">
+                                            <input type="number" name="CaloriesInDay" class="form-control" 
+                                                   min="1000" max="5000" 
+                                                   value="@(Model.NutritionProfile?.CaloriesInDay)" 
+                                                   placeholder="Ví dụ: 2000" />
+                                            <span class="input-group-text">kcal</span>
+                                        </div>
+                                        <div class="form-text">Mục tiêu calories trong một ngày (1000-5000 kcal). Để trống nếu muốn hệ thống tự tính.</div>
+                                    </div>
+
                                     <!-- Notes -->
                                     <div class="col-12">
                                         <label class="form-label">
@@ -315,6 +330,15 @@
                                     <i class="bi bi-calendar3"></i> @profile.MealsPerDay bữa
                                 </div>
                             </div>
+                            @if (profile.CaloriesInDay.HasValue)
+                            {
+                                <div class="col-md-6">
+                                    <label class="small text-muted d-block mb-1">Calories Trong Một Ngày</label>
+                                    <div class="fw-semibold">
+                                        <i class="bi bi-fire text-danger"></i> @profile.CaloriesInDay.Value kcal
+                                    </div>
+                                </div>
+                            }
                         </div>
 
                         @if(!string.IsNullOrEmpty(profile.Notes))

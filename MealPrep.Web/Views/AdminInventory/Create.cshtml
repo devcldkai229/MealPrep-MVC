@@ -1,0 +1,70 @@
+@model MealPrep.DAL.Entities.KitchenInventory
+@{
+    ViewData["Title"] = "Tạo Giới Hạn Kho";
+    Layout = "_AdminLayout";
+}
+
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="app-card p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h3 class="fw-bold mb-1">Tạo Giới Hạn Kho</h3>
+                        <p class="text-muted mb-0">Thiết lập số lượng tối đa cho món ăn trong ngày</p>
+                    </div>
+                    <a asp-action="Index" asp-route-date="@Model.Date.ToString("yyyy-MM-dd")" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Quay Lại
+                    </a>
+                </div>
+
+                <form asp-action="Create" method="post">
+                    @Html.AntiForgeryToken()
+                    
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="Date" class="form-label fw-semibold">Ngày <span class="text-danger">*</span></label>
+                        <input asp-for="Date" type="date" class="form-control" required />
+                        <span asp-validation-for="Date" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="MealId" class="form-label fw-semibold">Món Ăn <span class="text-danger">*</span></label>
+                        <select asp-for="MealId" asp-items="ViewBag.Meals" class="form-select" required>
+                            <option value="">-- Chọn Món Ăn --</option>
+                        </select>
+                        <span asp-validation-for="MealId" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="QuantityLimit" class="form-label fw-semibold">Giới Hạn Số Lượng <span class="text-danger">*</span></label>
+                        <input asp-for="QuantityLimit" type="number" min="1" max="10000" class="form-control" required />
+                        <small class="text-muted">Số lượng suất tối đa có thể phục vụ trong ngày này</small>
+                        <span asp-validation-for="QuantityLimit" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Notes" class="form-label fw-semibold">Ghi Chú</label>
+                        <textarea asp-for="Notes" class="form-control" rows="3" maxlength="500"></textarea>
+                        <small class="text-muted">Ghi chú tùy chọn (tối đa 500 ký tự)</small>
+                        <span asp-validation-for="Notes" class="text-danger"></span>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a asp-action="Index" asp-route-date="@Model.Date.ToString("yyyy-MM-dd")" class="btn btn-outline-secondary">
+                            Hủy
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg"></i> Tạo Giới Hạn
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

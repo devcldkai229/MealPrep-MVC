@@ -1,352 +1,580 @@
 @model MealPrep.Web.ViewModels.AiMenuRecommendationVm
 
-<div class="row g-4">
-    <!-- Left Column: AI Recommendations -->
-    <div class="col-lg-8">
-        <div class="app-card p-4 mb-4">
-            <div class="d-flex align-items-center gap-3 mb-4">
+<div class="ai-menu-page">
+    <div class="container py-4">
+        <!-- Header -->
+        <div class="page-header mb-4">
+            <div class="d-flex align-items-center gap-3 mb-3">
                 <div class="header-icon">
-                    <i class="bi bi-robot" style="font-size: 2rem; color: var(--accent);"></i>
+                    <i class="bi bi-robot"></i>
                 </div>
                 <div>
-                    <h4 class="fw-bold mb-1">Menu AI Đề Xuất</h4>
-                    <p class="text-muted mb-0">
-                        <i class="bi bi-calendar3"></i> Tuần từ @Model.WeekStart.ToString("dd/MM/yyyy") đến @Model.WeekEnd.ToString("dd/MM/yyyy")
+                    <h1 class="page-title mb-1">Menu AI Đề Xuất</h1>
+                    <p class="page-subtitle mb-0">
+                        <i class="bi bi-calendar3 me-1"></i>
+                        Tuần từ @Model.WeekStart.ToString("dd/MM/yyyy") đến @Model.WeekEnd.ToString("dd/MM/yyyy")
                     </p>
                 </div>
             </div>
+        </div>
 
-            @foreach (var day in Model.AiRecommendations)
-            {
-                var isWeekend = day.Day >= 6;
-                <div class="app-card p-4 mb-3 day-card @(isWeekend ? "weekend-card" : "")" 
-                     style="border-left: 4px solid @(isWeekend ? "var(--accent)" : "var(--primary)");">
-                    <!-- Day Header -->
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="day-number-circle @(isWeekend ? "bg-accent" : "bg-primary")">
-                                @day.Day
+        <div class="row g-4">
+            <!-- Left Column: AI Recommendations -->
+            <div class="col-lg-8">
+                @foreach (var day in Model.AiRecommendations)
+                {
+                    <div class="day-card mb-4">
+                        <div class="card border-0 shadow-sm">
+                            <!-- Day Header -->
+                            <div class="card-header-custom">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="day-number">
+                                            @day.Day
+                                        </div>
+                                        <div>
+                                            <h5 class="day-name mb-1">@day.Date.ToString("dd/MM/yyyy")</h5>
+                                        </div>
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(day.Reason))
+                                    {
+                                        <span class="badge bg-info">
+                                            <i class="bi bi-lightbulb me-1"></i>AI
+                                        </span>
+                                    }
+                                </div>
                             </div>
-                            <div>
-                                <h5 class="fw-bold mb-1">@day.DayName</h5>
-                                <small class="text-muted">
-                                    <i class="bi bi-calendar3"></i> @day.Date.ToString("dd/MM/yyyy")
-                                </small>
-                            </div>
-                        </div>
-                        @if (!string.IsNullOrEmpty(day.Reason))
-                        {
-                            <span class="badge bg-info px-3 py-2" title="@day.Reason">
-                                <i class="bi bi-lightbulb"></i> AI
-                            </span>
-                        }
-                    </div>
 
-                    <!-- AI Reason -->
-                    @if (!string.IsNullOrEmpty(day.Reason))
-                    {
-                        <div class="alert alert-info mb-3">
-                            <i class="bi bi-info-circle"></i> <strong>Lý do:</strong> @day.Reason
-                        </div>
-                    }
+                            <!-- AI Reason -->
+                            @if (!string.IsNullOrEmpty(day.Reason))
+                            {
+                                <div class="card-body-custom border-bottom">
+                                    <div class="ai-reason">
+                                        <i class="bi bi-info-circle text-primary me-2"></i>
+                                        <strong>Lý do:</strong> @day.Reason
+                                    </div>
+                                </div>
+                            }
 
-                    <!-- Recommended Meals -->
-                    <div class="row g-3" id="ai-day-@day.Day">
-                        @for (int i = 0; i < 2; i++)
-                        {
-                            var mealType = i == 0 ? "Sáng" : "Chiều";
-                            var mealIcon = i == 0 ? "sunrise" : "sunset";
-                            var recommendedMeal = day.RecommendedMeals.Count > i ? day.RecommendedMeals[i] : null;
-                            
-                            <div class="col-md-6 col-lg-4">
-                                <label class="form-label fw-bold mb-3 d-block">
-                                    <i class="bi bi-@mealIcon text-warning"></i> 
-                                    Bữa @mealType <span class="text-danger">*</span>
-                                </label>
-                                
-                                @if (recommendedMeal != null)
-                                {
-                                    var mealImage = !string.IsNullOrEmpty(recommendedMeal.ImageUrl) 
-                                        ? recommendedMeal.ImageUrl 
-                                        : "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%23e5e7eb' width='400' height='300'/%3E%3Ctext fill='%239ca3af' font-family='Arial' font-size='16' x='50%25' y='50%25' text-anchor='middle' dominant-baseline='middle'%3ENo Image%3C/text%3E%3C/svg%3E";
-                                    
-                                    <div class="card meal-recommendation-card mb-3" style="border: 2px solid #22C55E; border-radius: 12px;">
-                                        <div class="position-relative" style="height: 150px; overflow: hidden; border-radius: 12px 12px 0 0;">
-                                            <img src="@mealImage" 
-                                                 alt="@recommendedMeal.Name" 
-                                                 class="w-100 h-100" 
-                                                 style="object-fit: cover;"
-                                                 onerror="if(this.src.indexOf('placeholder') === -1) { this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'300\'%3E%3Crect fill=\'%23e5e7eb\' width=\'400\' height=\'300\'/%3E%3Ctext fill=\'%239ca3af\' font-family=\'Arial\' font-size=\'16\' x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dominant-baseline=\'middle\'%3ENo Image%3C/text%3E%3C/svg%3E'; }" />
-                                            @if (recommendedMeal.HasAllergen)
+                            <!-- Recommended Meals -->
+                            <div class="card-body-custom">
+                                <div class="row g-3" id="ai-day-@day.Day">
+                                    @for (int i = 0; i < 2; i++)
+                                    {
+                                        var mealType = i == 0 ? "Sáng" : "Chiều";
+                                        var mealIcon = i == 0 ? "sunrise" : "sunset";
+                                        var recommendedMeal = day.RecommendedMeals.Count > i ? day.RecommendedMeals[i] : null;
+                                        
+                                        <div class="col-md-6">
+                                            <label class="meal-slot-label mb-2 d-block">
+                                                <i class="bi bi-@mealIcon text-warning me-1"></i>
+                                                Bữa @mealType
+                                            </label>
+                                            
+                                            @if (recommendedMeal != null)
                                             {
-                                                <span class="badge bg-warning position-absolute top-0 end-0 m-2" title="@recommendedMeal.AllergenWarning">
+                                                var mealImage = !string.IsNullOrEmpty(recommendedMeal.ImageUrl) 
+                                                    ? recommendedMeal.ImageUrl 
+                                                    : "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%23e5e7eb' width='400' height='300'/%3E%3Ctext fill='%239ca3af' font-family='Arial' font-size='16' x='50%25' y='50%25' text-anchor='middle' dominant-baseline='middle'%3ENo Image%3C/text%3E%3C/svg%3E";
+                                                
+                                                <div class="meal-card" 
+                                                     id="meal-card-@day.Day-@i"
+                                                     data-meal-id="@recommendedMeal.MealId"
+                                                     data-day="@day.Day"
+                                                     data-slot="@i"
+                                                     data-date="@day.Date.ToString("yyyy-MM-dd")">
+                                                    <div class="meal-image-wrapper">
+                                                        <img src="@mealImage" 
+                                                             alt="@recommendedMeal.Name" 
+                                                             class="meal-image"
+                                                             onerror="if(this.src.indexOf('data:image') === -1) { this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'300\'%3E%3Crect fill=\'%23e5e7eb\' width=\'400\' height=\'300\'/%3E%3Ctext fill=\'%239ca3af\' font-family=\'Arial\' font-size=\'16\' x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dominant-baseline=\'middle\'%3ENo Image%3C/text%3E%3C/svg%3E'; }" />
+                                                        @if (recommendedMeal.HasAllergen)
+                                                        {
+                                                            <span class="badge bg-warning position-absolute top-0 end-0 m-2" title="@recommendedMeal.AllergenWarning">
+                                                                <i class="bi bi-exclamation-triangle"></i>
+                                                            </span>
+                                                        }
+                                                        <div class="position-absolute top-0 start-0 m-2">
+                                                            <span class="badge bg-success">
+                                                                <i class="bi bi-robot me-1"></i>AI
+                                                            </span>
+                                                        </div>
+                                                        <div class="position-absolute bottom-0 end-0 m-2" id="checkmark-@day.Day-@i" style="display: none;">
+                                                            <span class="badge bg-success" style="width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+                                                                <i class="bi bi-check-circle-fill"></i>
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="meal-info">
+                                                        <h6 class="meal-name">@recommendedMeal.Name</h6>
+                                                        <p class="meal-description">@(recommendedMeal.Description?.Length > 60 ? recommendedMeal.Description.Substring(0, 60) + "..." : recommendedMeal.Description ?? "Không có mô tả")</p>
+                                                        <div class="meal-nutrition">
+                                                            <span class="badge bg-secondary"><i class="bi bi-fire"></i> @recommendedMeal.Calories cal</span>
+                                                            <span class="badge bg-secondary">P:@recommendedMeal.Protein</span>
+                                                            <span class="badge bg-secondary">C:@recommendedMeal.Carbs</span>
+                                                            <span class="badge bg-secondary">F:@recommendedMeal.Fat</span>
+                                                        </div>
+                                                        <div class="meal-actions mt-3">
+                                                            <a asp-controller="Meal" 
+                                                               asp-action="Details" 
+                                                               asp-route-id="@recommendedMeal.MealId" 
+                                                               target="_blank"
+                                                               class="btn btn-sm btn-outline-primary">
+                                                                <i class="bi bi-eye me-1"></i>Chi tiết
+                                                            </a>
+                                                            <button type="button" 
+                                                                    class="btn btn-sm btn-success ai-select-btn"
+                                                                    id="select-btn-@day.Day-@i"
+                                                                    data-day="@day.Day"
+                                                                    data-slot="@i"
+                                                                    data-meal-id="@recommendedMeal.MealId"
+                                                                    data-date="@day.Date.ToString("yyyy-MM-dd")">
+                                                                <i class="bi bi-check-circle me-1"></i>Chọn
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <input type="hidden" 
+                                                       name="aiSelections[@day.Day].MealIds[@i]"
+                                                       id="ai-meal-input-@day.Day-@i"
+                                                       value=""
+                                                       data-date="@day.Date.ToString("yyyy-MM-dd")"
+                                                       data-selected="false" />
+                                            }
+                                            else
+                                            {
+                                                <select class="form-select ai-meal-select" 
+                                                        name="aiSelections[@day.Day].MealIds[@i]"
+                                                        id="ai-meal-select-@day.Day-@i"
+                                                        data-day="@day.Day"
+                                                        data-slot="@i"
+                                                        data-date="@day.Date.ToString("yyyy-MM-dd")">
+                                                    <option value="">-- Chọn món --</option>
+                                                    @foreach (var meal in Model.AvailableMeals)
+                                                    {
+                                                        var optionText = $"{meal.Name} ({meal.Calories} cal)";
+                                                        if (meal.HasAllergen)
+                                                        {
+                                                            optionText = $"⚠️ {optionText}";
+                                                        }
+                                                        <option value="@meal.MealId" 
+                                                                data-allergen="@(meal.HasAllergen ? "true" : "false")"
+                                                                data-warning="@meal.AllergenWarning">
+                                                            @optionText
+                                                        </option>
+                                                    }
+                                                </select>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <!-- Action Buttons -->
+                <div class="action-buttons mt-4">
+                    <div class="d-flex justify-content-end gap-2">
+                        <button type="button" class="btn btn-outline-secondary" onclick="window.resetAiMenu()">
+                            <i class="bi bi-arrow-counterclockwise me-1"></i>Đặt lại
+                        </button>
+                        <button type="button" class="btn btn-primary btn-lg px-4" onclick="window.acceptAiMenu()">
+                            <i class="bi bi-check-circle-fill me-1"></i>Lưu Menu
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Available Meals -->
+            <div class="col-lg-4">
+                <div class="available-meals-card">
+                    <div class="card border-0 shadow-sm sticky-top" style="top: 20px;">
+                        <div class="card-header-custom">
+                            <h5 class="card-title-custom mb-0">
+                                <i class="bi bi-list-ul me-2"></i>Tất cả Món Ăn
+                            </h5>
+                        </div>
+                        <div class="card-body-custom">
+                            <div class="available-meals-list">
+                                @foreach (var meal in Model.AvailableMeals)
+                                {
+                                    <div class="meal-item">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <h6 class="meal-item-name mb-0">@meal.Name</h6>
+                                            @if (meal.HasAllergen)
+                                            {
+                                                <span class="badge bg-warning">
                                                     <i class="bi bi-exclamation-triangle"></i>
                                                 </span>
                                             }
-                                            <div class="position-absolute top-0 start-0 m-2">
-                                                <span class="badge bg-success">
-                                                    <i class="bi bi-robot"></i> AI Đề Xuất
-                                                </span>
-                                            </div>
                                         </div>
-                                        <div class="card-body p-3">
-                                            <h6 class="fw-bold mb-2">@recommendedMeal.Name</h6>
-                                            <p class="text-muted small mb-2">@(recommendedMeal.Description?.Length > 60 ? recommendedMeal.Description.Substring(0, 60) + "..." : recommendedMeal.Description ?? "Không có mô tả")</p>
-                                            <div class="d-flex gap-1 flex-wrap mb-2">
-                                                <span class="badge bg-info" style="font-size: 0.7rem;">
-                                                    <i class="bi bi-fire"></i> @recommendedMeal.Calories cal
-                                                </span>
-                                                <span class="badge bg-primary" style="font-size: 0.7rem;">
-                                                    <i class="bi bi-droplet"></i> P:@recommendedMeal.Protein
-                                                </span>
-                                                <span class="badge bg-success" style="font-size: 0.7rem;">
-                                                    <i class="bi bi-grain"></i> C:@recommendedMeal.Carbs
-                                                </span>
-                                                <span class="badge bg-warning text-dark" style="font-size: 0.7rem;">
-                                                    <i class="bi bi-circle"></i> F:@recommendedMeal.Fat
-                                                </span>
-                                            </div>
-                                            <div class="d-flex gap-2">
-                                                <a asp-controller="Meal" 
-                                                   asp-action="Details" 
-                                                   asp-route-id="@recommendedMeal.MealId" 
-                                                   target="_blank"
-                                                   class="btn btn-sm btn-outline-primary flex-grow-1">
-                                                    <i class="bi bi-eye me-1"></i>Xem Chi Tiết
-                                                </a>
-                                                <button type="button" 
-                                                        class="btn btn-sm btn-success"
-                                                        onclick="confirmMealSelection(@day.Day, @i, @recommendedMeal.MealId, '@day.Date.ToString("yyyy-MM-dd")')">
-                                                    <i class="bi bi-check-circle"></i> Chọn
-                                                </button>
-                                            </div>
+                                        <p class="meal-item-description">@(meal.Description?.Length > 80 ? meal.Description.Substring(0, 80) + "..." : meal.Description ?? "Không có mô tả")</p>
+                                        <div class="meal-item-nutrition">
+                                            <span class="badge bg-secondary">@meal.Calories cal</span>
+                                            <span class="badge bg-secondary">P:@meal.Protein</span>
+                                            <span class="badge bg-secondary">C:@meal.Carbs</span>
+                                            <span class="badge bg-secondary">F:@meal.Fat</span>
                                         </div>
-                                    </div>
-                                    
-                                    <!-- Hidden input for form submission -->
-                                    <input type="hidden" 
-                                           name="aiSelections[@day.Day].MealIds[@i]"
-                                           id="ai-meal-input-@day.Day-@i"
-                                           value="@recommendedMeal.MealId"
-                                           data-date="@day.Date.ToString("yyyy-MM-dd")" />
-                                }
-                                else
-                                {
-                                    <!-- No recommendation, show dropdown -->
-                                    <select class="form-select ai-meal-select shadow-sm" 
-                                            name="aiSelections[@day.Day].MealIds[@i]"
-                                            id="ai-meal-select-@day.Day-@i"
-                                            data-day="@day.Day"
-                                            data-slot="@i"
-                                            data-date="@day.Date.ToString("yyyy-MM-dd")"
-                                            style="border-radius: 10px; border: 2px solid #E5E7EB; transition: all 0.2s;">
-                                        <option value="">-- Chọn món --</option>
-                                        @foreach (var meal in Model.AvailableMeals)
+                                        @if (meal.HasAllergen && !string.IsNullOrEmpty(meal.AllergenWarning))
                                         {
-                                            var optionText = $"{meal.Name} ({meal.Calories} cal)";
-                                            if (meal.HasAllergen)
-                                            {
-                                                optionText = $"⚠️ {optionText}";
-                                            }
-                                            <option value="@meal.MealId" 
-                                                    data-allergen="@(meal.HasAllergen ? "true" : "false")"
-                                                    data-warning="@meal.AllergenWarning"
-                                                    data-calories="@meal.Calories"
-                                                    data-protein="@meal.Protein"
-                                                    data-carbs="@meal.Carbs"
-                                                    data-fat="@meal.Fat"
-                                                    title="@meal.AllergenWarning">
-                                                @optionText
-                                            </option>
+                                            <small class="text-warning d-block mt-2">
+                                                <i class="bi bi-exclamation-triangle-fill me-1"></i>@meal.AllergenWarning
+                                            </small>
                                         }
-                                    </select>
+                                    </div>
                                 }
-                                
-                                <!-- Allergen Warning -->
-                                <small class="text-warning d-block mt-2" id="ai-warning-@day.Day-@i" style="display:none;">
-                                    <i class="bi bi-exclamation-triangle-fill"></i> 
-                                    <span class="warning-text"></span>
-                                </small>
                             </div>
-                        }
+                        </div>
                     </div>
                 </div>
-            }
-
-            <!-- Accept Button -->
-            <div class="d-flex justify-content-end gap-3 mt-4">
-                <button type="button" class="btn btn-outline-secondary" onclick="resetAiMenu()">
-                    <i class="bi bi-arrow-counterclockwise"></i> Đặt lại
-                </button>
-                <button type="button" class="btn btn-success btn-lg px-5" onclick="acceptAiMenu()">
-                    <i class="bi bi-check-circle-fill"></i> Đồng ý Menu AI
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Right Column: Available Meals -->
-    <div class="col-lg-4">
-        <div class="app-card p-4 sticky-top" style="top: 20px;">
-            <h5 class="fw-bold mb-3">
-                <i class="bi bi-list-ul text-primary"></i> Tất cả Món Ăn
-            </h5>
-            <div class="available-meals-list" style="max-height: 70vh; overflow-y: auto;">
-                @foreach (var meal in Model.AvailableMeals)
-                {
-                    <div class="meal-item-card p-3 mb-2 border rounded" 
-                         data-meal-id="@meal.MealId"
-                         style="cursor: pointer; transition: all 0.2s;"
-                         onmouseover="this.style.backgroundColor='#F9FAFB'" 
-                         onmouseout="this.style.backgroundColor='white'">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <h6 class="fw-semibold mb-0">@meal.Name</h6>
-                            @if (meal.HasAllergen)
-                            {
-                                <span class="badge bg-warning text-dark">
-                                    <i class="bi bi-exclamation-triangle"></i>
-                                </span>
-                            }
-                        </div>
-                        <p class="text-muted small mb-2">@(meal.Description.Length > 100 ? meal.Description.Substring(0, 100) + "..." : meal.Description)</p>
-                        <div class="d-flex gap-2 flex-wrap">
-                            <span class="badge bg-info">
-                                <i class="bi bi-fire"></i> @meal.Calories cal
-                            </span>
-                            <span class="badge bg-primary">
-                                <i class="bi bi-droplet"></i> @meal.Protein g P
-                            </span>
-                            <span class="badge bg-warning">
-                                <i class="bi bi-grain"></i> @meal.Carbs g C
-                            </span>
-                            <span class="badge bg-danger">
-                                <i class="bi bi-droplet-fill"></i> @meal.Fat g F
-                            </span>
-                        </div>
-                        @if (meal.HasAllergen && !string.IsNullOrEmpty(meal.AllergenWarning))
-                        {
-                            <small class="text-warning d-block mt-2">
-                                <i class="bi bi-exclamation-triangle-fill"></i> @meal.AllergenWarning
-                            </small>
-                        }
-                    </div>
-                }
             </div>
         </div>
     </div>
 </div>
 
 <style>
-    .meal-recommendation-card {
-        transition: all 0.3s ease;
-        cursor: pointer;
+    .ai-menu-page {
+        background: #f8f9fa;
+        min-height: 100vh;
     }
-    
-    .meal-recommendation-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 8px 20px rgba(34, 197, 94, 0.2);
+
+    .page-title {
+        font-size: 1.75rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin: 0;
     }
-    
-    .meal-recommendation-card img {
-        transition: transform 0.3s ease;
+
+    .page-subtitle {
+        color: #6b7280;
+        font-size: 0.95rem;
     }
-    
-    .meal-recommendation-card:hover img {
-        transform: scale(1.05);
+
+    .header-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 0.75rem;
+        background: #1f2937;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.75rem;
+    }
+
+    .day-card .card {
+        border-radius: 0.75rem;
+    }
+
+    .card-header-custom {
+        padding: 1.25rem;
+        border-bottom: 1px solid #e5e7eb;
+        background: #f9fafb;
+    }
+
+    .card-body-custom {
+        padding: 1.25rem;
+    }
+
+    .day-number {
+        width: 48px;
+        height: 48px;
+        border-radius: 0.5rem;
+        background: #1f2937;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        font-weight: 600;
+    }
+
+    .day-name {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin: 0;
+    }
+
+    .ai-reason {
+        padding: 0.75rem;
+        background: #eff6ff;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        color: #1e40af;
+    }
+
+    .meal-slot-label {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #374151;
+    }
+
+    .meal-card {
+        border: 1px solid #e5e7eb;
+        border-radius: 0.75rem;
+        overflow: hidden;
+        transition: all 0.2s ease;
+        background: white;
+    }
+
+    .meal-card:hover {
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        transform: translateY(-2px);
+    }
+
+    .meal-card.selected {
+        border-color: #16a34a;
+        background: #f0fdf4;
+    }
+
+    .meal-image-wrapper {
+        position: relative;
+        width: 100%;
+        height: 180px;
+        overflow: hidden;
+        background: #f3f4f6;
+    }
+
+    .meal-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .meal-info {
+        padding: 1rem;
+    }
+
+    .meal-name {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin-bottom: 0.5rem;
+    }
+
+    .meal-description {
+        font-size: 0.875rem;
+        color: #6b7280;
+        margin-bottom: 0.75rem;
+        line-height: 1.5;
+    }
+
+    .meal-nutrition {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .meal-nutrition .badge {
+        font-size: 0.75rem;
+        font-weight: 500;
+        padding: 0.375rem 0.625rem;
+    }
+
+    .meal-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .form-select {
+        border-color: #d1d5db;
+        border-radius: 0.5rem;
+    }
+
+    .form-select:focus {
+        border-color: #1f2937;
+        box-shadow: 0 0 0 0.2rem rgba(31, 41, 55, 0.1);
+    }
+
+    .available-meals-list {
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+
+    .meal-item {
+        padding: 1rem;
+        border-bottom: 1px solid #f3f4f6;
+        transition: background 0.2s;
+    }
+
+    .meal-item:last-child {
+        border-bottom: none;
+    }
+
+    .meal-item:hover {
+        background: #f9fafb;
+    }
+
+    .meal-item-name {
+        font-size: 0.9375rem;
+        font-weight: 600;
+        color: #1f2937;
+    }
+
+    .meal-item-description {
+        font-size: 0.8125rem;
+        color: #6b7280;
+        margin-bottom: 0.5rem;
+        line-height: 1.4;
+    }
+
+    .meal-item-nutrition {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.375rem;
+    }
+
+    .meal-item-nutrition .badge {
+        font-size: 0.6875rem;
+        padding: 0.25rem 0.5rem;
+    }
+
+    .btn-primary {
+        background: #1f2937;
+        border-color: #1f2937;
+        font-weight: 500;
+    }
+
+    .btn-primary:hover {
+        background: #111827;
+        border-color: #111827;
+    }
+
+    .btn-success {
+        background: #16a34a;
+        border-color: #16a34a;
+        font-weight: 500;
+    }
+
+    .btn-success:hover {
+        background: #15803d;
+        border-color: #15803d;
+    }
+
+    .btn-outline-primary {
+        border-color: #d1d5db;
+        color: #374151;
+    }
+
+    .btn-outline-primary:hover {
+        background: #f3f4f6;
+        border-color: #1f2937;
+        color: #1f2937;
+    }
+
+    .btn-outline-secondary {
+        border-color: #d1d5db;
+        color: #374151;
+    }
+
+    .btn-outline-secondary:hover {
+        background: #f3f4f6;
+        border-color: #9ca3af;
+        color: #1f2937;
+    }
+
+    .badge {
+        font-weight: 500;
+        padding: 0.375rem 0.75rem;
+        font-size: 0.75rem;
+    }
+
+    @@media (max-width: 768px) {
+        .header-icon {
+            width: 48px;
+            height: 48px;
+            font-size: 1.5rem;
+        }
+
+        .day-number {
+            width: 40px;
+            height: 40px;
+            font-size: 1rem;
+        }
     }
 </style>
 
 <script>
-    // Initialize AI meal selects
-    document.addEventListener('DOMContentLoaded', function() {
-        const aiMealSelects = document.querySelectorAll('.ai-meal-select');
+    // Ensure function is available globally
+    window.toggleMealSelection = function(day, slot, mealId, dateStr) {
+        console.log('toggleMealSelection called:', { day, slot, mealId, dateStr });
         
-        aiMealSelects.forEach(select => {
-            select.addEventListener('change', function() {
-                const option = this.options[this.selectedIndex];
-                const hasAllergen = option.dataset.allergen === 'true';
-                const warning = option.dataset.warning || '';
-                const day = this.dataset.day;
-                const slot = this.dataset.slot;
-                
-                // Allergen warning
-                const warningEl = document.getElementById(`ai-warning-${day}-${slot}`);
-                if (hasAllergen && warningEl) {
-                    warningEl.querySelector('.warning-text').textContent = warning;
-                    warningEl.style.display = 'block';
-                } else if (warningEl) {
-                    warningEl.style.display = 'none';
-                }
-                
-                // Nutrition info
-                const nutritionEl = document.getElementById(`ai-nutrition-${day}-${slot}`);
-                if (option.value && nutritionEl) {
-                    const calories = option.dataset.calories || '0';
-                    const protein = option.dataset.protein || '0';
-                    
-                    nutritionEl.querySelector('.calories-text').textContent = calories;
-                    nutritionEl.querySelector('.protein-text').textContent = protein;
-                    nutritionEl.style.display = 'block';
-                } else if (nutritionEl) {
-                    nutritionEl.style.display = 'none';
-                }
-                
-                // Visual feedback
-                if (option.value) {
-                    this.style.borderColor = hasAllergen ? '#F59E0B' : '#22C55E';
-                } else {
-                    this.style.borderColor = '#E5E7EB';
-                }
-            });
-            
-            // Trigger change event for pre-selected options
-            if (select.value) {
-                select.dispatchEvent(new Event('change'));
-            }
-        });
-    });
-
-    // Confirm meal selection from AI recommendation card
-    function confirmMealSelection(day, slot, mealId, dateStr) {
-        // Update hidden input if exists, or create select option
         const hiddenInput = document.getElementById(`ai-meal-input-${day}-${slot}`);
+        const mealCard = document.getElementById(`meal-card-${day}-${slot}`);
+        const selectBtn = document.getElementById(`select-btn-${day}-${slot}`);
+        const checkmark = document.getElementById(`checkmark-${day}-${slot}`);
         const select = document.getElementById(`ai-meal-select-${day}-${slot}`);
         
-        if (hiddenInput) {
-            hiddenInput.value = mealId;
-        } else if (select) {
-            select.value = mealId;
-            select.dispatchEvent(new Event('change'));
+        console.log('Elements found:', { hiddenInput, mealCard, selectBtn, checkmark, select });
+        
+        if (!hiddenInput) {
+            console.error('Hidden input not found for day:', day, 'slot:', slot);
+            return;
         }
         
-        // Show success feedback
-        const btn = event.target;
-        const originalHtml = btn.innerHTML;
-        btn.disabled = true;
-        btn.innerHTML = '<i class="bi bi-check-circle-fill"></i> Đã Chọn';
-        btn.classList.remove('btn-success');
-        btn.classList.add('btn-outline-success');
+        const isSelected = hiddenInput.dataset.selected === 'true';
+        console.log('Current selection state:', isSelected);
         
-        setTimeout(() => {
-            btn.disabled = false;
-            btn.innerHTML = originalHtml;
-            btn.classList.remove('btn-outline-success');
-            btn.classList.add('btn-success');
-        }, 2000);
-    }
+        if (isSelected) {
+            // Deselect
+            hiddenInput.value = '';
+            hiddenInput.dataset.selected = 'false';
+            if (mealCard) {
+                mealCard.classList.remove('selected');
+            }
+            if (checkmark) checkmark.style.display = 'none';
+            if (selectBtn) {
+                selectBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Chọn';
+                selectBtn.classList.remove('btn-outline-danger');
+                selectBtn.classList.add('btn-success');
+            }
+            console.log('Meal deselected');
+        } else {
+            // Select
+            hiddenInput.value = mealId;
+            hiddenInput.dataset.selected = 'true';
+            if (mealCard) {
+                mealCard.classList.add('selected');
+            }
+            if (checkmark) checkmark.style.display = 'block';
+            if (selectBtn) {
+                selectBtn.innerHTML = '<i class="bi bi-x-circle me-1"></i>Bỏ Chọn';
+                selectBtn.classList.remove('btn-success');
+                selectBtn.classList.add('btn-outline-danger');
+            }
+            console.log('Meal selected');
+        }
+        
+        if (select && !isSelected) {
+            select.value = mealId;
+            select.dispatchEvent(new Event('change'));
+        } else if (select && isSelected) {
+            select.value = '';
+            select.dispatchEvent(new Event('change'));
+        }
+    };
 
-    function acceptAiMenu() {
+    // Ensure function is available globally
+    window.acceptAiMenu = function() {
+        console.log('acceptAiMenu called');
+        
         const selections = [];
         const dateMap = new Map();
         
-        // Collect from hidden inputs (AI recommendations)
+        // Collect from hidden inputs (AI recommendations) - only if selected
         document.querySelectorAll('input[id^="ai-meal-input-"]').forEach(input => {
-            if (input.value) {
+            if (input.value && input.dataset.selected === 'true') {
                 const date = input.dataset.date;
                 if (!dateMap.has(date)) {
                     dateMap.set(date, []);
                 }
-                dateMap.get(date).push(parseInt(input.value));
+                const mealId = parseInt(input.value);
+                if (mealId && !dateMap.get(date).includes(mealId)) {
+                    dateMap.get(date).push(mealId);
+                }
             }
         });
         
@@ -357,39 +585,105 @@
                 if (!dateMap.has(date)) {
                     dateMap.set(date, []);
                 }
-                dateMap.get(date).push(parseInt(select.value));
+                const mealId = parseInt(select.value);
+                if (mealId && !dateMap.get(date).includes(mealId)) {
+                    dateMap.get(date).push(mealId);
+                }
             }
         });
         
+        // Convert map to array
         dateMap.forEach((mealIds, dateStr) => {
-            selections.push({
-                Date: dateStr, // ISO format: "yyyy-MM-dd"
-                MealIds: mealIds
-            });
+            if (mealIds.length > 0) {
+                selections.push({
+                    Date: dateStr,
+                    MealIds: mealIds
+                });
+            }
         });
+        
+        console.log('Collected selections:', selections);
         
         if (selections.length === 0) {
             alert('Vui lòng chọn ít nhất một món ăn!');
             return;
         }
         
-        // Show loading
-        const btn = event.target;
+        const btn = event?.target || document.querySelector('button[onclick*="acceptAiMenu"]');
         const originalHtml = btn.innerHTML;
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang lưu...';
         
+        // Get anti-forgery token
+        let token = '';
+        const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+        if (tokenInput) {
+            token = tokenInput.value;
+        } else {
+            // Try to get from parent window if this is loaded via AJAX
+            try {
+                if (window.parent && window.parent.document) {
+                    const parentToken = window.parent.document.querySelector('input[name="__RequestVerificationToken"]');
+                    if (parentToken) token = parentToken.value;
+                }
+            } catch (e) {
+                console.warn('Cannot access parent window token:', e);
+            }
+        }
+        
+        if (!token) {
+            console.warn('Anti-forgery token not found. Request may fail.');
+        }
+        
+        // Get delivery address from form or user profile
+        let deliveryAddress = '';
+        const addressInput = document.getElementById('deliveryAddress');
+        if (addressInput) {
+            deliveryAddress = addressInput.value.trim();
+        } else {
+            // Try to get from parent window if this is loaded via AJAX
+            try {
+                if (window.parent && window.parent.document) {
+                    const parentAddressInput = window.parent.document.getElementById('deliveryAddress');
+                    if (parentAddressInput) {
+                        deliveryAddress = parentAddressInput.value.trim();
+                    }
+                }
+            } catch (e) {
+                console.warn('Cannot access parent window address:', e);
+            }
+        }
+
         fetch('@Url.Action("AcceptAiMenu", "Menu")', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                'RequestVerificationToken': token,
+                'X-Requested-With': 'XMLHttpRequest'
             },
-            body: JSON.stringify({ DaySelections: selections })
+            body: JSON.stringify({ 
+                DaySelections: selections,
+                DeliveryAddress: deliveryAddress || null
+            })
         })
-        .then(response => response.json())
+        .then(response => {
+            console.log('Response status:', response.status);
+            if (!response.ok) {
+                return response.text().then(text => {
+                    console.error('Error response:', text);
+                    try {
+                        return JSON.parse(text);
+                    } catch {
+                        throw new Error(`HTTP ${response.status}: ${text}`);
+                    }
+                });
+            }
+            return response.json();
+        })
         .then(data => {
+            console.log('Response data:', data);
             if (data.success) {
+                alert('Đã lưu menu thành công!');
                 window.location.href = '@Url.Action("Index", "Dashboard")';
             } else {
                 alert(data.message || 'Có lỗi xảy ra!');
@@ -399,17 +693,36 @@
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Có lỗi xảy ra khi lưu menu!');
+            alert('Có lỗi xảy ra khi lưu menu: ' + error.message);
             btn.disabled = false;
             btn.innerHTML = originalHtml;
         });
-    }
+    };
 
-    function resetAiMenu() {
+    // Ensure function is available globally
+    window.resetAiMenu = function() {
         if (confirm('Bạn có chắc muốn đặt lại menu AI?')) {
             // Reset hidden inputs (AI recommendations)
             document.querySelectorAll('input[id^="ai-meal-input-"]').forEach(input => {
                 input.value = '';
+                input.dataset.selected = 'false';
+            });
+            
+            // Reset meal cards styling
+            document.querySelectorAll('[id^="meal-card-"]').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            // Hide checkmarks
+            document.querySelectorAll('[id^="checkmark-"]').forEach(checkmark => {
+                checkmark.style.display = 'none';
+            });
+            
+            // Reset select buttons
+            document.querySelectorAll('[id^="select-btn-"]').forEach(btn => {
+                btn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Chọn';
+                btn.classList.remove('btn-outline-danger');
+                btn.classList.add('btn-success');
             });
             
             // Reset selects (manual selections)
@@ -417,6 +730,93 @@
                 select.value = '';
                 select.dispatchEvent(new Event('change'));
             });
+            
+            console.log('AI menu reset');
         }
-    }
+    };
+    
+    // Initialize immediately (not waiting for DOMContentLoaded since this might be loaded via AJAX)
+    (function() {
+        console.log('AI Menu Recommendations script loaded');
+        
+        // Verify functions are available
+        if (typeof window.toggleMealSelection === 'function') {
+            console.log('✓ toggleMealSelection function is available');
+        } else {
+            console.error('✗ toggleMealSelection function is NOT available');
+        }
+        
+        if (typeof window.acceptAiMenu === 'function') {
+            console.log('✓ acceptAiMenu function is available');
+        } else {
+            console.error('✗ acceptAiMenu function is NOT available');
+        }
+        
+        // Wait for DOM to be ready (in case this is loaded via AJAX)
+        function initializeButtons() {
+            // Add click event listeners to buttons as fallback (in case onclick doesn't work)
+            document.querySelectorAll('[id^="select-btn-"]').forEach(btn => {
+                // Remove existing event listeners by cloning
+                const newBtn = btn.cloneNode(true);
+                btn.parentNode.replaceChild(newBtn, btn);
+                
+                // Add new event listener
+                newBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    const day = this.dataset.day || this.id.match(/select-btn-(\d+)-(\d+)/)?.[1];
+                    const slot = this.dataset.slot || this.id.match(/select-btn-(\d+)-(\d+)/)?.[2];
+                    const mealId = this.dataset.mealId || this.closest('.meal-card')?.dataset.mealId;
+                    const dateStr = this.dataset.date || this.closest('.meal-card')?.dataset.date;
+                    
+                    console.log('Button clicked:', { day, slot, mealId, dateStr, buttonId: this.id });
+                    
+                    if (day && slot && mealId && dateStr) {
+                        if (typeof window.toggleMealSelection === 'function') {
+                            window.toggleMealSelection(parseInt(day), parseInt(slot), parseInt(mealId), dateStr);
+                        } else {
+                            console.error('toggleMealSelection function not found');
+                            alert('Lỗi: Không tìm thấy hàm xử lý. Vui lòng tải lại trang.');
+                        }
+                    } else {
+                        console.error('Missing data attributes:', { day, slot, mealId, dateStr, button: this });
+                    }
+                });
+            });
+            
+            console.log('Buttons initialized:', document.querySelectorAll('[id^="select-btn-"]').length);
+        }
+        
+        // Initialize immediately if DOM is ready, otherwise wait
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeButtons);
+        } else {
+            // DOM is already ready
+            setTimeout(initializeButtons, 100); // Small delay to ensure all elements are rendered
+        }
+        
+        // Also use event delegation as a fallback (works even if buttons are added dynamically)
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.ai-select-btn')) {
+                const btn = e.target.closest('.ai-select-btn');
+                const day = btn.dataset.day;
+                const slot = btn.dataset.slot;
+                const mealId = btn.dataset.mealId;
+                const dateStr = btn.dataset.date;
+                
+                console.log('Event delegation: Button clicked', { day, slot, mealId, dateStr });
+                
+                if (day && slot && mealId && dateStr) {
+                    if (typeof window.toggleMealSelection === 'function') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        window.toggleMealSelection(parseInt(day), parseInt(slot), parseInt(mealId), dateStr);
+                    } else {
+                        console.error('toggleMealSelection function not found');
+                    }
+                }
+            }
+        });
+    })();
 </script>

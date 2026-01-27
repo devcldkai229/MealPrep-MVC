@@ -54,8 +54,7 @@ namespace MealPrep.Web.Controllers
                 }
                 else
                 {
-                    TempData["SuccessMessage"] = $"✅ Successfully generated {result.TotalOrdersCreated} delivery orders! " +
-                                                 $"Auto-assigned {result.TotalAutoAssignedMeals} meals.";
+                    TempData["SuccessMessage"] = $"✅ Successfully generated {result.TotalOrdersCreated} delivery orders!";
                 }
 
                 return RedirectToAction(nameof(DailyOrders), new { date = targetDate });
@@ -188,37 +187,6 @@ namespace MealPrep.Web.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "❌ Error bulk updating");
-                TempData["ErrorMessage"] = $"Error: {ex.Message}";
-                return RedirectToAction(nameof(DailyOrders), new { date = returnDate });
-            }
-        }
-
-        /// <summary>
-        /// 🤖 Auto-assign meals cho DeliveryOrder
-        /// </summary>
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AutoAssignMeals(int deliveryOrderId, DateOnly returnDate)
-        {
-            try
-            {
-                var success = await _deliveryProcessingService.AutoAssignMealsForDeliveryOrderAsync(
-                    deliveryOrderId);
-
-                if (success)
-                {
-                    TempData["SuccessMessage"] = "✅ Auto-assigned meals successfully";
-                }
-                else
-                {
-                    TempData["ErrorMessage"] = "❌ Failed to auto-assign meals";
-                }
-
-                return RedirectToAction(nameof(DailyOrders), new { date = returnDate });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "❌ Error auto-assigning meals");
                 TempData["ErrorMessage"] = $"Error: {ex.Message}";
                 return RedirectToAction(nameof(DailyOrders), new { date = returnDate });
             }

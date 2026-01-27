@@ -98,10 +98,14 @@ namespace MealPrep.Web.Controllers
 
             await SignInAsync(user);
             
-            // Check if user is Admin - redirect to Admin Dashboard
+            // Check user role and redirect accordingly
             if (user.RoleName == "Admin")
             {
                 return RedirectToAction("Index", "Admin");
+            }
+            else if (user.RoleName == "Shipper")
+            {
+                return RedirectToAction("Index", "ShipperDashboard");
             }
             
             // Redirect to returnUrl if provided, otherwise to Dashboard
@@ -202,6 +206,7 @@ namespace MealPrep.Web.Controllers
                 vm.ActivityLevel = user.NutritionProfile.ActivityLevel;
                 vm.DietPreference = user.NutritionProfile.DietPreference;
                 vm.MealsPerDay = user.NutritionProfile.MealsPerDay;
+                vm.CaloriesInDay = user.NutritionProfile.CaloriesInDay;
                 vm.Notes = user.NutritionProfile.Notes;
             }
 
@@ -233,6 +238,7 @@ namespace MealPrep.Web.Controllers
                     vm.ActivityLevel,
                     vm.DietPreference,
                     vm.MealsPerDay,
+                    vm.CaloriesInDay,
                     vm.Notes
                 );
 
@@ -281,7 +287,7 @@ namespace MealPrep.Web.Controllers
         public async Task<IActionResult> UpdateNutritionProfile(
             int heightCm, decimal weightKg, FitnessGoal goal, 
             ActivityLevel activityLevel, DietPreference dietPreference, 
-            int mealsPerDay, string? notes, List<string>? allergies)
+            int mealsPerDay, int? caloriesInDay, string? notes, List<string>? allergies)
         {
             var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
             
@@ -289,7 +295,7 @@ namespace MealPrep.Web.Controllers
             {
                 await _userService.UpsertNutritionProfileAsync(
                     userId, heightCm, weightKg, goal, activityLevel, 
-                    dietPreference, mealsPerDay, notes, allergies);
+                    dietPreference, mealsPerDay, caloriesInDay, notes, allergies);
                 
                 TempData["SuccessMessage"] = "Đã cập nhật hồ sơ dinh dưỡng thành công!";
             }

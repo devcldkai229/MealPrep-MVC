@@ -15,7 +15,7 @@ namespace MealPrep.BLL.Services
         /// <summary>
         /// Get meals for selection with search and pagination
         /// </summary>
-        Task<(List<MealOptionDto> Meals, int TotalCount)> GetMealsForSelectionAsync(string? search, int page, int pageSize, Guid userId);
+        Task<(List<MealOptionDto> Meals, int TotalCount)> GetMealsForSelectionAsync(string? search, int page, int pageSize, Guid userId, DateOnly? date = null);
 
         /// <summary>
         /// Lưu meal selections của user

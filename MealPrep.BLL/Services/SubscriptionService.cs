@@ -179,6 +179,52 @@ public class SubscriptionService : ISubscriptionService
             throw new InvalidOperationException("Invalid plan or tier selected.");
         }
 
+        // Calculate end date for the new subscription
+        // Note: In ConfirmPaymentAsync, StartDate will be recalculated as TransactionDate.AddDays(1)
+        // But for validation, we use the provided startDate to check overlap
+        var newEndDate = startDate.AddDays(plan.DurationDays - 1); // -1 because startDate is included
+
+        // Check for overlapping subscriptions
+        // We need to check both Active and PendingPayment subscriptions
+        var existingSubscriptions = await _subRepo.Query()
+            .Where(s => s.AppUserId == userId && 
+                       (s.Status == SubscriptionStatus.Active || s.Status == SubscriptionStatus.PendingPayment))
+            .ToListAsync();
+
+        foreach (var existingSub in existingSubscriptions)
+        {
+            // Skip if EndDate is null (shouldn't happen for Active, but safety check)
+            if (!existingSub.EndDate.HasValue)
+            {
+                // If EndDate is null but subscription is Active, it might be an edge case
+                // We'll be conservative and block it
+                _logger.LogWarning("Subscription {SubscriptionId} has null EndDate but status is {Status}", 
+                    existingSub.Id, existingSub.Status);
+                throw new InvalidOperationException(
+                    $"Bạn đã có gói đăng ký đang hoạt động hoặc đang chờ thanh toán. " +
+                    $"Không thể đăng ký gói mới trong khoảng thời gian này. " +
+                    $"Vui lòng chọn ngày bắt đầu sau khi gói hiện tại kết thúc.");
+            }
+
+            var existingStart = existingSub.StartDate;
+            var existingEnd = existingSub.EndDate.Value;
+
+            // Check for date overlap
+            // Overlap occurs when: newStart <= existingEnd && newEnd >= existingStart
+            if (startDate <= existingEnd && newEndDate >= existingStart)
+            {
+                _logger.LogWarning(
+                    "User {UserId} attempted to create subscription with overlapping dates. " +
+                    "New: {NewStart} to {NewEnd}, Existing: {ExistingStart} to {ExistingEnd} (Subscription {SubscriptionId})",
+                    userId, startDate, newEndDate, existingStart, existingEnd, existingSub.Id);
+
+                throw new InvalidOperationException(
+                    $"Bạn đã có gói đăng ký từ {existingStart:dd/MM/yyyy} đến {existingEnd:dd/MM/yyyy}. " +
+                    $"Không thể đăng ký gói mới từ {startDate:dd/MM/yyyy} đến {newEndDate:dd/MM/yyyy} vì trùng ngày. " +
+                    $"Vui lòng chọn ngày bắt đầu sau {existingEnd:dd/MM/yyyy}.");
+            }
+        }
+
         var totalAmount = await CalculateTotalPriceAsync(planId, tierId);
 
         // Create Subscription
@@ -290,20 +336,45 @@ public class SubscriptionService : ISubscriptionService
             var subscription = payment.Subscription;
             if (subscription != null)
             {
-                subscription.Status = SubscriptionStatus.Active;
-                subscription.StartDate = DateOnly.FromDateTime(DateTime.UtcNow);
-                subscription.UpdatedAt = DateTime.UtcNow;
+                // StartDate = TransactionDate.AddDays(1) (Next-Day Rule)
+                // If user pays on Jan 26th, subscription starts on Jan 27th
+                var newStartDate = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(1);
+                var newEndDate = newStartDate.AddDays(6); // Total 7 days
 
-                var plan = await _planRepo.GetByIdAsync(subscription.PlanId);
-                if (plan != null)
+                // Re-validate overlap before activating (in case user has created another subscription while payment was pending)
+                var userId = subscription.AppUserId;
+                var overlappingSubs = await _subRepo.Query()
+                    .Where(s => s.AppUserId == userId && 
+                               s.Id != subscription.Id && // Exclude current subscription
+                               (s.Status == SubscriptionStatus.Active || s.Status == SubscriptionStatus.PendingPayment) &&
+                               s.EndDate.HasValue &&
+                               newStartDate <= s.EndDate.Value && 
+                               newEndDate >= s.StartDate)
+                    .ToListAsync();
+
+                if (overlappingSubs.Any())
                 {
-                    subscription.EndDate = subscription.StartDate.AddDays(plan.DurationDays);
+                    var overlappingSub = overlappingSubs.First();
+                    _logger.LogWarning(
+                        "Cannot activate subscription {SubscriptionId}: overlap detected with subscription {OverlappingId}. " +
+                        "New: {NewStart} to {NewEnd}, Existing: {ExistingStart} to {ExistingEnd}",
+                        subscription.Id, overlappingSub.Id, newStartDate, newEndDate, 
+                        overlappingSub.StartDate, overlappingSub.EndDate);
+
+                    await transaction.RollbackAsync();
+                    throw new InvalidOperationException(
+                        $"Không thể kích hoạt gói đăng ký vì trùng với gói khác đang hoạt động " +
+                        $"({overlappingSub.StartDate:dd/MM/yyyy} - {overlappingSub.EndDate:dd/MM/yyyy}). " +
+                        $"Vui lòng liên hệ hỗ trợ để được giải quyết.");
                 }
-                else
-                {
-                    _logger.LogWarning("Plan {PlanId} not found for subscription {SubscriptionId}", 
-                        subscription.PlanId, subscription.Id);
-                }
+
+                subscription.Status = SubscriptionStatus.Active;
+                subscription.StartDate = newStartDate;
+                subscription.EndDate = newEndDate;
+                subscription.UpdatedAt = DateTime.UtcNow;
+                
+                _logger.LogInformation("Subscription {SubscriptionId} activated: StartDate={StartDate}, EndDate={EndDate}", 
+                    subscription.Id, subscription.StartDate, subscription.EndDate);
             }
             else
             {

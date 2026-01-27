@@ -24,8 +24,7 @@ namespace MealPrep.BLL.DTOs
         DateOnly DeliveryDate,
         int Stars,
         List<string>? Tags,
-        string? Comments,
-        bool RequestBlock // User có muốn chặn món không?
+        string? Comments
     );
 
     /// <summary>
@@ -34,7 +33,6 @@ namespace MealPrep.BLL.DTOs
     public record SubmitRatingResult(
         bool Success,
         string Message,
-        bool BlockedMeal, // Đã chặn món chưa?
         bool AddedToNutritionLog // Đã ghi vào NutritionLog chưa?
     );
 

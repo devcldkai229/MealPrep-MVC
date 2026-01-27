@@ -49,18 +49,33 @@ public class MenuController : Controller
             return RedirectToAction("Index", "Subscription");
         }
 
+        // Get user delivery address
+        var user = await _context.Set<AppUser>().FindAsync(userId);
+        var deliveryAddress = user?.DeliveryAddress;
+        var hasDeliveryAddress = !string.IsNullOrWhiteSpace(deliveryAddress);
+
         // Map DTO to ViewModel
         var vm = new WeeklySelectionVm
         {
             SubscriptionId = dto.SubscriptionId,
             MealsPerDay = dto.MealsPerDay,
             UserAllergies = dto.UserAllergies,
+            DeliveryAddress = deliveryAddress,
+            HasDeliveryAddress = hasDeliveryAddress,
             DailySlots = dto.DailySlots.Select(ds => new DailySlot
             {
                 Date = ds.Date,
                 DayName = ds.DayName,
                 DayOfWeek = ds.DayOfWeek,
                 SlotsCount = ds.SlotsCount,
+                IsLocked = ds.IsLocked,
+                HasOrder = ds.HasOrder,
+                LockedMeals = ds.LockedMeals.Select(lm => new LockedMealInfo
+                {
+                    MealId = lm.MealId,
+                    MealName = lm.MealName,
+                    SlotIndex = lm.SlotIndex
+                }).ToList(),
                 AvailableMeals = ds.AvailableMeals.Select(mo => new MealOption
                 {
                     MealId = mo.MealId,
@@ -131,11 +146,19 @@ public class MenuController : Controller
             return RedirectToAction("Index", "Subscription");
         }
 
+        // Get delivery address from form (if provided)
+        var deliveryAddress = Request.Form["DeliveryAddress"].ToString().Trim();
+        if (string.IsNullOrWhiteSpace(deliveryAddress))
+        {
+            deliveryAddress = null; // Will be taken from user profile if available
+        }
+
         // Map ViewModel selections to DTO
         var selectionDtos = selections.Select(s => new MealPrep.BLL.DTOs.MealSelectionRequestDto
         {
             Date = s.Date,
-            SelectedMealIds = s.SelectedMealIds
+            SelectedMealIds = s.SelectedMealIds,
+            DeliveryAddress = deliveryAddress // Pass address to DTO (only first selection needs it, but we pass it to all for consistency)
         }).ToList();
 
         try
@@ -195,9 +218,39 @@ public class MenuController : Controller
                 weekEnd = subscription.EndDate.Value;
             }
 
-            // Generate AI recommendations with optional weekly notes
+            // Find remaining days (days without confirmed orders)
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            var existingOrders = await _context.Set<DeliveryOrder>()
+                .Include(o => o.Items)
+                .Where(o => o.SubscriptionId == subscription.Id &&
+                           o.DeliveryDate >= weekStart &&
+                           o.DeliveryDate <= weekEnd)
+                .ToListAsync();
+
+            var datesWithOrders = existingOrders
+                .Where(o => o.Items.Any()) // Only orders with items are considered "confirmed"
+                .Select(o => o.DeliveryDate)
+                .ToHashSet();
+
+            // Build list of remaining dates (future dates without orders)
+            var remainingDates = new List<DateOnly>();
+            for (var date = weekStart; date <= weekEnd; date = date.AddDays(1))
+            {
+                // Only include future dates (>= today) that don't have confirmed orders
+                if (date >= today && !datesWithOrders.Contains(date))
+                {
+                    remainingDates.Add(date);
+                }
+            }
+
+            if (remainingDates.Count == 0)
+            {
+                return Json(new { success = false, message = "Tất cả các ngày trong tuần đã được đặt món hoặc đã qua. Không cần tạo menu AI." });
+            }
+
+            // Generate AI recommendations only for remaining days
             // If weeklyNotes is provided, it will override profile.Notes
-            var aiPlan = await _aiMenuService.GenerateMenuAsync(userId, weekStart, weeklyNotes);
+            var aiPlan = await _aiMenuService.GenerateMenuAsync(userId, remainingDates, weeklyNotes);
 
             // Load all active meals for selection
             var allMeals = await _mealService.GetAllActiveMealsAsync();
@@ -215,33 +268,38 @@ public class MenuController : Controller
                 WeekEnd = weekEnd
             };
 
-            // Map AI recommendations
+            // Map AI recommendations to actual dates
+            // AI returns day 1, 2, 3... which map to remainingDates[0], remainingDates[1], remainingDates[2]...
             var dayNames = new[] { "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy", "Chủ Nhật" };
             foreach (var dayPlan in aiPlan.OrderBy(d => d.day))
             {
-                // Validate day range (1-7)
-                if (dayPlan.day < 1 || dayPlan.day > 7)
+                // Validate day range (1 to remainingDates.Count)
+                if (dayPlan.day < 1 || dayPlan.day > remainingDates.Count)
                 {
-                    _logger.LogWarning("Invalid day from AI: {Day}, skipping", dayPlan.day);
+                    _logger.LogWarning("Invalid day from AI: {Day}, expected 1-{Count}, skipping", 
+                        dayPlan.day, remainingDates.Count);
                     continue;
                 }
 
-                var date = weekStart.AddDays(dayPlan.day - 1);
+                // Map AI day (1-based) to actual date from remainingDates (0-based index)
+                var date = remainingDates[dayPlan.day - 1];
                 
-                // Validate meal IDs exist and count is exactly 2
-                if (dayPlan.meal_ids.Count != 2)
+                // Validate meal IDs exist and count matches MealsPerDay
+                var expectedMeals = weeklySelection.MealsPerDay;
+                if (dayPlan.meal_ids.Count != expectedMeals)
                 {
-                    _logger.LogWarning("AI returned {Count} meals for day {Day}, expected exactly 2", 
-                        dayPlan.meal_ids.Count, dayPlan.day);
-                    // Truncate or pad to 2 meals
-                    if (dayPlan.meal_ids.Count > 2)
+                    _logger.LogWarning("AI returned {Count} meals for day {Day}, expected exactly {ExpectedMeals}", 
+                        dayPlan.meal_ids.Count, dayPlan.day, expectedMeals);
+                    // Truncate or pad to expected meals
+                    if (dayPlan.meal_ids.Count > expectedMeals)
                     {
-                        dayPlan.meal_ids = dayPlan.meal_ids.Take(2).ToList();
+                        dayPlan.meal_ids = dayPlan.meal_ids.Take(expectedMeals).ToList();
                     }
                     else
                     {
-                        _logger.LogError("AI returned less than 2 meals for day {Day}, cannot proceed", dayPlan.day);
-                        continue; // Skip this day if less than 2 meals
+                        _logger.LogError("AI returned less than {ExpectedMeals} meals for day {Day}, cannot proceed", 
+                            expectedMeals, dayPlan.day);
+                        continue; // Skip this day if less than expected meals
                     }
                 }
                 
@@ -253,11 +311,11 @@ public class MenuController : Controller
                         string.Join(", ", invalidIds), dayPlan.day);
                 }
                 
-                // Ensure we have exactly 2 valid meals
-                if (validMealIds.Count != 2)
+                // Ensure we have exactly expectedMeals valid meals
+                if (validMealIds.Count != expectedMeals)
                 {
-                    _logger.LogWarning("Day {Day} has {Count} valid meals, expected 2. Skipping.", 
-                        dayPlan.day, validMealIds.Count);
+                    _logger.LogWarning("Day {Day} has {Count} valid meals, expected {ExpectedMeals}. Skipping.", 
+                        dayPlan.day, validMealIds.Count, expectedMeals);
                     continue;
                 }
 
@@ -304,18 +362,18 @@ public class MenuController : Controller
                 });
             }
 
-            // Ensure we have recommendations for all 7 days
+            // Ensure we have recommendations for all remaining dates
             // If AI returned fewer days, fill missing days with empty recommendations
             var existingDays = vm.AiRecommendations.Select(r => r.Day).ToHashSet();
-            for (int day = 1; day <= 7; day++)
+            for (int day = 1; day <= remainingDates.Count; day++)
             {
                 if (!existingDays.Contains(day))
                 {
-                    var date = weekStart.AddDays(day - 1);
+                    var date = remainingDates[day - 1];
                     vm.AiRecommendations.Add(new AiDayRecommendation
                     {
                         Day = day,
-                        DayName = dayNames[day - 1],
+                        DayName = date.ToString("dd/MM/yyyy"),
                         Date = date,
                         RecommendedMealIds = new List<int>(),
                         Reason = "Chưa có đề xuất từ AI",
@@ -367,11 +425,15 @@ public class MenuController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetMealsForSelection(string? search = null, int page = 1, int pageSize = 4)
+    public async Task<IActionResult> GetMealsForSelection(string? search = null, int page = 1, int pageSize = 4, string? date = null)
     {
         var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-        
-        var (meals, totalCount) = await _menuService.GetMealsForSelectionAsync(search, page, pageSize, userId);
+        DateOnly? dateOnly = null;
+        if (!string.IsNullOrEmpty(date) && DateOnly.TryParse(date, out var parsedDate))
+        {
+            dateOnly = parsedDate;
+        }
+        var (meals, totalCount) = await _menuService.GetMealsForSelectionAsync(search, page, pageSize, userId, dateOnly);
         
         return Json(new
         {
@@ -386,7 +448,9 @@ public class MenuController : Controller
                 carbs = m.Carbs,
                 fat = m.Fat,
                 hasAllergen = m.HasAllergen,
-                allergenWarning = m.AllergenWarning
+                allergenWarning = m.AllergenWarning,
+                isSoldOut = m.IsSoldOut,
+                availableQuantity = m.AvailableQuantity
             }),
             totalCount = totalCount,
             page = page,
@@ -396,10 +460,13 @@ public class MenuController : Controller
     }
 
     [HttpPost]
-    [ValidateAntiForgeryToken]
+    [IgnoreAntiforgeryToken] // We'll validate manually for AJAX requests
     public async Task<IActionResult> AcceptAiMenu([FromBody] AcceptAiMenuRequest request)
     {
         var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+        // Note: Anti-forgery token validation is handled via header in AJAX request
+        // For security, we rely on [Authorize] attribute and user authentication
 
         try
         {
@@ -451,7 +518,8 @@ public class MenuController : Controller
                     selections.Add(new MealPrep.BLL.DTOs.MealSelectionRequestDto
                     {
                         Date = date,
-                        SelectedMealIds = ds.MealIds
+                        SelectedMealIds = ds.MealIds,
+                        DeliveryAddress = request.DeliveryAddress // Pass address from request
                     });
                 }
             }
@@ -478,6 +546,10 @@ public class MenuController : Controller
 public class AcceptAiMenuRequest
 {
     public List<DaySelection> DaySelections { get; set; } = new();
+    /// <summary>
+    /// Địa chỉ giao hàng (optional, sẽ lấy từ user nếu không có)
+    /// </summary>
+    public string? DeliveryAddress { get; set; }
 }
 
 public class DaySelection

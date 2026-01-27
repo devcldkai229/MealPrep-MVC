@@ -37,10 +37,5 @@ namespace MealPrep.BLL.Services
         /// Bulk update trạng thái nhiều DeliveryOrders
         /// </summary>
         Task<int> BulkUpdateDeliveryOrderStatusAsync(List<int> deliveryOrderIds, OrderStatus newStatus);
-
-        /// <summary>
-        /// Tự động assign meals cho DeliveryOrder chưa có món
-        /// </summary>
-        Task<bool> AutoAssignMealsForDeliveryOrderAsync(int deliveryOrderId);
     }
 }

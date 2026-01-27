@@ -17,7 +17,6 @@ namespace MealPrep.BLL.Services
         private readonly IRepository<OrderItem> _orderItemRepo;
         private readonly IRepository<Meal> _mealRepo;
         private readonly IRepository<AppUser> _userRepo;
-        private readonly IRepository<UserDislikedMeal> _dislikedMealRepo;
         private readonly AppDbContext _context;
         private readonly ILogger<DeliveryProcessingService> _logger;
 
@@ -29,7 +28,6 @@ namespace MealPrep.BLL.Services
             IRepository<OrderItem> orderItemRepo,
             IRepository<Meal> mealRepo,
             IRepository<AppUser> userRepo,
-            IRepository<UserDislikedMeal> dislikedMealRepo,
             AppDbContext context,
             ILogger<DeliveryProcessingService> logger)
         {
@@ -40,7 +38,6 @@ namespace MealPrep.BLL.Services
             _orderItemRepo = orderItemRepo;
             _mealRepo = mealRepo;
             _userRepo = userRepo;
-            _dislikedMealRepo = dislikedMealRepo;
             _context = context;
             _logger = logger;
         }
@@ -55,7 +52,7 @@ namespace MealPrep.BLL.Services
         ///    a. Kiểm tra đã có DeliveryOrder cho ngày này chưa? → Skip nếu có
         ///    b. Tìm Order tương ứng (Order.DeliveryDate == targetDate)
         ///       - Nếu có Order → User đã chọn món → Copy từ OrderItems
-        ///       - Nếu KHÔNG có Order → User quên chọn → Auto-assign meals
+        ///       - Nếu KHÔNG có Order → Skip (User cần tự chọn món)
         ///    c. Tạo DeliveryOrder mới với status = Planned
         ///    d. Tạo DeliveryOrderItems tương ứng
         /// 4. SaveChanges & Return kết quả
@@ -108,6 +105,14 @@ namespace MealPrep.BLL.Services
                                 o.SubscriptionId == subscription.Id &&
                                 o.DeliveryDate == deliveryDate);
 
+                        // Chỉ xử lý nếu User đã chọn món
+                        if (userOrder == null || !userOrder.Items.Any())
+                        {
+                            _logger.LogWarning("⚠️ User {UserId} has not selected meals for {Date}. Skipping.", 
+                                subscription.AppUserId, deliveryDate);
+                            continue; // Skip nếu chưa chọn món
+                        }
+
                         // === BƯỚC 4: Tạo DeliveryOrder ===
                         var deliveryOrder = new DeliveryOrder
                         {
@@ -122,43 +127,23 @@ namespace MealPrep.BLL.Services
                         await _deliveryOrderRepo.SaveChangesAsync(); // Save để có Id
 
                         // === BƯỚC 5: Tạo DeliveryOrderItems ===
-                        if (userOrder != null && userOrder.Items.Any())
+                        _logger.LogInformation("✅ User {UserId} has selected meals for {Date}", 
+                            subscription.AppUserId, deliveryDate);
+
+                        foreach (var orderItem in userOrder.Items)
                         {
-                            // ✅ User đã chọn món → Copy từ Order
-                            _logger.LogInformation("✅ User {UserId} has selected meals for {Date}", 
-                                subscription.AppUserId, deliveryDate);
-
-                            foreach (var orderItem in userOrder.Items)
+                            var deliveryItem = new DeliveryOrderItem
                             {
-                                var deliveryItem = new DeliveryOrderItem
-                                {
-                                    DeliveryOrderId = deliveryOrder.Id,
-                                    MealId = orderItem.MealId,
-                                    MealNameSnapshot = orderItem.Meal?.Name ?? "Unknown",
-                                    Quantity = orderItem.Quantity,
-                                    UnitPrice = orderItem.Meal?.BasePrice ?? 0,
-                                    CreatedAt = DateTime.UtcNow
-                                };
+                                DeliveryOrderId = deliveryOrder.Id,
+                                MealId = orderItem.MealId,
+                                MealNameSnapshot = orderItem.Meal?.Name ?? "Unknown",
+                                Quantity = orderItem.Quantity,
+                                UnitPrice = orderItem.Meal?.BasePrice ?? 0,
+                                CreatedAt = DateTime.UtcNow
+                            };
 
-                                await _deliveryOrderItemRepo.AddAsync(deliveryItem);
-                                deliveryOrder.TotalAmount += deliveryItem.UnitPrice * deliveryItem.Quantity;
-                            }
-                        }
-                        else
-                        {
-                            // ❌ User QUÊN chọn món → Auto-assign
-                            _logger.LogWarning("⚠️ User {UserId} forgot to select meals. Auto-assigning...", 
-                                subscription.AppUserId);
-
-                            var autoAssignSuccess = await AutoAssignMealsForDeliveryOrderInternalAsync(
-                                deliveryOrder, 
-                                subscription.MealsPerDay,
-                                subscription.AppUserId);
-
-                            if (autoAssignSuccess)
-                            {
-                                result.TotalAutoAssignedMeals += subscription.MealsPerDay;
-                            }
+                            await _deliveryOrderItemRepo.AddAsync(deliveryItem);
+                            deliveryOrder.TotalAmount += deliveryItem.UnitPrice * deliveryItem.Quantity;
                         }
 
                         _deliveryOrderRepo.Update(deliveryOrder);
@@ -186,89 +171,7 @@ namespace MealPrep.BLL.Services
         }
 
         /// <summary>
-        /// 🤖 Tự động chọn món cho User quên chọn
-        /// 
-        /// === LOGIC AUTO-ASSIGN ===
-        /// 1. Lấy danh sách món Active, sắp xếp theo:
-        ///    - Calories thấp nhất (healthy meals)
-        ///    - Món bán chạy (popular meals) - TODO: Add tracking
-        /// 2. Random hoặc Round-robin để đa dạng
-        /// 3. Tạo DeliveryOrderItems tương ứng
-        /// </summary>
-        private async Task<bool> AutoAssignMealsForDeliveryOrderInternalAsync(
-            DeliveryOrder deliveryOrder, 
-            int mealsPerDay,
-            Guid? userId = null)
-        {
-            try
-            {
-                // ✅ STEP 1: Lấy danh sách món User đã chặn
-                var dislikedMealIds = new List<int>();
-                if (userId.HasValue)
-                {
-                    dislikedMealIds = await _dislikedMealRepo.Query()
-                        .Where(d => d.AppUserId == userId.Value)
-                        .Select(d => d.MealId)
-                        .ToListAsync();
-
-                    if (dislikedMealIds.Any())
-                    {
-                        _logger.LogInformation("🚫 User {UserId} has {Count} disliked meals to filter out", 
-                            userId.Value, dislikedMealIds.Count);
-                    }
-                }
-
-                // ✅ STEP 2: Lấy danh sách món healthy (calories thấp) VÀ loại bỏ món bị chặn
-                var availableMeals = await _mealRepo.Query()
-                    .Where(m => m.IsActive && !dislikedMealIds.Contains(m.Id))
-                    .OrderBy(m => m.Calories)
-                    .Take(mealsPerDay * 3) // Lấy nhiều hơn để random
-                    .ToListAsync();
-
-                if (availableMeals.Count == 0)
-                {
-                    _logger.LogError("❌ No available meals to auto-assign (after filtering disliked meals)");
-                    return false;
-                }
-
-                // Random để tạo đa dạng
-                var random = new Random();
-                var selectedMeals = availableMeals
-                    .OrderBy(x => random.Next())
-                    .Take(mealsPerDay)
-                    .ToList();
-
-                foreach (var meal in selectedMeals)
-                {
-                    var item = new DeliveryOrderItem
-                    {
-                        DeliveryOrderId = deliveryOrder.Id,
-                        MealId = meal.Id,
-                        MealNameSnapshot = meal.Name,
-                        Quantity = 1,
-                        UnitPrice = meal.BasePrice,
-                        CreatedAt = DateTime.UtcNow
-                    };
-
-                    await _deliveryOrderItemRepo.AddAsync(item);
-                    deliveryOrder.TotalAmount += item.UnitPrice;
-                }
-
-                await _deliveryOrderItemRepo.SaveChangesAsync();
-                _logger.LogInformation("✅ Auto-assigned {Count} meals for DeliveryOrder #{Id}", 
-                    mealsPerDay, deliveryOrder.Id);
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "❌ Error auto-assigning meals");
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// 🍳 Export Kitchen List - Danh sách tổng hợp cần nấu
+            /// 🍳 Export Kitchen List - Danh sách tổng hợp cần nấu
         /// 
         /// === ĐƯỜNG ĐI DỮ LIỆU ===
         /// 1. Input: date (ngày cần export)
@@ -384,6 +287,17 @@ namespace MealPrep.BLL.Services
                 return false;
             }
 
+            // Validation: Cannot mark as "Delivered" if delivery date is in the future
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            if (newStatus == OrderStatus.Delivered && deliveryOrder.DeliveryDate > today)
+            {
+                _logger.LogWarning("⚠️ Cannot mark DeliveryOrder #{Id} as Delivered: DeliveryDate {DeliveryDate} is in the future (Today: {Today})", 
+                    deliveryOrderId, deliveryOrder.DeliveryDate, today);
+                throw new InvalidOperationException(
+                    $"Không thể đánh dấu đơn hàng là 'Đã giao' vì ngày giao hàng ({deliveryOrder.DeliveryDate:dd/MM/yyyy}) chưa đến. " +
+                    $"Chỉ có thể đánh dấu 'Đã giao' cho các đơn hàng có ngày giao hàng <= {today:dd/MM/yyyy}.");
+            }
+
             deliveryOrder.Status = newStatus;
             deliveryOrder.UpdatedAt = DateTime.UtcNow;
 
@@ -402,6 +316,22 @@ namespace MealPrep.BLL.Services
                 .Where(d => deliveryOrderIds.Contains(d.Id))
                 .ToListAsync();
 
+            // Validation: Cannot mark as "Delivered" if delivery date is in the future
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            if (newStatus == OrderStatus.Delivered)
+            {
+                var futureOrders = deliveryOrders.Where(d => d.DeliveryDate > today).ToList();
+                if (futureOrders.Any())
+                {
+                    var futureDates = string.Join(", ", futureOrders.Select(d => d.DeliveryDate.ToString("dd/MM/yyyy")));
+                    _logger.LogWarning("⚠️ Cannot bulk mark {Count} delivery orders as Delivered: DeliveryDates {Dates} are in the future (Today: {Today})", 
+                        futureOrders.Count, futureDates, today);
+                    throw new InvalidOperationException(
+                        $"Không thể đánh dấu {futureOrders.Count} đơn hàng là 'Đã giao' vì ngày giao hàng chưa đến: {futureDates}. " +
+                        $"Chỉ có thể đánh dấu 'Đã giao' cho các đơn hàng có ngày giao hàng <= {today:dd/MM/yyyy}.");
+                }
+            }
+
             foreach (var order in deliveryOrders)
             {
                 order.Status = newStatus;
@@ -415,23 +345,6 @@ namespace MealPrep.BLL.Services
                 deliveryOrders.Count, newStatus);
 
             return deliveryOrders.Count;
-        }
-
-        public async Task<bool> AutoAssignMealsForDeliveryOrderAsync(int deliveryOrderId)
-        {
-            var deliveryOrder = await _deliveryOrderRepo.Query()
-                .Include(d => d.Subscription)
-                .FirstOrDefaultAsync(d => d.Id == deliveryOrderId);
-
-            if (deliveryOrder == null)
-            {
-                return false;
-            }
-
-            return await AutoAssignMealsForDeliveryOrderInternalAsync(
-                deliveryOrder, 
-                deliveryOrder.Subscription!.MealsPerDay,
-                deliveryOrder.Subscription.AppUserId);
         }
     }
 }

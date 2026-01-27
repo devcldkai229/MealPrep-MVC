@@ -9,13 +9,16 @@ namespace MealPrep.Web.Controllers
     public class AdminMealsController : Controller
     {
         private readonly IMealService _mealService;
+        private readonly IS3Service _s3Service;
         private readonly ILogger<AdminMealsController> _logger;
 
         public AdminMealsController(
             IMealService mealService,
+            IS3Service s3Service,
             ILogger<AdminMealsController> logger)
         {
             _mealService = mealService;
+            _s3Service = s3Service;
             _logger = logger;
         }
 
@@ -54,12 +57,47 @@ namespace MealPrep.Web.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(Meal meal)
+        public async Task<IActionResult> Create(Meal meal, List<IFormFile>? imageFiles)
         {
             if (ModelState.IsValid)
             {
                 try
                 {
+                    // Upload images to S3 if provided
+                    var imageUrls = new List<string>();
+                    if (imageFiles != null && imageFiles.Any())
+                    {
+                        foreach (var file in imageFiles)
+                        {
+                            if (file.Length > 0 && file.ContentType.StartsWith("image/"))
+                            {
+                                try
+                                {
+                                    var s3Key = await _s3Service.UploadFileAsync(
+                                        file.OpenReadStream(),
+                                        file.FileName,
+                                        "meals",
+                                        file.ContentType);
+                                    
+                                    // Get presigned URL for the uploaded image
+                                    var imageUrl = _s3Service.GetPresignedUrl(s3Key, 8760); // 1 year expiration
+                                    imageUrls.Add(imageUrl);
+                                }
+                                catch (Exception ex)
+                                {
+                                    _logger.LogError(ex, "Error uploading image {FileName} to S3", file.FileName);
+                                    ModelState.AddModelError("", $"Lỗi khi upload ảnh {file.FileName}: {ex.Message}");
+                                }
+                            }
+                        }
+                    }
+
+                    // If images were uploaded, update meal.Images
+                    if (imageUrls.Any())
+                    {
+                        meal.Images = System.Text.Json.JsonSerializer.Serialize(imageUrls);
+                    }
+
                     await _mealService.CreateAsync(meal);
                     TempData["SuccessMessage"] = $"Đã tạo món ăn {meal.Name} thành công";
                     return RedirectToAction(nameof(Details), new { id = meal.Id });
@@ -86,7 +124,7 @@ namespace MealPrep.Web.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, Meal meal)
+        public async Task<IActionResult> Edit(int id, Meal meal, List<IFormFile>? imageFiles)
         {
             if (id != meal.Id)
             {
@@ -97,6 +135,56 @@ namespace MealPrep.Web.Controllers
             {
                 try
                 {
+                    // Get existing meal to preserve existing images
+                    var existingMeal = await _mealService.GetAsync(id);
+                    var existingImageUrls = new List<string>();
+                    
+                    if (existingMeal != null && !string.IsNullOrWhiteSpace(existingMeal.Images))
+                    {
+                        try
+                        {
+                            existingImageUrls = System.Text.Json.JsonSerializer.Deserialize<List<string>>(existingMeal.Images) ?? new List<string>();
+                        }
+                        catch
+                        {
+                            // If parsing fails, keep empty list
+                        }
+                    }
+
+                    // Upload new images to S3 if provided
+                    if (imageFiles != null && imageFiles.Any())
+                    {
+                        foreach (var file in imageFiles)
+                        {
+                            if (file.Length > 0 && file.ContentType.StartsWith("image/"))
+                            {
+                                try
+                                {
+                                    var s3Key = await _s3Service.UploadFileAsync(
+                                        file.OpenReadStream(),
+                                        file.FileName,
+                                        "meals",
+                                        file.ContentType);
+                                    
+                                    // Get presigned URL for the uploaded image
+                                    var imageUrl = _s3Service.GetPresignedUrl(s3Key, 8760); // 1 year expiration
+                                    existingImageUrls.Add(imageUrl);
+                                }
+                                catch (Exception ex)
+                                {
+                                    _logger.LogError(ex, "Error uploading image {FileName} to S3", file.FileName);
+                                    ModelState.AddModelError("", $"Lỗi khi upload ảnh {file.FileName}: {ex.Message}");
+                                }
+                            }
+                        }
+                    }
+
+                    // Update meal.Images with all images (existing + new)
+                    if (existingImageUrls.Any())
+                    {
+                        meal.Images = System.Text.Json.JsonSerializer.Serialize(existingImageUrls);
+                    }
+
                     await _mealService.UpdateAsync(meal);
                     TempData["SuccessMessage"] = $"Đã cập nhật món ăn {meal.Name} thành công";
                     return RedirectToAction(nameof(Details), new { id = meal.Id });

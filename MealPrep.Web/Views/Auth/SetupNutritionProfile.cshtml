@@ -172,6 +172,26 @@
                                 <div class="form-text">Số bữa ăn mỗi ngày (1-6 bữa)</div>
                             </div>
 
+                            <!-- Calories In Day -->
+                            <div class="col-12">
+                                <h6 class="text-primary mb-3 mt-3">
+                                    <i class="bi bi-fire"></i> Mục tiêu Calories
+                                </h6>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label asp-for="CaloriesInDay" class="form-label fw-semibold">
+                                    @Html.DisplayNameFor(m => m.CaloriesInDay)
+                                </label>
+                                <div class="input-group">
+                                    <input asp-for="CaloriesInDay" type="number" class="form-control form-control-lg"
+                                           placeholder="Ví dụ: 2000" min="1000" max="5000" />
+                                    <span class="input-group-text">kcal</span>
+                                </div>
+                                <span asp-validation-for="CaloriesInDay" class="text-danger small"></span>
+                                <div class="form-text">Calories mục tiêu trong một ngày (1000-5000 kcal). Để trống nếu muốn hệ thống tự tính.</div>
+                            </div>
+
                             <!-- Allergies -->
                             <div class="col-12">
                                 <h6 class="text-primary mb-3 mt-3">

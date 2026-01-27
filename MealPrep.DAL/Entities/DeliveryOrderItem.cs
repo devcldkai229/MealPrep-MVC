@@ -44,6 +44,25 @@ namespace MealPrep.DAL.Entities
         [Range(0, 10000000)]
         public decimal UnitPrice { get; set; }
 
+        /// <summary>
+        /// Địa chỉ giao hàng tại thời điểm tạo đơn (snapshot)
+        /// Để shipper biết giao đến địa chỉ nào
+        /// </summary>
+        [StringLength(500)]
+        public string? DeliveryAddress { get; set; }
+
+        /// <summary>
+        /// S3 Key của ảnh xác nhận giao hàng
+        /// Shipper chụp ảnh khi giao hàng thành công và upload lên S3
+        /// </summary>
+        [StringLength(500)]
+        public string? ImageS3Key { get; set; }
+
+        /// <summary>
+        /// Thời điểm giao hàng thành công (khi shipper bấm "Hoàn thành")
+        /// </summary>
+        public DateTime? DeliveredAt { get; set; }
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 }

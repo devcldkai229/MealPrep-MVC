@@ -95,10 +95,17 @@ namespace MealPrep.Web.Controllers
                 
                 return Redirect(payUrl);
             }
+            catch (InvalidOperationException ex)
+            {
+                // Handle business logic errors (e.g., overlapping subscriptions, validation errors)
+                _logger.LogWarning(ex, "Subscription creation failed: {Message}", ex.Message);
+                TempData["ErrorMessage"] = ex.Message;
+                return RedirectToAction(nameof(Index));
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to create subscription/payment");
-                ModelState.AddModelError("", $"Payment initialization failed: {ex.Message}");
+                TempData["ErrorMessage"] = $"Có lỗi xảy ra khi tạo đăng ký: {ex.Message}";
                 return RedirectToAction(nameof(Index));
             }
         }
@@ -242,8 +249,16 @@ namespace MealPrep.Web.Controllers
                         TempData["ErrorMessage"] = "Không tìm thấy thông tin thanh toán. Vui lòng liên hệ hỗ trợ.";
                         return RedirectToAction(nameof(Index));
                     }
+                    else if (ex.Message.Contains("trùng") || ex.Message.Contains("overlap") || ex.Message.Contains("Không thể kích hoạt"))
+                    {
+                        // Handle overlap error during payment confirmation
+                        _logger.LogWarning("Subscription overlap detected during payment confirmation: {Message}", ex.Message);
+                        TempData["ErrorMessage"] = ex.Message;
+                        return RedirectToAction(nameof(Index));
+                    }
                     _logger.LogError(ex, "Failed to confirm payment: {Message}", ex.Message);
                     TempData["ErrorMessage"] = $"Có lỗi xảy ra khi xử lý thanh toán: {ex.Message}";
+                    return RedirectToAction(nameof(Index));
                 }
                 catch (Exception ex)
                 {

@@ -64,6 +64,18 @@ namespace MealPrep.Web.Controllers
                 await _adminDeliveryOrderService.UpdateDeliveryOrderStatusAsync(id, status);
                 TempData["SuccessMessage"] = $"Đã cập nhật trạng thái đơn hàng #{id}";
             }
+            catch (InvalidOperationException ex)
+            {
+                // Handle business logic validation errors (e.g., cannot mark as Delivered if delivery date is in the future)
+                _logger.LogWarning(ex, "Business rule violation when updating delivery order status {OrderId}: {Message}", id, ex.Message);
+                TempData["ErrorMessage"] = ex.Message;
+            }
+            catch (ArgumentException ex)
+            {
+                // Handle argument errors (e.g., order not found)
+                _logger.LogWarning(ex, "Invalid argument when updating delivery order status {OrderId}: {Message}", id, ex.Message);
+                TempData["ErrorMessage"] = ex.Message;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating delivery order status {OrderId}", id);

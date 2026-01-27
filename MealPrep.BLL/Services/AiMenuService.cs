@@ -14,9 +14,9 @@ namespace MealPrep.BLL.Services
         /// Generate AI menu recommendations without saving (for user review)
         /// </summary>
         /// <param name="userId">User ID</param>
-        /// <param name="weekStart">Start date of the week (Monday)</param>
+        /// <param name="remainingDates">List of dates that need meal planning (only future dates without orders)</param>
         /// <param name="weeklyNotes">Optional notes for this week. If provided, will override profile.Notes</param>
-        Task<List<AiMenuPlanItem>> GenerateMenuAsync(Guid userId, DateOnly weekStart, string? weeklyNotes = null);
+        Task<List<AiMenuPlanItem>> GenerateMenuAsync(Guid userId, List<DateOnly> remainingDates, string? weeklyNotes = null);
         
         /// <summary>
         /// Generate and save menu directly to database
@@ -44,11 +44,12 @@ namespace MealPrep.BLL.Services
 
         /// <summary>
         /// Generate AI menu recommendations without saving (for user review)
+        /// Only generates for remaining dates (future dates without confirmed orders)
         /// </summary>
         /// <param name="userId">User ID</param>
-        /// <param name="weekStart">Start date of the week (Monday)</param>
+        /// <param name="remainingDates">List of dates that need meal planning (only future dates without orders)</param>
         /// <param name="weeklyNotes">Optional notes for this week. If provided, will override profile.Notes</param>
-        public async Task<List<AiMenuPlanItem>> GenerateMenuAsync(Guid userId, DateOnly weekStart, string? weeklyNotes = null)
+        public async Task<List<AiMenuPlanItem>> GenerateMenuAsync(Guid userId, List<DateOnly> remainingDates, string? weeklyNotes = null)
         {
             // 1. Lấy dữ liệu User với đầy đủ thông tin
             var user = await _context.Users
@@ -74,6 +75,9 @@ namespace MealPrep.BLL.Services
                 : (profile.Notes ?? "");
 
             // 5. Chuẩn bị Payload theo format Python API yêu cầu
+            // Pass number of remaining days instead of always 7
+            var numberOfDays = remainingDates.Count;
+            
             var payload = new
             {
                 user_profile = new
@@ -88,7 +92,8 @@ namespace MealPrep.BLL.Services
                     calories_in_day = caloriesInDay,
                     allergies = allergies
                 },
-                disliked_ids = user.DislikedMeals.Select(d => d.MealId).ToList()
+                disliked_ids = user.DislikedMeals.Select(d => d.MealId).ToList(),
+                number_of_days = numberOfDays // Tell AI to generate for N days, not always 7
             };
 
             // 5. Gọi AI Service (Python)
@@ -119,10 +124,18 @@ namespace MealPrep.BLL.Services
 
         /// <summary>
         /// Generate and save menu directly to database
+        /// Note: This method is deprecated. Use GenerateMenuAsync with remainingDates instead.
         /// </summary>
         public async Task<int> GenerateAndSaveMenuAsync(Guid userId, DateOnly weekStart)
         {
-            var menuPlan = await GenerateMenuAsync(userId, weekStart);
+            // Build a list of 7 days from weekStart for backward compatibility
+            var dates = new List<DateOnly>();
+            for (int i = 0; i < 7; i++)
+            {
+                dates.Add(weekStart.AddDays(i));
+            }
+            
+            var menuPlan = await GenerateMenuAsync(userId, dates);
             return await SaveMenuToDb(userId, weekStart, menuPlan);
         }
 

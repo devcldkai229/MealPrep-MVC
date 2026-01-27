@@ -16,7 +16,7 @@ namespace MealPrep.Web.Filters
                 var action = context.RouteData.Values["action"]?.ToString();
                 
                 // List of admin controllers
-                var adminControllers = new[] { "Admin", "AdminUsers", "AdminMeals", "AdminSubscriptions", "AdminPlans", "AdminDeliveryOrders" };
+                var adminControllers = new[] { "Admin", "AdminUsers", "AdminMeals", "AdminSubscriptions", "AdminPlans", "AdminDeliveryOrders", "AdminInventory" };
                 
                 // If accessing a non-admin controller, redirect to Admin Dashboard
                 if (!adminControllers.Contains(controller) && 

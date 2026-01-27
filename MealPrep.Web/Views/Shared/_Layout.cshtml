@@ -11,6 +11,8 @@
     
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     @RenderSection("Styles", required: false)
     <style>
         :root{
@@ -56,15 +58,31 @@
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 @if (User.Identity?.IsAuthenticated == true)
                 {
-                    <li class="nav-item"><a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Dashboard" ? "active" : "")" asp-controller="Dashboard" asp-action="Index">Bảng Điều Khiển</a></li>
-                    <li class="nav-item"><a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Subscription" ? "active" : "")" asp-controller="Subscription" asp-action="Index">Đăng Ký</a></li>
-                    <li class="nav-item"><a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Meal" ? "active" : "")" asp-controller="Meal" asp-action="Index">Món Ăn</a></li>
-                    <li class="nav-item"><a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "MealFeedback" ? "active" : "")" asp-controller="MealFeedback" asp-action="Index">⭐ Đánh Giá</a></li>
-                    <li class="nav-item"><a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "NutritionLog" ? "active" : "")" asp-controller="NutritionLog" asp-action="Index">Dinh Dưỡng</a></li>
-                    <li class="nav-item"><a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "UserSubscriptions" ? "active" : "")" asp-controller="UserSubscriptions" asp-action="Index">Gói Đăng Ký</a></li>
+                    @if (User.IsInRole("Shipper") && !User.IsInRole("Admin"))
+                    {
+                        <!-- Shipper Navigation -->
+                        <li class="nav-item"><a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "ShipperDashboard" ? "active" : "")" asp-controller="ShipperDashboard" asp-action="Index">Dashboard</a></li>
+                        <li class="nav-item"><a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "ShipperDelivery" ? "active" : "")" asp-controller="ShipperDelivery" asp-action="Index">Đơn Hàng</a></li>
+                    }
+                    else
+                    {
+                        <!-- User Navigation -->
+                        <li class="nav-item"><a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Dashboard" ? "active" : "")" asp-controller="Dashboard" asp-action="Index">Bảng Điều Khiển</a></li>
+                        <li class="nav-item"><a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Subscription" ? "active" : "")" asp-controller="Subscription" asp-action="Index">Đăng Ký</a></li>
+                        <li class="nav-item"><a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Meal" ? "active" : "")" asp-controller="Meal" asp-action="Index">Món Ăn</a></li>
+                        <li class="nav-item"><a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "MealFeedback" ? "active" : "")" asp-controller="MealFeedback" asp-action="Index">Đánh Giá</a></li>
+                        <li class="nav-item"><a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "NutritionLog" ? "active" : "")" asp-controller="NutritionLog" asp-action="Index">Dinh Dưỡng</a></li>
+                        <li class="nav-item"><a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "UserSubscriptions" ? "active" : "")" asp-controller="UserSubscriptions" asp-action="Index">Gói Đăng Ký</a></li>
+                    }
+                    
                     @if (User.IsInRole("Admin"))
                     {
                         <li class="nav-item"><a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Admin" ? "active" : "")" asp-controller="Admin" asp-action="Index">Admin</a></li>
+                    }
+                    
+                    @if (User.IsInRole("Shipper") && User.IsInRole("Admin"))
+                    {
+                        <li class="nav-item"><a class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "ShipperDashboard" ? "active" : "")" asp-controller="ShipperDashboard" asp-action="Index">Shipper</a></li>
                     }
                 }
                 else
@@ -84,21 +102,42 @@
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li><h6 class="dropdown-header">@User.FindFirstValue(ClaimTypes.Email)</h6></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" asp-controller="Auth" asp-action="Profile">
-                                <i class="bi bi-person"></i> Hồ Sơ
-                            </a></li>
-                            <li><a class="dropdown-item" asp-controller="Subscription" asp-action="Index">
-                                <i class="bi bi-calendar-check"></i> Đăng Ký Gói
-                            </a></li>
-                            <li><a class="dropdown-item" asp-controller="NutritionLog" asp-action="Index">
-                                <i class="bi bi-heart-pulse"></i> Nhật Ký Dinh Dưỡng
-                            </a></li>
-                            <li><a class="dropdown-item" asp-controller="MealFeedback" asp-action="Index">
-                                <i class="bi bi-star"></i> Đánh Giá Món Ăn
-                            </a></li>
-                            <li><a class="dropdown-item" asp-controller="MealFeedback" asp-action="MySummary">
-                                <i class="bi bi-graph-up"></i> Thống Kê Feedback
-                            </a></li>
+                            @if (User.IsInRole("Shipper") && !User.IsInRole("Admin"))
+                            {
+                                <!-- Shipper Menu -->
+                                <li><a class="dropdown-item" asp-controller="ShipperDashboard" asp-action="Index">
+                                    <i class="bi bi-speedometer2"></i> Dashboard
+                                </a></li>
+                                <li><a class="dropdown-item" asp-controller="ShipperDelivery" asp-action="Index">
+                                    <i class="bi bi-truck"></i> Đơn Hàng
+                                </a></li>
+                            }
+                            else
+                            {
+                                <!-- User Menu -->
+                                <li><a class="dropdown-item" asp-controller="Auth" asp-action="Profile">
+                                    <i class="bi bi-person"></i> Hồ Sơ
+                                </a></li>
+                                <li><a class="dropdown-item" asp-controller="Subscription" asp-action="Index">
+                                    <i class="bi bi-calendar-check"></i> Đăng Ký Gói
+                                </a></li>
+                                <li><a class="dropdown-item" asp-controller="NutritionLog" asp-action="Index">
+                                    <i class="bi bi-heart-pulse"></i> Nhật Ký Dinh Dưỡng
+                                </a></li>
+                                <li><a class="dropdown-item" asp-controller="MealFeedback" asp-action="Index">
+                                    <i class="bi bi-chat-left-text"></i> Đánh Giá Món Ăn
+                                </a></li>
+                                <li><a class="dropdown-item" asp-controller="MealFeedback" asp-action="MySummary">
+                                    <i class="bi bi-graph-up"></i> Thống Kê Feedback
+                                </a></li>
+                            }
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" asp-controller="Admin" asp-action="Index">
+                                    <i class="bi bi-shield-check"></i> Admin Panel
+                                </a></li>
+                            }
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item text-danger" asp-controller="Auth" asp-action="Logout">
                                 <i class="bi bi-box-arrow-right"></i> Đăng Xuất

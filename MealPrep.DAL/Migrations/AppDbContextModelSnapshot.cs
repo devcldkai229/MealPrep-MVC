@@ -35,7 +35,7 @@ namespace MealPrep.DAL.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Roles", (string)null);
+                    b.ToTable("Roles");
 
                     b.HasData(
                         new
@@ -68,6 +68,10 @@ namespace MealPrep.DAL.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<string>("DeliveryAddress")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -107,7 +111,7 @@ namespace MealPrep.DAL.Migrations
 
                     b.HasIndex("RoleId");
 
-                    b.ToTable("Users", (string)null);
+                    b.ToTable("Users");
 
                     b.HasData(
                         new
@@ -180,7 +184,7 @@ namespace MealPrep.DAL.Migrations
 
                     b.HasIndex("SubscriptionId");
 
-                    b.ToTable("DeliveryOrders", (string)null);
+                    b.ToTable("DeliveryOrders");
                 });
 
             modelBuilder.Entity("MealPrep.DAL.Entities.DeliveryOrderItem", b =>
@@ -194,8 +198,19 @@ namespace MealPrep.DAL.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime?>("DeliveredAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeliveryAddress")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<int>("DeliveryOrderId")
                         .HasColumnType("int");
+
+                    b.Property<string>("ImageS3Key")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<int?>("MealId")
                         .HasColumnType("int");
@@ -222,7 +237,7 @@ namespace MealPrep.DAL.Migrations
 
                     b.HasIndex("MealId");
 
-                    b.ToTable("DeliveryOrderItems", (string)null);
+                    b.ToTable("DeliveryOrderItems");
                 });
 
             modelBuilder.Entity("MealPrep.DAL.Entities.DeliverySlot", b =>
@@ -246,7 +261,6 @@ namespace MealPrep.DAL.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("DeliverySlots", (string)null);
                     b.ToTable("DeliverySlots");
 
                     b.HasData(
@@ -271,6 +285,46 @@ namespace MealPrep.DAL.Migrations
                             IsActive = true,
                             Name = "Evening"
                         });
+                });
+
+            modelBuilder.Entity("MealPrep.DAL.Entities.KitchenInventory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date");
+
+                    b.Property<int>("MealId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("QuantityLimit")
+                        .HasColumnType("int");
+
+                    b.Property<int>("QuantityUsed")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MealId");
+
+                    b.HasIndex("Date", "MealId")
+                        .IsUnique();
+
+                    b.ToTable("KitchenInventories");
                 });
 
             modelBuilder.Entity("MealPrep.DAL.Entities.Meal", b =>
@@ -331,7 +385,7 @@ namespace MealPrep.DAL.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Meals", (string)null);
+                    b.ToTable("Meals");
 
                     b.HasData(
                         new
@@ -1888,7 +1942,7 @@ namespace MealPrep.DAL.Migrations
                     b.HasIndex("AppUserId", "DeliveryOrderItemId")
                         .IsUnique();
 
-                    b.ToTable("MealRatings", (string)null);
+                    b.ToTable("MealRatings");
                 });
 
             modelBuilder.Entity("MealPrep.DAL.Entities.NutritionLog", b =>
@@ -1922,7 +1976,7 @@ namespace MealPrep.DAL.Migrations
 
                     b.HasIndex("MealId");
 
-                    b.ToTable("NutritionLogs", (string)null);
+                    b.ToTable("NutritionLogs");
                 });
 
             modelBuilder.Entity("MealPrep.DAL.Entities.Order", b =>
@@ -1956,7 +2010,7 @@ namespace MealPrep.DAL.Migrations
 
                     b.HasIndex("SubscriptionId");
 
-                    b.ToTable("Orders", (string)null);
+                    b.ToTable("Orders");
                 });
 
             modelBuilder.Entity("MealPrep.DAL.Entities.OrderItem", b =>
@@ -1982,7 +2036,7 @@ namespace MealPrep.DAL.Migrations
 
                     b.HasIndex("OrderId");
 
-                    b.ToTable("OrderItems", (string)null);
+                    b.ToTable("OrderItems");
                 });
 
             modelBuilder.Entity("MealPrep.DAL.Entities.OtpCode", b =>
@@ -2010,7 +2064,7 @@ namespace MealPrep.DAL.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("OtpCodes", (string)null);
+                    b.ToTable("OtpCodes");
                 });
 
             modelBuilder.Entity("MealPrep.DAL.Entities.Payment", b =>
@@ -2073,7 +2127,7 @@ namespace MealPrep.DAL.Migrations
 
                     b.HasIndex("SubscriptionId");
 
-                    b.ToTable("Payments", (string)null);
+                    b.ToTable("Payments");
                 });
 
             modelBuilder.Entity("MealPrep.DAL.Entities.PaymentTransaction", b =>
@@ -2118,7 +2172,7 @@ namespace MealPrep.DAL.Migrations
 
                     b.HasIndex("PaymentId");
 
-                    b.ToTable("PaymentTransactions", (string)null);
+                    b.ToTable("PaymentTransactions");
                 });
 
             modelBuilder.Entity("MealPrep.DAL.Entities.Plan", b =>
@@ -2156,7 +2210,7 @@ namespace MealPrep.DAL.Migrations
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("Plans", (string)null);
+                    b.ToTable("Plans");
 
                     b.HasData(
                         new
@@ -2210,7 +2264,7 @@ namespace MealPrep.DAL.Migrations
                     b.HasIndex("PlanId", "MealsPerDay")
                         .IsUnique();
 
-                    b.ToTable("PlanMealTiers", (string)null);
+                    b.ToTable("PlanMealTiers");
 
                     b.HasData(
                         new
@@ -2321,7 +2375,7 @@ namespace MealPrep.DAL.Migrations
 
                     b.HasIndex("PlanId");
 
-                    b.ToTable("Subscriptions", (string)null);
+                    b.ToTable("Subscriptions");
                 });
 
             modelBuilder.Entity("MealPrep.DAL.Entities.UserAllergy", b =>
@@ -2344,7 +2398,7 @@ namespace MealPrep.DAL.Migrations
 
                     b.HasIndex("UserNutritionProfileId");
 
-                    b.ToTable("UserAllergies", (string)null);
+                    b.ToTable("UserAllergies");
 
                     b.HasData(
                         new
@@ -2382,7 +2436,7 @@ namespace MealPrep.DAL.Migrations
                     b.HasIndex("AppUserId", "MealId")
                         .IsUnique();
 
-                    b.ToTable("UserDislikedMeals", (string)null);
+                    b.ToTable("UserDislikedMeals");
                 });
 
             modelBuilder.Entity("MealPrep.DAL.Entities.UserNutritionProfile", b =>
@@ -2427,7 +2481,7 @@ namespace MealPrep.DAL.Migrations
                     b.HasIndex("AppUserId")
                         .IsUnique();
 
-                    b.ToTable("UserNutritionProfiles", (string)null);
+                    b.ToTable("UserNutritionProfiles");
 
                     b.HasData(
                         new
@@ -2465,7 +2519,7 @@ namespace MealPrep.DAL.Migrations
 
                     b.HasIndex("CreatedByUserId");
 
-                    b.ToTable("WeeklyMenus", (string)null);
+                    b.ToTable("WeeklyMenus");
                 });
 
             modelBuilder.Entity("MealPrep.DAL.Entities.WeeklyMenuItem", b =>
@@ -2491,7 +2545,7 @@ namespace MealPrep.DAL.Migrations
 
                     b.HasIndex("WeeklyMenuId");
 
-                    b.ToTable("WeeklyMenuItems", (string)null);
+                    b.ToTable("WeeklyMenuItems");
                 });
 
             modelBuilder.Entity("MealPrep.DAL.Entities.AppUser", b =>
@@ -2537,6 +2591,17 @@ namespace MealPrep.DAL.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("DeliveryOrder");
+
+                    b.Navigation("Meal");
+                });
+
+            modelBuilder.Entity("MealPrep.DAL.Entities.KitchenInventory", b =>
+                {
+                    b.HasOne("MealPrep.DAL.Entities.Meal", "Meal")
+                        .WithMany()
+                        .HasForeignKey("MealId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Meal");
                 });

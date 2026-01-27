@@ -27,6 +27,7 @@ namespace MealPrep.BLL.Services
             ActivityLevel activityLevel,
             DietPreference dietPreference,
             int mealsPerDay,
+            int? caloriesInDay,
             string? notes,
             List<string>? allergies = null)
         {
@@ -52,6 +53,7 @@ namespace MealPrep.BLL.Services
                     ActivityLevel = activityLevel,
                     DietPreference = dietPreference,
                     MealsPerDay = mealsPerDay,
+                    CaloriesInDay = caloriesInDay,
                     Notes = notes
                 };
 
@@ -66,6 +68,7 @@ namespace MealPrep.BLL.Services
                 user.NutritionProfile.ActivityLevel = activityLevel;
                 user.NutritionProfile.DietPreference = dietPreference;
                 user.NutritionProfile.MealsPerDay = mealsPerDay;
+                user.NutritionProfile.CaloriesInDay = caloriesInDay;
                 user.NutritionProfile.Notes = notes;
             }
 
