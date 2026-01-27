@@ -17,6 +17,28 @@
 
     <div class="row">
         <div class="col-lg-8">
+            <div class="app-card p-4 mb-4">
+                <h5 class="fw-bold mb-3">Nhập nhanh bằng giọng nói (AI)</h5>
+                <p class="text-muted small mb-3">
+                    Khi bếp đang bận tay, bạn có thể bấm ghi âm, mô tả tên món, nguyên liệu, định lượng, cách nấu...
+                    Hệ thống sẽ tự động phân tích và điền sẵn form bên dưới để bạn kiểm tra lại.
+                </p>
+                <div class="row g-3 align-items-center">
+                    <div class="col-md-6">
+                        <input type="file" id="voiceFile" name="voiceFile" class="form-control" accept="audio/*" />
+                        <small class="text-muted">Hỗ trợ: wav, mp3, m4a, flac, webm</small>
+                    </div>
+                    <div class="col-md-3 d-grid">
+                        <button type="button" id="btnAnalyzeVoice" class="btn btn-outline-primary">
+                            <i class="bi bi-mic me-2"></i>Phân tích bằng AI
+                        </button>
+                    </div>
+                    <div class="col-md-3">
+                        <div id="voiceStatus" class="small text-muted"></div>
+                    </div>
+                </div>
+            </div>
+
             <div class="app-card p-4">
                 <form asp-action="Create" method="post" enctype="multipart/form-data">
                     @Html.AntiForgeryToken()
@@ -128,5 +150,69 @@
                 }
             });
         });
+
+        // Voice-to-meal AI: gọi AdminMeals/AnalyzeMealVoice và fill form
+        (function () {
+            const btnAnalyze = document.getElementById('btnAnalyzeVoice');
+            const fileInput = document.getElementById('voiceFile');
+            const statusEl = document.getElementById('voiceStatus');
+
+            if (!btnAnalyze || !fileInput) return;
+
+            btnAnalyze.addEventListener('click', async function () {
+                if (!fileInput.files || fileInput.files.length === 0) {
+                    statusEl.textContent = 'Vui lòng chọn file audio trước.';
+                    statusEl.classList.remove('text-success');
+                    statusEl.classList.add('text-danger');
+                    return;
+                }
+
+                const form = document.querySelector('form[asp-action="Create"]');
+                const antiForgery = form.querySelector('input[name="__RequestVerificationToken"]');
+
+                const formData = new FormData();
+                formData.append('audioFile', fileInput.files[0]);
+                if (antiForgery) {
+                    formData.append('__RequestVerificationToken', antiForgery.value);
+                }
+
+                btnAnalyze.disabled = true;
+                statusEl.textContent = 'Đang phân tích audio bằng AI...';
+                statusEl.classList.remove('text-danger', 'text-success');
+
+                try {
+                    const response = await fetch('@Url.Action("AnalyzeMealVoice", "AdminMeals")', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const result = await response.json();
+                    if (!response.ok || !result.success) {
+                        throw new Error(result.message || 'AI không phân tích được audio.');
+                    }
+
+                    // Fill form fields
+                    document.getElementById('Name').value = result.dishName || '';
+                    document.getElementById('Description').value = result.description || '';
+                    document.getElementById('Ingredients').value = result.ingredientsJson || '';
+                    document.getElementById('Calories').value = result.calories || 0;
+                    document.getElementById('Protein').value = result.protein || 0;
+                    document.getElementById('Carbs').value = result.carbs || 0;
+                    document.getElementById('Fat').value = result.fat || 0;
+                    document.getElementById('BasePrice').value = result.basePrice || 0;
+
+                    statusEl.textContent = 'Đã phân tích xong. Vui lòng kiểm tra lại thông tin trước khi lưu.';
+                    statusEl.classList.remove('text-danger');
+                    statusEl.classList.add('text-success');
+                } catch (err) {
+                    console.error(err);
+                    statusEl.textContent = err.message || 'Có lỗi xảy ra khi gọi AI.';
+                    statusEl.classList.remove('text-success');
+                    statusEl.classList.add('text-danger');
+                } finally {
+                    btnAnalyze.disabled = false;
+                }
+            });
+        })();
     </script>
 }

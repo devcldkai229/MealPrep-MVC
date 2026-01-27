@@ -1,4 +1,5 @@
 using MealPrep.BLL.DTOs;
+using MealPrep.DAL.Entities;
 
 namespace MealPrep.BLL.Services
 {
