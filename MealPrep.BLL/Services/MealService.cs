@@ -1,4 +1,4 @@
-﻿using MealPrep.DAL.Entities;
+using BusinessObjects.Entities;
 using MealPrep.DAL.Repositories;
 using Microsoft.EntityFrameworkCore;
 using System;

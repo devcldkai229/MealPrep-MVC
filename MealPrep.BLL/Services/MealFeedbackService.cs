@@ -1,5 +1,5 @@
 using MealPrep.BLL.DTOs;
-using MealPrep.DAL.Entities;
+using BusinessObjects.Entities;
 using MealPrep.DAL.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -64,7 +64,7 @@ namespace MealPrep.BLL.Services
                 _logger.LogInformation("📊 DEBUG Summary for User {UserId}:", userId);
                 _logger.LogInformation("  - Total DeliveryOrders: {Total}", allUserOrders.Count);
                 _logger.LogInformation("  - Orders with Status=Delivered: {Count}", 
-                    allUserOrders.Count(d => d.Status == DAL.Enums.OrderStatus.Delivered));
+                    allUserOrders.Count(d => d.Status == BusinessObjects.Enums.OrderStatus.Delivered));
                 _logger.LogInformation("  - Items with DeliveredAt: {Count}", 
                     allUserOrders.SelectMany(d => d.Items).Count(i => i.DeliveredAt.HasValue));
 
@@ -78,7 +78,7 @@ namespace MealPrep.BLL.Services
                     .Include(d => d.Subscription)
                     .Where(d =>
                         d.Subscription!.AppUserId == userId &&
-                        (d.Status == DAL.Enums.OrderStatus.Delivered ||  // ✅ Cách 1: Admin set
+                        (d.Status == BusinessObjects.Enums.OrderStatus.Delivered ||  // ✅ Cách 1: Admin set
                          d.Items.Any(i => i.DeliveredAt.HasValue)));      // ✅ Cách 2: Shipper upload
 
                 // Chỉ filter theo ngày nếu date có giá trị
@@ -106,7 +106,7 @@ namespace MealPrep.BLL.Services
                     { 
                         Item = i, 
                         DeliveryDate = d.DeliveryDate,
-                        IsDelivered = d.Status == DAL.Enums.OrderStatus.Delivered || i.DeliveredAt.HasValue
+                        IsDelivered = d.Status == BusinessObjects.Enums.OrderStatus.Delivered || i.DeliveredAt.HasValue
                     }))
                     .Where(x => x.IsDelivered) // ✅ Chỉ lấy items đã delivered
                     .ToList();

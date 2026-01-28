@@ -1,4 +1,4 @@
-using MealPrep.DAL.Enums;
+using BusinessObjects.Enums;
 
 namespace MealPrep.BLL.DTOs
 {

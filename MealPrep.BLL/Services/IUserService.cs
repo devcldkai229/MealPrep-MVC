@@ -1,5 +1,5 @@
-using MealPrep.DAL.Entities;
-using MealPrep.DAL.Enums;
+using BusinessObjects.Entities;
+using BusinessObjects.Enums;
 using System;
 using System.Threading.Tasks;
 

@@ -1,7 +1,7 @@
-﻿@model MealPrep.Web.ViewModels.CompleteProfileVm
+@model MealPrep.Web.ViewModels.CompleteProfileVm
 
 @{
-    ViewData["Title"] = "Hoàn tất hồ sơ";
+    ViewData["Title"] = "Ho�n t?t h? so";
 }
 
 <div class="container">
@@ -14,17 +14,17 @@
                         <div class="mb-3">
                             <i class="bi bi-person-circle text-primary" style="font-size: 4rem;"></i>
                         </div>
-                        <h2 class="h4 fw-bold mb-2">Hoàn tất hồ sơ</h2>
+                        <h2 class="h4 fw-bold mb-2">Ho�n t?t h? so</h2>
                         <p class="text-muted mb-0">
-                            Vui lòng cung cấp thêm thông tin để chúng tôi phục vụ bạn tốt hơn
+                            Vui l�ng cung c?p th�m th�ng tin d? ch�ng t�i ph?c v? b?n t?t hon
                         </p>
                     </div>
 
                     <!-- Progress indicator -->
                     <div class="mb-4">
                         <div class="d-flex justify-content-between align-items-center mb-2">
-                            <small class="text-muted">Hoàn thành hồ sơ</small>
-                            <small class="text-primary fw-semibold">Bước cuối</small>
+                            <small class="text-muted">Ho�n th�nh h? so</small>
+                            <small class="text-primary fw-semibold">Bu?c cu?i</small>
                         </div>
                         <div class="progress" style="height: 6px;">
                             <div class="progress-bar bg-primary" role="progressbar" style="width: 90%"></div>
@@ -36,7 +36,7 @@
                     {
                         <div class="alert alert-danger alert-dismissible fade show" role="alert">
                             <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                            <strong>Lỗi!</strong> Vui lòng kiểm tra lại thông tin.
+                            <strong>L?i!</strong> Vui l�ng ki?m tra l?i th�ng tin.
                             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                         </div>
                     }
@@ -55,7 +55,7 @@
                             <div class="row g-2">
                                 <div class="col-6">
                                     <input type="radio" class="btn-check" name="Gender" id="genderMale"
-                                           value="@((int)MealPrep.DAL.Enums.Gender.Male)"
+                                           value="@((int)BusinessObjects.Enums.Gender.Male)"
                                            autocomplete="off" checked>
                                     <label class="btn btn-outline-primary w-100 py-3" for="genderMale">
                                         <i class="bi bi-gender-male d-block mb-2" style="font-size: 1.5rem;"></i>
@@ -64,11 +64,11 @@
                                 </div>
                                 <div class="col-6">
                                     <input type="radio" class="btn-check" name="Gender" id="genderFemale"
-                                           value="@((int)MealPrep.DAL.Enums.Gender.Female)"
+                                           value="@((int)BusinessObjects.Enums.Gender.Female)"
                                            autocomplete="off">
                                     <label class="btn btn-outline-primary w-100 py-3" for="genderFemale">
                                         <i class="bi bi-gender-female d-block mb-2" style="font-size: 1.5rem;"></i>
-                                        <span>Nữ</span>
+                                        <span>N?</span>
                                     </label>
                                 </div>
                             </div>
@@ -84,12 +84,12 @@
                             </label>
                             <div class="input-group">
                                 <input asp-for="Age" type="number" class="form-control form-control-lg"
-                                       placeholder="Nhập tuổi của bạn" max="100" required />
-                                <span class="input-group-text">tuổi</span>
+                                       placeholder="Nh?p tu?i c?a b?n" max="100" required />
+                                <span class="input-group-text">tu?i</span>
                             </div>
                             <span asp-validation-for="Age" class="text-danger small"></span>
                             <div class="form-text">
-                                <i class="bi bi-info-circle"></i> Phạm vi: 5-100 tuổi
+                                <i class="bi bi-info-circle"></i> Ph?m vi: 5-100 tu?i
                             </div>
                         </div>
 
@@ -100,10 +100,10 @@
                                 @Html.DisplayNameFor(m => m.PhoneNumber)
                             </label>
                             <input asp-for="PhoneNumber" type="tel" class="form-control form-control-lg"
-                                   placeholder="Ví dụ: 0912345678" />
+                                   placeholder="V� d?: 0912345678" />
                             <span asp-validation-for="PhoneNumber" class="text-danger small"></span>
                             <div class="form-text">
-                                <i class="bi bi-info-circle"></i> Tùy chọn - Để liên hệ khi cần thiết
+                                <i class="bi bi-info-circle"></i> T�y ch?n - �? li�n h? khi c?n thi?t
                             </div>
                         </div>
 
@@ -111,14 +111,14 @@
                         <div class="d-grid gap-2 mt-4">
                             <button type="submit" class="btn btn-primary btn-lg">
                                 <i class="bi bi-check-circle-fill me-2"></i>
-                                Hoàn tất và tiếp tục
+                                Ho�n t?t v� ti?p t?c
                             </button>
                         </div>
 
                         <!-- Note -->
                         <div class="alert alert-info mt-4 mb-0" role="alert">
                             <i class="bi bi-lightbulb-fill me-2"></i>
-                            <strong>Gợi ý:</strong> Thông tin này giúp chúng tôi cá nhân hóa trải nghiệm của bạn và đề xuất các gói ăn phù hợp.
+                            <strong>G?i �:</strong> Th�ng tin n�y gi�p ch�ng t�i c� nh�n h�a tr?i nghi?m c?a b?n v� d? xu?t c�c g�i an ph� h?p.
                         </div>
                     </form>
                 </div>

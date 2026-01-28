@@ -1,5 +1,5 @@
 using MealPrep.BLL.Services;
-using MealPrep.DAL.Entities;
+using BusinessObjects.Entities;
 using System;
 using System.Collections.Generic;
 

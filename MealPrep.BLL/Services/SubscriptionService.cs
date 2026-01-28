@@ -1,6 +1,6 @@
-﻿using MealPrep.DAL.Data;
-using MealPrep.DAL.Entities;
-using MealPrep.DAL.Enums;
+using MealPrep.DAL.Data;
+using BusinessObjects.Entities;
+using BusinessObjects.Enums;
 using MealPrep.DAL.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -202,9 +202,9 @@ public class SubscriptionService : ISubscriptionService
                 _logger.LogWarning("Subscription {SubscriptionId} has null EndDate but status is {Status}", 
                     existingSub.Id, existingSub.Status);
                 throw new InvalidOperationException(
-                    $"Bạn đã có gói đăng ký đang hoạt động hoặc đang chờ thanh toán. " +
-                    $"Không thể đăng ký gói mới trong khoảng thời gian này. " +
-                    $"Vui lòng chọn ngày bắt đầu sau khi gói hiện tại kết thúc.");
+                    $"B?n d� c� g�i dang k� dang ho?t d?ng ho?c dang ch? thanh to�n. " +
+                    $"Kh�ng th? dang k� g�i m?i trong kho?ng th?i gian n�y. " +
+                    $"Vui l�ng ch?n ng�y b?t d?u sau khi g�i hi?n t?i k?t th�c.");
             }
 
             var existingStart = existingSub.StartDate;
@@ -220,9 +220,9 @@ public class SubscriptionService : ISubscriptionService
                     userId, startDate, newEndDate, existingStart, existingEnd, existingSub.Id);
 
                 throw new InvalidOperationException(
-                    $"Bạn đã có gói đăng ký từ {existingStart:dd/MM/yyyy} đến {existingEnd:dd/MM/yyyy}. " +
-                    $"Không thể đăng ký gói mới từ {startDate:dd/MM/yyyy} đến {newEndDate:dd/MM/yyyy} vì trùng ngày. " +
-                    $"Vui lòng chọn ngày bắt đầu sau {existingEnd:dd/MM/yyyy}.");
+                    $"B?n d� c� g�i dang k� t? {existingStart:dd/MM/yyyy} d?n {existingEnd:dd/MM/yyyy}. " +
+                    $"Kh�ng th? dang k� g�i m?i t? {startDate:dd/MM/yyyy} d?n {newEndDate:dd/MM/yyyy} v� tr�ng ng�y. " +
+                    $"Vui l�ng ch?n ng�y b?t d?u sau {existingEnd:dd/MM/yyyy}.");
             }
         }
 
@@ -366,9 +366,9 @@ public class SubscriptionService : ISubscriptionService
 
                     await transaction.RollbackAsync();
                     throw new InvalidOperationException(
-                        $"Không thể kích hoạt gói đăng ký vì trùng với gói khác đang hoạt động " +
+                        $"Kh�ng th? k�ch ho?t g�i dang k� v� tr�ng v?i g�i kh�c dang ho?t d?ng " +
                         $"({overlappingSub.StartDate:dd/MM/yyyy} - {overlappingSub.EndDate:dd/MM/yyyy}). " +
-                        $"Vui lòng liên hệ hỗ trợ để được giải quyết.");
+                        $"Vui l�ng li�n h? h? tr? d? du?c gi?i quy?t.");
                 }
 
                 subscription.Status = SubscriptionStatus.Active;
@@ -394,8 +394,8 @@ public class SubscriptionService : ISubscriptionService
         }
         catch (Exception ex)
         {
-            // Transaction có thể đã rollback trước đó trong các nhánh logic (ví dụ overlap).
-            // Try/catch để tránh lỗi "This SqlTransaction has completed".
+            // Transaction c� th? d� rollback tru?c d� trong c�c nh�nh logic (v� d? overlap).
+            // Try/catch d? tr�nh l?i "This SqlTransaction has completed".
             try
             {
                 await transaction.RollbackAsync();
@@ -417,15 +417,15 @@ public class SubscriptionService : ISubscriptionService
 
         if (subscription == null)
         {
-            throw new InvalidOperationException("Không tìm thấy gói đăng ký.");
+            throw new InvalidOperationException("Kh�ng t�m th?y g�i dang k�.");
         }
 
         if (subscription.Status != SubscriptionStatus.PendingPayment)
         {
-            throw new InvalidOperationException("Chỉ có thể thanh toán lại cho gói đang ở trạng thái Chờ thanh toán.");
+            throw new InvalidOperationException("Ch? c� th? thanh to�n l?i cho g�i dang ? tr?ng th�i Ch? thanh to�n.");
         }
 
-        // Nếu đã có payment đang Pending thì dùng lại để tránh tạo quá nhiều bản ghi
+        // N?u d� c� payment dang Pending th� d�ng l?i d? tr�nh t?o qu� nhi?u b?n ghi
         var existingPending = subscription.Payments
             .FirstOrDefault(p => p.Status == "Pending");
         if (existingPending != null)
@@ -433,7 +433,7 @@ public class SubscriptionService : ISubscriptionService
             return existingPending;
         }
 
-        // Tạo payment mới
+        // T?o payment m?i
         var amount = subscription.TotalAmount;
         if (amount <= 0)
         {

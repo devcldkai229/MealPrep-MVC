@@ -1,6 +1,6 @@
-﻿using MealPrep.BLL.Exceptions;
+using MealPrep.BLL.Exceptions;
 using MealPrep.BLL.Services;
-using MealPrep.DAL.Enums;
+using BusinessObjects.Enums;
 using MealPrep.Web.ViewModels;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -66,7 +66,7 @@ namespace MealPrep.Web.Controllers
                 var user = await _authService.RegisterAsync(vm.Email, vm.FullName, vm.Password, vm.OtpCode);
                 await SignInAsync(user);
                 
-                // Sau khi đăng ký thành công, chuyển đến trang hoàn tất thông tin cá nhân
+                // Sau khi dang k� th�nh c�ng, chuy?n d?n trang ho�n t?t th�ng tin c� nh�n
                 return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
@@ -125,7 +125,7 @@ namespace MealPrep.Web.Controllers
         }
 
         /// <summary>
-        /// Trang hoàn tất thông tin cá nhân (tuổi, giới tính, số điện thoại) - GET
+        /// Trang ho�n t?t th�ng tin c� nh�n (tu?i, gi?i t�nh, s? di?n tho?i) - GET
         /// </summary>
         [Authorize]
         [HttpGet]
@@ -135,7 +135,7 @@ namespace MealPrep.Web.Controllers
         }
 
         /// <summary>
-        /// Xử lý submit form hoàn tất thông tin cá nhân - POST
+        /// X? l� submit form ho�n t?t th�ng tin c� nh�n - POST
         /// </summary>
         [Authorize]
         [HttpPost]
@@ -167,21 +167,21 @@ namespace MealPrep.Web.Controllers
                     currentUser.AvatarUrl
                 );
 
-                TempData["SuccessMessage"] = "Hoàn tất thông tin cá nhân thành công!";
+                TempData["SuccessMessage"] = "Ho�n t?t th�ng tin c� nh�n th�nh c�ng!";
                 
-                // Sau khi hoàn tất thông tin cá nhân, chuyển đến trang thiết lập nutrition profile
+                // Sau khi ho�n t?t th�ng tin c� nh�n, chuy?n d?n trang thi?t l?p nutrition profile
                 return RedirectToAction(nameof(SetupNutritionProfile));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error completing profile");
-                ModelState.AddModelError("", "Đã xảy ra lỗi khi cập nhật hồ sơ. Vui lòng thử lại.");
+                ModelState.AddModelError("", "�� x?y ra l?i khi c?p nh?t h? so. Vui l�ng th? l?i.");
                 return View("Index", vm);
             }
         }
 
         /// <summary>
-        /// Trang thiết lập hồ sơ dinh dưỡng - GET
+        /// Trang thi?t l?p h? so dinh du?ng - GET
         /// </summary>
         [Authorize]
         [HttpGet]
@@ -214,7 +214,7 @@ namespace MealPrep.Web.Controllers
         }
 
         /// <summary>
-        /// Xử lý submit form thiết lập hồ sơ dinh dưỡng - POST
+        /// X? l� submit form thi?t l?p h? so dinh du?ng - POST
         /// </summary>
         [Authorize]
         [HttpPost]
@@ -242,15 +242,15 @@ namespace MealPrep.Web.Controllers
                     vm.Notes
                 );
 
-                TempData["SuccessMessage"] = "Thiết lập hồ sơ dinh dưỡng thành công! Chào mừng bạn đến với MealPrep.";
+                TempData["SuccessMessage"] = "Thi?t l?p h? so dinh du?ng th�nh c�ng! Ch�o m?ng b?n d?n v?i MealPrep.";
                 
-                // Sau khi hoàn tất nutrition profile, chuyển đến Dashboard
+                // Sau khi ho�n t?t nutrition profile, chuy?n d?n Dashboard
                 return RedirectToAction("Index", "Dashboard");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error setting up nutrition profile for user {UserId}", User.FindFirstValue(ClaimTypes.NameIdentifier));
-                ModelState.AddModelError("", "Đã xảy ra lỗi khi thiết lập hồ sơ dinh dưỡng. Vui lòng thử lại.");
+                ModelState.AddModelError("", "�� x?y ra l?i khi thi?t l?p h? so dinh du?ng. Vui l�ng th? l?i.");
                 return View(vm);
             }
         }
@@ -297,12 +297,12 @@ namespace MealPrep.Web.Controllers
                     userId, heightCm, weightKg, goal, activityLevel, 
                     dietPreference, mealsPerDay, caloriesInDay, notes, allergies);
                 
-                TempData["SuccessMessage"] = "Đã cập nhật hồ sơ dinh dưỡng thành công!";
+                TempData["SuccessMessage"] = "�� c?p nh?t h? so dinh du?ng th�nh c�ng!";
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to update nutrition profile");
-                TempData["ErrorMessage"] = "Có lỗi xảy ra khi cập nhật hồ sơ. Vui lòng thử lại.";
+                TempData["ErrorMessage"] = "C� l?i x?y ra khi c?p nh?t h? so. Vui l�ng th? l?i.";
             }
             
             return RedirectToAction(nameof(Profile));
@@ -318,12 +318,12 @@ namespace MealPrep.Web.Controllers
             try
             {
                 await _userService.AddDislikedMealAsync(userId, mealId);
-                TempData["SuccessMessage"] = "Đã thêm món vào danh sách không thích.";
+                TempData["SuccessMessage"] = "�� th�m m�n v�o danh s�ch kh�ng th�ch.";
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to add disliked meal");
-                TempData["ErrorMessage"] = "Có lỗi xảy ra. Vui lòng thử lại.";
+                TempData["ErrorMessage"] = "C� l?i x?y ra. Vui l�ng th? l?i.";
             }
             
             return RedirectToAction(nameof(Profile));
@@ -345,13 +345,13 @@ namespace MealPrep.Web.Controllers
                 if (dislikedMeal != null)
                 {
                     await _userService.RemoveDislikedMealAsync(userId, dislikedMeal.MealId);
-                    TempData["SuccessMessage"] = "Đã xóa món khỏi danh sách không thích.";
+                    TempData["SuccessMessage"] = "�� x�a m�n kh?i danh s�ch kh�ng th�ch.";
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to remove disliked meal");
-                TempData["ErrorMessage"] = "Có lỗi xảy ra. Vui lòng thử lại.";
+                TempData["ErrorMessage"] = "C� l?i x?y ra. Vui l�ng th? l?i.";
             }
             
             return RedirectToAction(nameof(Profile));
@@ -371,24 +371,24 @@ namespace MealPrep.Web.Controllers
                 if (isDisliked)
                 {
                     await _userService.RemoveDislikedMealAsync(userId, mealId);
-                    TempData["SuccessMessage"] = "Đã bỏ không thích món này.";
+                    TempData["SuccessMessage"] = "�� b? kh�ng th�ch m�n n�y.";
                 }
                 else
                 {
                     await _userService.AddDislikedMealAsync(userId, mealId);
-                    TempData["SuccessMessage"] = "Đã thêm món vào danh sách không thích.";
+                    TempData["SuccessMessage"] = "�� th�m m�n v�o danh s�ch kh�ng th�ch.";
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to toggle disliked meal");
-                TempData["ErrorMessage"] = "Có lỗi xảy ra. Vui lòng thử lại.";
+                TempData["ErrorMessage"] = "C� l?i x?y ra. Vui l�ng th? l?i.";
             }
             
             return RedirectToAction("Details", "Meal", new { id = mealId });
         }
 
-        public IActionResult AccessDenied() => Content("Truy cập bị từ chối!");
+        public IActionResult AccessDenied() => Content("Truy c?p b? t? ch?i!");
 
         private async Task SignInAsync(AuthResponse user)
         {

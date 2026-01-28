@@ -1,5 +1,5 @@
-﻿using MealPrep.DAL.Entities;
-using MealPrep.DAL.Enums;
+using BusinessObjects.Entities;
+using BusinessObjects.Enums;
 using System.ComponentModel.DataAnnotations;
 
 namespace MealPrep.Web.ViewModels
@@ -7,39 +7,39 @@ namespace MealPrep.Web.ViewModels
     public class UpdateNutritionProfileVm
     {
 
-        [Required(ErrorMessage = "Vui lòng nhập chiều cao")]
-        [Range(80, 220, ErrorMessage = "Chiều cao phải từ 80-220 cm")]
-        [Display(Name = "Chiều cao (cm)")]
+        [Required(ErrorMessage = "Vui l�ng nh?p chi?u cao")]
+        [Range(80, 220, ErrorMessage = "Chi?u cao ph?i t? 80-220 cm")]
+        [Display(Name = "Chi?u cao (cm)")]
         public int HeightCm { get; set; }
 
-        [Required(ErrorMessage = "Vui lòng nhập cân nặng")]
-        [Range(20, 250, ErrorMessage = "Cân nặng phải từ 20-250 kg")]
-        [Display(Name = "Cân nặng (kg)")]
+        [Required(ErrorMessage = "Vui l�ng nh?p c�n n?ng")]
+        [Range(20, 250, ErrorMessage = "C�n n?ng ph?i t? 20-250 kg")]
+        [Display(Name = "C�n n?ng (kg)")]
         public decimal WeightKg { get; set; }
 
-        [Required(ErrorMessage = "Vui lòng chọn mục tiêu")]
-        [Display(Name = "Mục tiêu")]
+        [Required(ErrorMessage = "Vui l�ng ch?n m?c ti�u")]
+        [Display(Name = "M?c ti�u")]
         public FitnessGoal Goal { get; set; }
 
-        [Required(ErrorMessage = "Vui lòng chọn mức độ hoạt động")]
-        [Display(Name = "Mức độ hoạt động")]
+        [Required(ErrorMessage = "Vui l�ng ch?n m?c d? ho?t d?ng")]
+        [Display(Name = "M?c d? ho?t d?ng")]
         public ActivityLevel ActivityLevel { get; set; }
 
-        [Required(ErrorMessage = "Vui lòng chọn chế độ ăn")]
-        [Display(Name = "Chế độ ăn")]
+        [Required(ErrorMessage = "Vui l�ng ch?n ch? d? an")]
+        [Display(Name = "Ch? d? an")]
         public DietPreference DietPreference { get; set; }
 
-        [Required(ErrorMessage = "Vui lòng nhập số bữa ăn")]
-        [Range(1, 6, ErrorMessage = "Số bữa ăn phải từ 1-6")]
-        [Display(Name = "Số bữa mỗi ngày")]
+        [Required(ErrorMessage = "Vui l�ng nh?p s? b?a an")]
+        [Range(1, 6, ErrorMessage = "S? b?a an ph?i t? 1-6")]
+        [Display(Name = "S? b?a m?i ng�y")]
         public int MealsPerDay { get; set; } = 3;
 
-        [Range(1000, 5000, ErrorMessage = "Calories trong ngày phải từ 1000-5000 kcal")]
-        [Display(Name = "Calories trong một ngày (kcal)")]
+        [Range(1000, 5000, ErrorMessage = "Calories trong ng�y ph?i t? 1000-5000 kcal")]
+        [Display(Name = "Calories trong m?t ng�y (kcal)")]
         public int? CaloriesInDay { get; set; }
 
-        [StringLength(10000, ErrorMessage = "Ghi chú không được vượt quá 10000 ký tự")]
-        [Display(Name = "Ghi chú")]
+        [StringLength(10000, ErrorMessage = "Ghi ch� kh�ng du?c vu?t qu� 10000 k� t?")]
+        [Display(Name = "Ghi ch�")]
         public string? Notes { get; set; }
     }
 }

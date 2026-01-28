@@ -1,4 +1,4 @@
-﻿using MealPrep.DAL.Enums;
+using BusinessObjects.Enums;
 using System.ComponentModel.DataAnnotations;
 
 namespace MealPrep.Web.ViewModels
@@ -6,18 +6,18 @@ namespace MealPrep.Web.ViewModels
     public class CompleteProfileVm
     {
 
-        [Required(ErrorMessage = "Vui lòng chọn giới tính")]
-        [Display(Name = "Giới tính")]
+        [Required(ErrorMessage = "Vui l�ng ch?n gi?i t�nh")]
+        [Display(Name = "Gi?i t�nh")]
         public Gender Gender { get; set; }
 
-        [Required(ErrorMessage = "Vui lòng nhập tuổi")]
-        [Range(5, 100, ErrorMessage = "Tuổi phải từ 5 đến 100")]
-        [Display(Name = "Tuổi")]
+        [Required(ErrorMessage = "Vui l�ng nh?p tu?i")]
+        [Range(5, 100, ErrorMessage = "Tu?i ph?i t? 5 d?n 100")]
+        [Display(Name = "Tu?i")]
         public int Age { get; set; }
 
-        [StringLength(20, ErrorMessage = "Số điện thoại không được vượt quá 20 ký tự")]
-        [Phone(ErrorMessage = "Số điện thoại không hợp lệ")]
-        [Display(Name = "Số điện thoại (tùy chọn)")]
+        [StringLength(20, ErrorMessage = "S? di?n tho?i kh�ng du?c vu?t qu� 20 k� t?")]
+        [Phone(ErrorMessage = "S? di?n tho?i kh�ng h?p l?")]
+        [Display(Name = "S? di?n tho?i (t�y ch?n)")]
         public string? PhoneNumber { get; set; }
     }
 }

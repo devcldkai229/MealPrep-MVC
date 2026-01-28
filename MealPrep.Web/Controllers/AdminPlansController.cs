@@ -1,6 +1,6 @@
 using MealPrep.BLL.Services;
-using MealPrep.DAL.Entities;
-using MealPrep.DAL.Enums;
+using BusinessObjects.Entities;
+using BusinessObjects.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

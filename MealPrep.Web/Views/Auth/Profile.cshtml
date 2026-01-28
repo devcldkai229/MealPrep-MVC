@@ -1,4 +1,4 @@
-@model MealPrep.DAL.Entities.AppUser
+@model BusinessObjects.Entities.AppUser
 
 @{
     ViewData["Title"] = "Hồ Sơ Của Tôi";
@@ -59,7 +59,7 @@
                         <div class="col-md-6">
                             <label class="small text-muted d-block mb-1">Giới Tính</label>
                             <div class="fw-semibold">
-                                @if(Model.Gender != MealPrep.DAL.Enums.Gender.Unknown)
+                                @if(Model.Gender != BusinessObjects.Enums.Gender.Unknown)
                                 {
                                     @Model.Gender.ToString()
                                 }
@@ -160,7 +160,7 @@
                                             <i class="bi bi-trophy"></i> Mục Tiêu
                                         </label>
                                         <select name="Goal" class="form-select" required>
-                                            @foreach(var goal in Enum.GetValues<MealPrep.DAL.Enums.FitnessGoal>())
+                                            @foreach(var goal in Enum.GetValues<BusinessObjects.Enums.FitnessGoal>())
                                             {
                                                 <option value="@goal" selected="@(Model.NutritionProfile?.Goal == goal)">
                                                     @goal
@@ -175,7 +175,7 @@
                                             <i class="bi bi-activity"></i> Mức Độ Hoạt Động
                                         </label>
                                         <select name="ActivityLevel" class="form-select" required>
-                                            @foreach(var level in Enum.GetValues<MealPrep.DAL.Enums.ActivityLevel>())
+                                            @foreach(var level in Enum.GetValues<BusinessObjects.Enums.ActivityLevel>())
                                             {
                                                 <option value="@level" selected="@(Model.NutritionProfile?.ActivityLevel == level)">
                                                     @level
@@ -190,7 +190,7 @@
                                             <i class="bi bi-egg-fried"></i> Chế Độ Ăn
                                         </label>
                                         <select name="DietPreference" class="form-select" required>
-                                            @foreach(var diet in Enum.GetValues<MealPrep.DAL.Enums.DietPreference>())
+                                            @foreach(var diet in Enum.GetValues<BusinessObjects.Enums.DietPreference>())
                                             {
                                                 <option value="@diet" selected="@(Model.NutritionProfile?.DietPreference == diet)">
                                                     @diet
@@ -406,7 +406,7 @@
                                         <option value="">-- Chọn món ăn --</option>
                                         @if (ViewBag.AvailableMeals != null)
                                         {
-                                            var availableMeals = ViewBag.AvailableMeals as List<MealPrep.DAL.Entities.Meal> ?? new List<MealPrep.DAL.Entities.Meal>();
+                                            var availableMeals = ViewBag.AvailableMeals as List<BusinessObjects.Entities.Meal> ?? new List<BusinessObjects.Entities.Meal>();
                                             var dislikedMealIds = Model.DislikedMeals?.Select(dm => dm.MealId).ToList() ?? new List<int>();
                                             
                                             @foreach (var meal in availableMeals)
@@ -500,7 +500,7 @@
                         <div class="d-flex justify-content-between mb-1">
                             <span class="small text-muted">Đăng Ký Đang Hoạt Động</span>
                             <strong class="text-success">
-                                @(Model.Subscriptions?.Count(s => s.Status == MealPrep.DAL.Enums.SubscriptionStatus.Active) ?? 0)
+                                @(Model.Subscriptions?.Count(s => s.Status == BusinessObjects.Enums.SubscriptionStatus.Active) ?? 0)
                             </strong>
                         </div>
                     </div>

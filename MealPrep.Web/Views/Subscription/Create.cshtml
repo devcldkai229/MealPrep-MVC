@@ -1,8 +1,8 @@
-@model MealPrep.DAL.Entities.Subscription
-@using MealPrep.DAL.Enums
+@model BusinessObjects.Entities.Subscription
+@using BusinessObjects.Enums
 @{
     ViewData["Title"] = "Đăng Ký Gói Ăn";
-    var slots = ViewBag.Slots as List<MealPrep.DAL.Entities.DeliverySlot> ?? new();
+    var slots = ViewBag.Slots as List<BusinessObjects.Entities.DeliverySlot> ?? new();
 }
 
 <div class="container py-4">

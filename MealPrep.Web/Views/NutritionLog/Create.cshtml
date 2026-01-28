@@ -1,16 +1,16 @@
-﻿@model MealPrep.DAL.Entities.NutritionLog
+@model BusinessObjects.Entities.NutritionLog
 @{
-    var meals = ViewBag.Meals as List<MealPrep.DAL.Entities.Meal>;
-    ViewData["Title"] = "Thêm Nhật Ký Dinh Dưỡng";
+    var meals = ViewBag.Meals as List<BusinessObjects.Entities.Meal>;
+    ViewData["Title"] = "Th�m Nh?t K� Dinh Du?ng";
 }
 
 <div class="container py-4">
     <!-- Breadcrumb -->
     <nav aria-label="breadcrumb" class="mb-4">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Trang Chủ</a></li>
-            <li class="breadcrumb-item"><a asp-action="Index">Nhật Ký Dinh Dưỡng</a></li>
-            <li class="breadcrumb-item active">Thêm Nhật Ký</li>
+            <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Trang Ch?</a></li>
+            <li class="breadcrumb-item"><a asp-action="Index">Nh?t K� Dinh Du?ng</a></li>
+            <li class="breadcrumb-item active">Th�m Nh?t K�</li>
         </ol>
     </nav>
 
@@ -20,7 +20,7 @@
             <div class="card app-card">
                 <div class="card-header bg-white border-bottom">
                     <h4 class="mb-0">
-                        <i class="bi bi-plus-circle text-primary"></i> Thêm Nhật Ký Dinh Dưỡng
+                        <i class="bi bi-plus-circle text-primary"></i> Th�m Nh?t K� Dinh Du?ng
                     </h4>
                 </div>
                 <div class="card-body">
@@ -28,7 +28,7 @@
                         <!-- Date -->
                         <div class="mb-4">
                             <label asp-for="Date" class="form-label">
-                                <i class="bi bi-calendar3"></i> Ngày
+                                <i class="bi bi-calendar3"></i> Ng�y
                             </label>
                             <input asp-for="Date" type="date" class="form-control form-control-lg" />
                             <span asp-validation-for="Date" class="text-danger small"></span>
@@ -37,10 +37,10 @@
                         <!-- Meal Selection -->
                         <div class="mb-4">
                             <label asp-for="MealId" class="form-label">
-                                <i class="bi bi-egg-fried"></i> Chọn Món Ăn
+                                <i class="bi bi-egg-fried"></i> Ch?n M�n An
                             </label>
                             <select asp-for="MealId" class="form-select form-select-lg" id="mealSelect">
-                                <option value="">-- Chọn món ăn --</option>
+                                <option value="">-- Ch?n m�n an --</option>
                                 @foreach (var m in meals ?? new())
                                 {
                                     <option value="@m.Id" 
@@ -58,19 +58,19 @@
                         <!-- Quantity -->
                         <div class="mb-4">
                             <label asp-for="Quantity" class="form-label">
-                                <i class="bi bi-hash"></i> Số Lượng (suất)
+                                <i class="bi bi-hash"></i> S? Lu?ng (su?t)
                             </label>
                             <input asp-for="Quantity" type="number" min="1" max="10" 
                                    class="form-control form-control-lg" id="quantityInput" />
                             <span asp-validation-for="Quantity" class="text-danger small"></span>
-                            <div class="form-text">Số suất bạn đã ăn</div>
+                            <div class="form-text">S? su?t b?n d� an</div>
                         </div>
 
                         <!-- Nutrition Preview -->
                         <div id="nutritionPreview" class="card bg-light border-0 mb-4" style="display: none;">
                             <div class="card-body">
                                 <h6 class="card-title mb-3">
-                                    <i class="bi bi-eye"></i> Tổng Dinh Dưỡng Dự Kiến
+                                    <i class="bi bi-eye"></i> T?ng Dinh Du?ng D? Ki?n
                                 </h6>
                                 <div class="row g-3">
                                     <div class="col-6 col-sm-3">
@@ -82,7 +82,7 @@
                                     <div class="col-6 col-sm-3">
                                         <div class="text-center">
                                             <div class="h5 mb-0 text-primary" id="previewProtein">0</div>
-                                            <small class="text-muted">Đạm (g)</small>
+                                            <small class="text-muted">�?m (g)</small>
                                         </div>
                                     </div>
                                     <div class="col-6 col-sm-3">
@@ -94,7 +94,7 @@
                                     <div class="col-6 col-sm-3">
                                         <div class="text-center">
                                             <div class="h5 mb-0 text-info" id="previewFat">0</div>
-                                            <small class="text-muted">Chất Béo (g)</small>
+                                            <small class="text-muted">Ch?t B�o (g)</small>
                                         </div>
                                     </div>
                                 </div>
@@ -104,10 +104,10 @@
                         <!-- Submit Buttons -->
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-primary btn-lg">
-                                <i class="bi bi-check-lg"></i> Lưu Nhật Ký
+                                <i class="bi bi-check-lg"></i> Luu Nh?t K�
                             </button>
                             <a asp-action="Index" class="btn btn-outline-secondary">
-                                <i class="bi bi-x-lg"></i> Hủy
+                                <i class="bi bi-x-lg"></i> H?y
                             </a>
                         </div>
                     </form>
@@ -117,7 +117,7 @@
             <!-- Quick Tip -->
             <div class="alert alert-info mt-4" role="alert">
                 <i class="bi bi-lightbulb"></i>
-                <strong>Mẹo:</strong> Ghi lại bữa ăn ngay sau khi ăn để theo dõi chính xác nhất!
+                <strong>M?o:</strong> Ghi l?i b?a an ngay sau khi an d? theo d�i ch�nh x�c nh?t!
             </div>
         </div>
     </div>

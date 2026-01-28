@@ -1,5 +1,5 @@
 using MealPrep.BLL.DTOs;
-using MealPrep.DAL.Entities;
+using BusinessObjects.Entities;
 
 namespace MealPrep.BLL.Services
 {

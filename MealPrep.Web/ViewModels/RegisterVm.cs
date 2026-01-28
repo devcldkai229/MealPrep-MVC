@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace MealPrep.Web.ViewModels
 {
@@ -9,21 +9,21 @@ namespace MealPrep.Web.ViewModels
         public string Email { get; set; } = "";
 
         [Required, StringLength(500)]
-        [Display(Name = "Họ và tên")]
+        [Display(Name = "H? v� t�n")]
         public string FullName { get; set; } = "";
 
         [Required, MinLength(6)]
         [DataType(DataType.Password)]
-        [Display(Name = "Mật khẩu")]
+        [Display(Name = "M?t kh?u")]
         public string Password { get; set; } = "";
 
         [Required, Compare(nameof(Password))]
         [DataType(DataType.Password)]
-        [Display(Name = "Xác nhận mật khẩu")]
+        [Display(Name = "X�c nh?n m?t kh?u")]
         public string ConfirmPassword { get; set; } = "";
 
         [Required, StringLength(6, MinimumLength = 6)]
-        [Display(Name = "Mã OTP")]
+        [Display(Name = "M� OTP")]
         public string OtpCode { get; set; } = "";
     }
 }

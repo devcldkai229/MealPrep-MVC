@@ -1,6 +1,6 @@
 using MealPrep.BLL.Exceptions;
 using MealPrep.DAL.Data;
-using MealPrep.DAL.Entities;
+using BusinessObjects.Entities;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;

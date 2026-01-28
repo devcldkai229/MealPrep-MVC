@@ -1,5 +1,5 @@
-﻿using MealPrep.BLL.Services;
-using MealPrep.DAL.Entities;
+using MealPrep.BLL.Services;
+using BusinessObjects.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;

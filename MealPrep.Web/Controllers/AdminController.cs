@@ -1,9 +1,7 @@
 using MealPrep.BLL.Services;
-using MealPrep.DAL.Entities;
 using MealPrep.Web.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Net.Http.Json;
 
 namespace MealPrep.Web.Controllers
 {

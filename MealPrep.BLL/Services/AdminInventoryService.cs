@@ -1,5 +1,5 @@
 using MealPrep.DAL.Data;
-using MealPrep.DAL.Entities;
+using BusinessObjects.Entities;
 using MealPrep.DAL.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;

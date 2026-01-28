@@ -1,5 +1,5 @@
-﻿using MealPrep.DAL.Entities;
-using MealPrep.DAL.Enums;
+using BusinessObjects.Entities;
+using BusinessObjects.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace MealPrep.DAL.Data
@@ -60,14 +60,14 @@ namespace MealPrep.DAL.Data
                 entity.Property(u => u.CreatedAtUtc)
                     .HasDefaultValueSql("GETUTCDATE()");
 
-                // User N-1 với Role
+                // User N-1 v?i Role
                 entity.HasOne(u => u.Role)
                     .WithMany(r => r.Users)
                     .HasForeignKey(u => u.RoleId)
                     .OnDelete(DeleteBehavior.Restrict);
             });
 
-            // UserNutritionProfile 1-1 với AppUser
+            // UserNutritionProfile 1-1 v?i AppUser
             modelBuilder.Entity<UserNutritionProfile>(entity =>
             {
                 entity.HasOne(p => p.AppUser)
@@ -79,7 +79,7 @@ namespace MealPrep.DAL.Data
                     .HasPrecision(5, 2);
             });
 
-            // UserAllergy 1-n với UserNutritionProfile
+            // UserAllergy 1-n v?i UserNutritionProfile
             modelBuilder.Entity<UserAllergy>(entity =>
             {
                 entity.HasOne(a => a.UserNutritionProfile)
@@ -92,7 +92,7 @@ namespace MealPrep.DAL.Data
                     .IsRequired();
             });
 
-            // UserDislikedMeal n-m giữa AppUser và Meal (join entity)
+            // UserDislikedMeal n-m gi?a AppUser v� Meal (join entity)
             modelBuilder.Entity<UserDislikedMeal>(entity =>
             {
                 entity.HasIndex(x => new { x.AppUserId, x.MealId })
@@ -193,7 +193,7 @@ namespace MealPrep.DAL.Data
                     .HasForeignKey(d => d.SubscriptionId)
                     .OnDelete(DeleteBehavior.Restrict);
 
-                // Shipper (AppUser) được gán cho DeliveryOrder
+                // Shipper (AppUser) du?c g�n cho DeliveryOrder
                 entity.HasOne(d => d.Shipper)
                     .WithMany()
                     .HasForeignKey(d => d.ShipperId)
@@ -215,7 +215,7 @@ namespace MealPrep.DAL.Data
                     .HasForeignKey(i => i.MealId)
                     .OnDelete(DeleteBehavior.SetNull);
 
-                // DeliverySlot cho từng item (Morning/Evening)
+                // DeliverySlot cho t?ng item (Morning/Evening)
                 entity.HasOne(i => i.DeliverySlot)
                     .WithMany()
                     .HasForeignKey(i => i.DeliverySlotId)
@@ -225,7 +225,7 @@ namespace MealPrep.DAL.Data
             // KitchenInventory - Unique constraint: Date + MealId
             modelBuilder.Entity<KitchenInventory>(entity =>
             {
-                // Unique: Mỗi món chỉ có 1 record inventory cho 1 ngày
+                // Unique: M?i m�n ch? c� 1 record inventory cho 1 ng�y
                 entity.HasIndex(k => new { k.Date, k.MealId }).IsUnique();
 
                 entity.HasOne(k => k.Meal)
@@ -234,7 +234,7 @@ namespace MealPrep.DAL.Data
                     .OnDelete(DeleteBehavior.Cascade);
             });
 
-            // Order N-1 với AppUser
+            // Order N-1 v?i AppUser
             modelBuilder.Entity<Order>(entity =>
             {
                 entity.HasOne(o => o.AppUser)
@@ -243,7 +243,7 @@ namespace MealPrep.DAL.Data
                     .OnDelete(DeleteBehavior.Restrict);
             });
 
-            // NutritionLog N-1 với AppUser
+            // NutritionLog N-1 v?i AppUser
             modelBuilder.Entity<NutritionLog>(entity =>
             {
                 entity.HasOne(n => n.AppUser)
@@ -252,7 +252,7 @@ namespace MealPrep.DAL.Data
                     .OnDelete(DeleteBehavior.Cascade);
             });
 
-            // WeeklyMenu N-1 với AppUser (CreatedBy)
+            // WeeklyMenu N-1 v?i AppUser (CreatedBy)
             modelBuilder.Entity<WeeklyMenu>(entity =>
             {
                 entity.HasOne(w => w.CreatedBy)
@@ -276,7 +276,7 @@ namespace MealPrep.DAL.Data
             // MealRating
             modelBuilder.Entity<MealRating>(entity =>
             {
-                // Unique constraint: User chỉ rate 1 lần mỗi DeliveryOrderItem
+                // Unique constraint: User ch? rate 1 l?n m?i DeliveryOrderItem
                 entity.HasIndex(r => new { r.AppUserId, r.DeliveryOrderItemId })
                     .IsUnique();
 

@@ -1,5 +1,5 @@
 using MealPrep.DAL.Data;
-using MealPrep.DAL.Entities;
+using BusinessObjects.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using System.Linq;
@@ -187,7 +187,7 @@ namespace MealPrep.BLL.Services
             // BMR = 10 * weight(kg) + 6.25 * height(cm) - 5 * age + s
             // s = +5 (male) or -161 (female)
             var age = user.Age > 0 ? user.Age : 30; // Default age nếu chưa set
-            var genderFactor = user.Gender == DAL.Enums.Gender.Female ? -161 : 5;
+            var genderFactor = user.Gender == BusinessObjects.Enums.Gender.Female ? -161 : 5;
             var bmr = 10 * (double)profile.WeightKg + 6.25 * profile.HeightCm - 5 * age + genderFactor;
 
             // TDEE = BMR * Activity Multiplier
@@ -206,10 +206,10 @@ namespace MealPrep.BLL.Services
             // Adjust based on goal
             switch (profile.Goal)
             {
-                case DAL.Enums.FitnessGoal.FatLoss:
+                case BusinessObjects.Enums.FitnessGoal.FatLoss:
                     tdee *= 0.85; // Deficit 15%
                     break;
-                case DAL.Enums.FitnessGoal.MuscleGain:
+                case BusinessObjects.Enums.FitnessGoal.MuscleGain:
                     tdee *= 1.15; // Surplus 15%
                     break;
                 // Maintain: no adjustment

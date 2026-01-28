@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,6 +14,6 @@ namespace MealPrep.DAL.Repositories
         void Update(T entity);
         void Remove(T entity);
         Task<int> SaveChangesAsync();
-        IQueryable<T> Query(); // để LINQ filter/sort/search
+        IQueryable<T> Query(); // d? LINQ filter/sort/search
     }
 }

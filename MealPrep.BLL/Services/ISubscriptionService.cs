@@ -1,4 +1,4 @@
-﻿using MealPrep.DAL.Entities;
+using BusinessObjects.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,23 +17,23 @@ namespace MealPrep.BLL.Services
         Task<decimal> CalculateTotalPriceAsync(int planId, int tierId);
         
         /// <summary>
-        /// Tạo subscription và payment cho checkout
+        /// T?o subscription v� payment cho checkout
         /// </summary>
         Task<(Subscription subscription, Payment payment)> CreateSubscriptionWithPaymentAsync(
             Guid userId, int planId, int tierId, DateOnly startDate);
         
         /// <summary>
-        /// Xác nhận thanh toán và kích hoạt subscription
+        /// X�c nh?n thanh to�n v� k�ch ho?t subscription
         /// </summary>
         Task<Subscription?> ConfirmPaymentAsync(string paymentCode, string? momoOrderId = null, string? rawResponse = null);
 
         /// <summary>
-        /// Lấy subscription từ mã thanh toán (dùng khi payment đã được xử lý trước đó)
+        /// L?y subscription t? m� thanh to�n (d�ng khi payment d� du?c x? l� tru?c d�)
         /// </summary>
         Task<Subscription?> GetSubscriptionByPaymentCodeAsync(string paymentCode);
 
         /// <summary>
-        /// Tạo (hoặc lấy) payment mới cho một subscription đang chờ thanh toán để user thanh toán lại.
+        /// T?o (ho?c l?y) payment m?i cho m?t subscription dang ch? thanh to�n d? user thanh to�n l?i.
         /// </summary>
         Task<Payment> CreateOrGetPendingPaymentAsync(int subscriptionId, Guid userId);
     }

@@ -1,5 +1,5 @@
 using MealPrep.DAL.Data;
-using MealPrep.DAL.Entities;
+using BusinessObjects.Entities;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -52,7 +52,7 @@ namespace MealPrep.BLL.Services
                 throw new InvalidOperationException("Không tìm thấy gói đăng ký.");
             }
 
-            if (subscription.Status != DAL.Enums.SubscriptionStatus.PendingPayment)
+            if (subscription.Status != BusinessObjects.Enums.SubscriptionStatus.PendingPayment)
             {
                 throw new InvalidOperationException("Chỉ có thể hủy gói đang ở trạng thái Chờ thanh toán.");
             }
@@ -64,7 +64,7 @@ namespace MealPrep.BLL.Services
             }
 
             // Cập nhật trạng thái subscription
-            subscription.Status = DAL.Enums.SubscriptionStatus.Cancelled;
+            subscription.Status = BusinessObjects.Enums.SubscriptionStatus.Cancelled;
             subscription.UpdatedAt = DateTime.UtcNow;
 
             // Hủy các payment Pending (nếu có)

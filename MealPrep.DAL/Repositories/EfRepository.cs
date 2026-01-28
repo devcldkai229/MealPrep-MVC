@@ -1,4 +1,4 @@
-﻿using MealPrep.DAL.Data;
+using MealPrep.DAL.Data;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;

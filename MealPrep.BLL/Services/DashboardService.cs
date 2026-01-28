@@ -1,6 +1,6 @@
 using MealPrep.BLL.DTOs;
-using MealPrep.DAL.Entities;
-using MealPrep.DAL.Enums;
+using BusinessObjects.Entities;
+using BusinessObjects.Enums;
 using MealPrep.DAL.Repositories;
 using Microsoft.EntityFrameworkCore;
 using System;

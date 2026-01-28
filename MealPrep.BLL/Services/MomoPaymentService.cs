@@ -1,4 +1,4 @@
-using MealPrep.DAL.Entities;
+using BusinessObjects.Entities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System.Security.Cryptography;

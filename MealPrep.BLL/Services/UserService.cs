@@ -1,7 +1,7 @@
-﻿using MealPrep.BLL.Exceptions;
+using MealPrep.BLL.Exceptions;
 using MealPrep.DAL.Data;
-using MealPrep.DAL.Entities;
-using MealPrep.DAL.Enums;
+using BusinessObjects.Entities;
+using BusinessObjects.Enums;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -41,7 +41,7 @@ namespace MealPrep.BLL.Services
                 throw new UserNotFoundException(userId);
             }
 
-            // Nếu chưa có profile thì tạo mới
+            // N?u chua c� profile th� t?o m?i
             if (user.NutritionProfile == null)
             {
                 user.NutritionProfile = new UserNutritionProfile
@@ -61,7 +61,7 @@ namespace MealPrep.BLL.Services
             }
             else
             {
-                // Cập nhật profile hiện có
+                // C?p nh?t profile hi?n c�
                 user.NutritionProfile.HeightCm = heightCm;
                 user.NutritionProfile.WeightKg = weightKg;
                 user.NutritionProfile.Goal = goal;
@@ -72,10 +72,10 @@ namespace MealPrep.BLL.Services
                 user.NutritionProfile.Notes = notes;
             }
 
-            // Xử lý allergies nếu có
+            // X? l� allergies n?u c�
             if (allergies != null)
             {
-                // Xóa allergies cũ không có trong danh sách mới
+                // X�a allergies cu kh�ng c� trong danh s�ch m?i
                 var existingAllergies = user.NutritionProfile.Allergies?.ToList() ?? new List<UserAllergy>();
                 var allergiesToRemove = existingAllergies
                     .Where(a => !allergies.Contains(a.AllergyName, StringComparer.OrdinalIgnoreCase))
@@ -86,7 +86,7 @@ namespace MealPrep.BLL.Services
                     _context.Set<UserAllergy>().Remove(allergy);
                 }
 
-                // Thêm allergies mới
+                // Th�m allergies m?i
                 var existingAllergyNames = existingAllergies
                     .Select(a => a.AllergyName)
                     .ToList();
@@ -165,7 +165,7 @@ namespace MealPrep.BLL.Services
             );
         }
 
-        public async Task<DAL.Entities.AppUser?> GetUserProfileAsync(Guid userId)
+        public async Task<BusinessObjects.Entities.AppUser?> GetUserProfileAsync(Guid userId)
         {
             return await _context.Users
                 .Include(u => u.Role)

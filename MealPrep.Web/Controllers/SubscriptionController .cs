@@ -1,5 +1,5 @@
-﻿using MealPrep.BLL.Services;
-using MealPrep.DAL.Entities;
+using MealPrep.BLL.Services;
+using BusinessObjects.Entities;
 using MealPrep.DAL.Repositories;
 using MealPrep.Web.ViewModels;
 using Microsoft.AspNetCore.Authorization;
@@ -60,7 +60,7 @@ namespace MealPrep.Web.Controllers
                 
                 if (selectedTier == null || selectedTier.MealsPerDay != 2)
                 {
-                    TempData["ErrorMessage"] = "Hiện tại chỉ hỗ trợ đăng ký gói 2 bữa/ngày.";
+                    TempData["ErrorMessage"] = "Hi?n t?i ch? h? tr? dang k� g�i 2 b?a/ng�y.";
                     return RedirectToAction(nameof(Index));
                 }
 
@@ -105,13 +105,13 @@ namespace MealPrep.Web.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to create subscription/payment");
-                TempData["ErrorMessage"] = $"Có lỗi xảy ra khi tạo đăng ký: {ex.Message}";
+                TempData["ErrorMessage"] = $"C� l?i x?y ra khi t?o dang k�: {ex.Message}";
                 return RedirectToAction(nameof(Index));
             }
         }
 
         /// <summary>
-        /// Thanh toán lại cho một subscription đang ở trạng thái Chờ thanh toán.
+        /// Thanh to�n l?i cho m?t subscription dang ? tr?ng th�i Ch? thanh to�n.
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -121,10 +121,10 @@ namespace MealPrep.Web.Controllers
 
             try
             {
-                // Tạo hoặc lấy payment Pending hiện có cho subscription
+                // T?o ho?c l?y payment Pending hi?n c� cho subscription
                 var payment = await _svc.CreateOrGetPendingPaymentAsync(subscriptionId, userId);
 
-                // Build returnUrl & ipnUrl giống Checkout
+                // Build returnUrl & ipnUrl gi?ng Checkout
                 var returnUrlBase = $"{Request.Scheme}://{Request.Host}";
                 var returnUrl = $"{returnUrlBase.TrimEnd('/')}{Url.Action(nameof(Callback), "Subscription")}";
 
@@ -151,7 +151,7 @@ namespace MealPrep.Web.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to retry payment for subscription {SubscriptionId}", subscriptionId);
-                TempData["ErrorMessage"] = $"Có lỗi xảy ra khi tạo lại thanh toán: {ex.Message}";
+                TempData["ErrorMessage"] = $"C� l?i x?y ra khi t?o l?i thanh to�n: {ex.Message}";
                 return RedirectToAction("Details", "UserSubscriptions", new { id = subscriptionId });
             }
         }
@@ -217,7 +217,7 @@ namespace MealPrep.Web.Controllers
                     
                     if (subscription != null)
                     {
-                        TempData["SuccessMessage"] = "Thanh toán thành công! Gói đăng ký của bạn đã được kích hoạt.";
+                        TempData["SuccessMessage"] = "Thanh to�n th�nh c�ng! G�i dang k� c?a b?n d� du?c k�ch ho?t.";
                         TempData["SubscriptionId"] = subscription.Id;
                         
                         // Redirect to user's subscription details page
@@ -236,7 +236,7 @@ namespace MealPrep.Web.Controllers
                     }
                     else
                     {
-                        TempData["ErrorMessage"] = "Thanh toán thành công nhưng không tìm thấy thông tin gói đăng ký. Vui lòng liên hệ hỗ trợ.";
+                        TempData["ErrorMessage"] = "Thanh to�n th�nh c�ng nhung kh�ng t�m th?y th�ng tin g�i dang k�. Vui l�ng li�n h? h? tr?.";
                         return RedirectToAction(nameof(Index));
                     }
                 }
@@ -250,7 +250,7 @@ namespace MealPrep.Web.Controllers
                             var subscription = await _svc.GetSubscriptionByPaymentCodeAsync(orderId);
                             if (subscription != null)
                             {
-                                TempData["SuccessMessage"] = "Thanh toán đã được xử lý trước đó. Gói đăng ký của bạn đã được kích hoạt.";
+                                TempData["SuccessMessage"] = "Thanh to�n d� du?c x? l� tru?c d�. G�i dang k� c?a b?n d� du?c k�ch ho?t.";
 
                                 if (User.Identity?.IsAuthenticated == true)
                                 {
@@ -270,7 +270,7 @@ namespace MealPrep.Web.Controllers
                         }
 
                         // Fallback: redirect to subscriptions list
-                        TempData["SuccessMessage"] = "Thanh toán đã được xử lý trước đó.";
+                        TempData["SuccessMessage"] = "Thanh to�n d� du?c x? l� tru?c d�.";
 
                         if (User.Identity?.IsAuthenticated == true)
                         {
@@ -286,10 +286,10 @@ namespace MealPrep.Web.Controllers
                     else if (ex.Message.Contains("Payment not found"))
                     {
                         _logger.LogWarning("Payment {OrderId} not found in database", orderId);
-                        TempData["ErrorMessage"] = "Không tìm thấy thông tin thanh toán. Vui lòng liên hệ hỗ trợ.";
+                        TempData["ErrorMessage"] = "Kh�ng t�m th?y th�ng tin thanh to�n. Vui l�ng li�n h? h? tr?.";
                         return RedirectToAction(nameof(Index));
                     }
-                    else if (ex.Message.Contains("trùng") || ex.Message.Contains("overlap") || ex.Message.Contains("Không thể kích hoạt"))
+                    else if (ex.Message.Contains("tr�ng") || ex.Message.Contains("overlap") || ex.Message.Contains("Kh�ng th? k�ch ho?t"))
                     {
                         // Handle overlap error during payment confirmation
                         _logger.LogWarning("Subscription overlap detected during payment confirmation: {Message}", ex.Message);
@@ -297,18 +297,18 @@ namespace MealPrep.Web.Controllers
                         return RedirectToAction(nameof(Index));
                     }
                     _logger.LogError(ex, "Failed to confirm payment: {Message}", ex.Message);
-                    TempData["ErrorMessage"] = $"Có lỗi xảy ra khi xử lý thanh toán: {ex.Message}";
+                    TempData["ErrorMessage"] = $"C� l?i x?y ra khi x? l� thanh to�n: {ex.Message}";
                     return RedirectToAction(nameof(Index));
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Failed to confirm payment");
-                    TempData["ErrorMessage"] = "Có lỗi xảy ra khi xử lý thanh toán. Vui lòng liên hệ hỗ trợ.";
+                    TempData["ErrorMessage"] = "C� l?i x?y ra khi x? l� thanh to�n. Vui l�ng li�n h? h? tr?.";
                 }
             }
             else
             {
-                var errorMsg = message ?? "Thanh toán không thành công";
+                var errorMsg = message ?? "Thanh to�n kh�ng th�nh c�ng";
                 _logger.LogWarning("MoMo payment failed - errorCode={ErrorCode}, resultCode={ResultCode}, message={Message}, orderId={OrderId}", 
                     errorCode, resultCode, message, orderId);
                 TempData["ErrorMessage"] = errorMsg;

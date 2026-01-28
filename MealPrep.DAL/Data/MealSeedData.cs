@@ -1,4 +1,4 @@
-using MealPrep.DAL.Entities;
+using BusinessObjects.Entities;
 
 namespace MealPrep.DAL.Data
 {

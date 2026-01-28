@@ -1,4 +1,4 @@
-﻿using MealPrep.DAL.Entities;
+using BusinessObjects.Entities;
 using System.ComponentModel.DataAnnotations;
 
 namespace MealPrep.Web.ViewModels
